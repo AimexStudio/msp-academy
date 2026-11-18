@@ -1,7 +1,7 @@
 {
-  "name": "pelagos-training-portal",
+  "name": "msp-academy",
   "version": "0.1.0",
-  "description": "Pelagos Langebaan staff training and SOP sign-off portal",
+  "description": "MSP Academy: multi-client compliance, SOP and course training platform (first client: Pelagos Langebaan)",
   "scripts": {
     "start": "node scripts/firebase-run.js start",
     "setup": "node scripts/firebase-run.js setup",
@@ -11,9 +11,15 @@
     "demo": "node scripts/demo.js",
     "test": "node --test --test-concurrency=1 test/*.test.js",
     "test:emulator": "node scripts/firebase-run.js test",
-    "verify": "node scripts/verify-evidence.js",
+    "verify": "node scripts/verify-evidence.js --local",
     "deploy": "firebase deploy --project pelagos-portal",
-    "load-live": "node scripts/load-live.js"
+    "load-live": "node scripts/load-live.js",
+    "verify:live": "node scripts/verify-evidence.js",
+    "migrate": "node scripts/migrate.js",
+    "migrate:local": "node scripts/firebase-run.js script migrate",
+    "platform-admin": "node scripts/create-platform-admin.js",
+    "platform-admin:local": "node scripts/firebase-run.js script create-platform-admin",
+    "update": "bash scripts/update-from-zip.sh"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.5",

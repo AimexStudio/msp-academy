@@ -11,15 +11,15 @@ function vMgr(inner) {
   const on = keys => keys.includes(v) ? "on" : "";
   const nav = (href, label, keys, extra = "") => `<a class="nav ${on(keys)}" href="${href}" ${on(keys) ? 'aria-current="page"' : ""}><span>${label}</span>${extra}</a>`;
   const body = inner || ({ "m-overview": mOverview, "m-staff": mStaff, "m-staffnew": mStaffNew, "m-person": mPerson, "m-library": mLibrary,
-    "m-edit": mEdit, "m-version": mVersion, "m-reports": mReports, "m-settings": mSettings, "m-audit": mAudit }[v] || (() => ""))(S.data[v]);
-  return `<div class="gutter"><div class="mgr"><nav class="rail" aria-label="Manager"><span class="eyebrow">${esc(ROLE_LABEL[P.role()])}</span>
+    "m-edit": mEdit, "m-version": mVersion, "m-course": mCourse, "m-reports": mReports, "m-settings": mSettings, "m-audit": mAudit }[v] || (() => ""))(S.data[v]);
+  return `<div class="gutter"><div class="mgr"><nav class="rail" aria-label="Manager"><span class="eyebrow">${esc(P.isAuthor() ? "MSP Academy author" : P.isSupport() ? P.SUPPORT_LABEL : ROLE_LABEL[P.role()])}</span>
     ${nav("#/m/overview", "Overview", ["m-overview"])}
     ${nav("#/m/staff", "Staff", ["m-staff", "m-person", "m-staffnew"])}
-    ${canDocs() ? nav("#/m/library", "SOP library", ["m-library", "m-edit", "m-version"], drafts ? `<span class="count tnum">${drafts} draft${drafts > 1 ? "s" : ""}</span>` : "") : ""}
+    ${canDocs() ? nav("#/m/library", "SOP library", ["m-library", "m-edit", "m-version", "m-course"], drafts ? `<span class="count tnum">${drafts} draft${drafts > 1 ? "s" : ""}</span>` : "") : ""}
     ${nav("#/m/reports", "Reports", ["m-reports"])}
     ${canDocs() ? nav("#/m/settings", "Settings", ["m-settings"]) : ""}
     ${canDocs() ? nav("#/m/audit", "Audit log", ["m-audit"]) : ""}
-    <hr><a class="nav" href="#/home"><span>My training</span></a></nav>
+    ${P.isSupport() || P.isAuthor() ? "" : `<hr><a class="nav" href="#/home"><span>My training</span></a>`}</nav>
     <main style="min-width:0">${body}</main></div></div>`;
 }
 
@@ -130,12 +130,112 @@ function mLibrary(d) {
   const ready = d.documents.filter(m => m.ready).length, held = d.documents.filter(m => m.status === "draft" && m.hold).length;
   return `<div class="page-head"><div class="t"><span class="eyebrow">Document control</span><h1>SOP library</h1><p class="muted">SOPs, manuals, policies and staff memos. Each one is assigned to positions and signed by staff.</p></div>${canEdit() ? `<div class="row"><a class="btn" href="#/m/doc/new">New document</a></div>` : ""}</div>
     ${ready && canEdit() ? `<div class="banner" style="margin-bottom:14px"><div class="main"><strong>${plural(ready, "draft")} ready to publish</strong><div class="muted" style="font-size:.9rem">Check the questions and correct answers, then publish. Staff see a document only once it is published.${held ? ` ${plural(held, "document")} on hold will stay as draft${held === 1 ? "" : "s"}.` : ""}</div></div><button type="button" class="btn primary" data-act="publish-all" ${S.busy ? "disabled" : ""}>Publish ${ready === 1 ? "it" : "all " + ready}</button></div>` : ""}
+    ${coursesCard(d.courses || [])}
     <div class="toolbar">${tab("all", "All")}${tab("published", "Published")}${tab("draft", "Drafts")}${tab("archived", "Archived")}</div>
     ${list.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Document</th><th>Type</th><th>Assigned to</th><th>Status</th><th>Signed</th></tr></thead><tbody>
       ${list.map(m => `<tr class="click" data-href="#/m/doc/${encodeURIComponent(m.code)}"><td><a class="nm" href="#/m/doc/${encodeURIComponent(m.code)}" style="color:inherit;text-decoration:none">${esc(m.title)}</a><div class="mono muted">${esc(m.code)} · v${esc(m.label)} · ${plural(m.questionCount, "question")}${m.videoCount ? ` · ▶ ${plural(m.videoCount, "video")}` : ""}</div></td><td>${esc(KINDS[m.kind])}</td><td style="max-width:260px">${esc(audienceText(m.audience))}</td>
-        <td><div class="chips">${m.status === "published" ? '<span class="chip ok">Published</span>' : m.status === "draft" ? '<span class="chip warn">Draft</span>' : '<span class="chip">Archived</span>'}${m.status === "draft" && m.hold ? `<span class="chip plain khaki" title="${esc(m.hold)}">On hold</span>` : ""}${m.draftDirty ? '<span class="chip plain tag-dirty">Unpublished changes</span>' : ""}</div></td>
+        <td><div class="chips">${m.status === "published" ? '<span class="chip ok">Published</span>' : m.status === "draft" ? '<span class="chip warn">Draft</span>' : '<span class="chip">Archived</span>'}${m.status === "draft" && m.hold ? `<span class="chip plain khaki" title="${esc(m.hold)}">On hold</span>` : ""}${m.draftDirty ? '<span class="chip plain tag-dirty">Unpublished changes</span>' : ""}${m.shared ? `<span class="chip plain info" title="Content provided by ${esc(m.shared.provider)}">${esc(m.shared.provider)}</span>` : ""}</div></td>
         <td>${m.stats ? `<div class="row" style="gap:8px;flex-wrap:nowrap"><div class="progress" style="width:70px"><span style="width:${m.stats.total ? Math.round(m.stats.done / m.stats.total * 100) : 0}%"></span></div><span class="tnum muted" style="font-size:.84rem">${m.stats.done}/${m.stats.total}</span></div>` : '<span class="muted">—</span>'}</td></tr>`).join("")}
     </tbody></table></div>` : `<div class="card empty"><h3>No documents here</h3><p>Create an SOP, training manual or policy, assign it to positions and publish it.</p>${canEdit() ? `<a class="btn primary" href="#/m/doc/new">New document</a>` : ""}</div>`}`;
+}
+
+/* ---------- courses: built from modules and lessons ---------- */
+const LESSON_TYPES = { text: "Text", video: "Video", pdf: "PDF", quiz: "Quiz", document: "SOP or policy" };
+const LESSON_ICON = { text: "¶", video: "▶", pdf: "⎙", quiz: "?", document: "✎" };
+function courseChip(c) {
+  if (c.status === "archived") return '<span class="chip">Archived</span>';
+  if (c.status === "published") return `<span class="chip ok">Published v${esc(c.label)}</span>${c.draftDirty ? ' <span class="chip plain tag-dirty">Unpublished changes</span>' : ""}`;
+  return '<span class="chip warn">Draft</span>';
+}
+function coursesCard(list) {
+  const T = P.term;
+  return `<section class="card pad stack" style="gap:12px;margin-bottom:18px"><div class="row between"><div><h2>${esc(T("courses"))}</h2><p class="muted" style="font-size:.9rem">Build ${esc(T("courses").toLowerCase())} from ${esc(T("modules").toLowerCase())} and lessons: text, video, PDF, quizzes, and your SOPs and policies. Finishing one gives the person a certificate.</p></div>${canEdit() ? `<a class="btn sm primary" href="#/m/course/new">New ${esc(T("course").toLowerCase())}</a>` : ""}</div>
+    ${list.length ? `<div class="list">${list.map(c => `<a class="li click" href="#/m/course/${encodeURIComponent(c.id)}" style="color:inherit;text-decoration:none"><div class="main"><div class="title">${esc(c.title)}</div><div class="sub">${plural(c.moduleCount, T("module").toLowerCase())} · ${plural(c.lessonCount, "lesson")}${c.stats ? ` · ${c.stats.completed} of ${c.stats.total} completed` : ""}</div></div><div class="chips">${courseChip(c)}${c.shared ? `<span class="chip plain info">${esc(c.shared.provider)}</span>` : ""}</div></a>`).join("")}</div>`
+      : `<p class="muted">No ${esc(T("courses").toLowerCase())} yet.</p>`}</section>`;
+}
+function mCourseNew() {
+  const e = S.courseEdit, T = P.term;
+  return `<div class="page-head"><div class="t"><a class="back" href="#/m/library">← SOP library</a><h1>New ${esc(T("course").toLowerCase())}</h1><p class="muted">Give it a title. You'll add ${esc(T("modules").toLowerCase())} and lessons next.</p></div></div>
+    <form data-form="course-new" class="card pad stack" style="gap:14px;max-width:640px">
+      <div class="field"><label for="cn-title">Title</label><input id="cn-title" type="text" data-bind="courseEdit.title" value="${esc(e.title)}" placeholder="e.g. Guest Service Basics"></div>
+      <div class="field"><label for="cn-desc">Description (optional)</label><textarea id="cn-desc" rows="2" data-bind="courseEdit.description">${esc(e.description)}</textarea></div>
+      <p class="err" id="course-err" role="alert"></p>
+      <div class="row"><button type="submit" class="btn primary">Create ${esc(T("course").toLowerCase())}</button><a class="btn" href="#/m/library">Cancel</a></div></form>`;
+}
+function lessonEditor(l, i, j, d) {
+  const e = S.courseEdit, p = `courseEdit.draft.modules.${i}.lessons.${j}`;
+  const title = `<div class="field"><label for="le-t-${i}-${j}">Lesson title</label><input id="le-t-${i}-${j}" type="text" data-bind="${p}.title" value="${esc(l.title)}"></div>`;
+  if (l.type === "text") return `${title}<div class="field"><label for="le-b-${i}-${j}">Text</label><textarea id="le-b-${i}-${j}" rows="10" data-bind="${p}.body">${esc(l.body || "")}</textarea><span class="hint">## for a heading, - for a bullet, 1. for a numbered step, **bold**.</span></div>`;
+  if (l.type === "video" || l.type === "pdf") {
+    const f = l.fileId && e.files[l.fileId], up = e.uploading && e.uploading.key === `${i}-${j}`;
+    return `${title}<div class="field"><span class="lbl">${l.type === "video" ? "Video (MP4)" : "PDF"}</span>
+      ${f ? `<div class="attach"><span class="chip plain ${l.type === "video" ? "info" : "khaki"}">${l.type === "video" ? "Video" : "PDF"}</span><span style="flex:1;min-width:0;overflow-wrap:anywhere">${esc(f.name)}${f.duration ? " · " + esc(P.fmtDur(f.duration)) : ""}${f.size ? " · " + esc(P.fmtSize(f.size)) : ""}</span><a class="btn sm" href="/api/files/${esc(l.fileId)}" target="_blank" rel="noopener">Open</a></div>` : ""}
+      ${up ? `<div class="upload-row"><span>Uploading ${esc(e.uploading.name)}…</span><progress max="1" value="${e.uploading.pct || 0}"></progress></div>`
+        : `<input type="file" accept="${l.type === "video" ? "video/mp4,.mp4,.m4v,.mov" : "application/pdf,.pdf"}" data-change="cb-upload" data-i="${i}" data-j="${j}"><span class="hint">${f ? "Choose a file to replace it." : l.type === "video" ? "MP4 (H.264), under 30 MB." : "Up to 25 MB."}</span>`}</div>`;
+  }
+  if (l.type === "document") {
+    const docs = d.lib.documents.filter(m => m.status !== "archived" || m.code === l.code);
+    return `<div class="field"><label for="le-d-${i}-${j}">SOP or policy</label><select id="le-d-${i}-${j}" data-bind="${p}.code" data-rerender="1"><option value="">Choose…</option>${docs.map(m => `<option value="${esc(m.code)}" ${l.code === m.code ? "selected" : ""}>${esc(m.code)} · ${esc(m.title)}${m.status !== "published" ? " (draft)" : ""}</option>`).join("")}</select>
+      <span class="hint">People read and sign it as usual; signing it finishes this lesson. Who must sign it is still set on the document.</span></div>`;
+  }
+  const qs = (l.questions || []).map((q, k) => `<div class="qe"><div class="row between"><span class="lbl">Question ${k + 1}</span><button type="button" class="btn ghost sm" data-act="cb-q-del" data-i="${i}" data-j="${j}" data-k="${k}">Remove</button></div>
+    <input type="text" aria-label="Question ${k + 1}" data-bind="${p}.questions.${k}.q" value="${esc(q.q)}" placeholder="Question">
+    ${q.options.map((o, n) => `<div class="opt-row"><input type="radio" name="cq-${i}-${j}-${k}" aria-label="Mark option ${n + 1} correct" data-change="cb-q-correct" data-i="${i}" data-j="${j}" data-k="${k}" data-n="${n}" ${q.correct === n ? "checked" : ""}><input type="text" aria-label="Option ${n + 1}" data-bind="${p}.questions.${k}.options.${n}" value="${esc(o)}" placeholder="Option ${n + 1}"><button type="button" class="btn ghost sm" data-act="cb-opt-del" data-i="${i}" data-j="${j}" data-k="${k}" data-n="${n}" ${q.options.length <= 2 ? "disabled" : ""} aria-label="Remove option">✕</button></div>`).join("")}
+    <div class="row between"><span class="hint muted" style="font-size:.8rem">Tick the correct answer.</span>${q.options.length < 6 ? `<button type="button" class="btn ghost sm" data-act="cb-opt-add" data-i="${i}" data-j="${j}" data-k="${k}">Add option</button>` : ""}</div></div>`).join("");
+  return `${title}<div class="field" style="max-width:160px"><label for="le-pm-${i}-${j}">Pass mark</label><select id="le-pm-${i}-${j}" data-bind="${p}.passMark" data-num="1">${[60, 70, 80, 90, 100].map(n => `<option value="${n}" ${Number(l.passMark) === n ? "selected" : ""}>${n}%</option>`).join("")}</select></div>
+    ${qs}<div class="row"><button type="button" class="btn sm" data-act="cb-q-add" data-i="${i}" data-j="${j}">Add question</button></div>`;
+}
+function lessonLabel(l, d) {
+  if (l.type === "document") { const m = d.lib.documents.find(x => x.code === l.code); return l.title || (m ? m.title : l.code || "Choose an SOP or policy"); }
+  return l.title || `Untitled ${LESSON_TYPES[l.type].toLowerCase()} lesson`;
+}
+function mCourse(d) {
+  const e = S.courseEdit; if (!e) return "";
+  if (!e.id) return mCourseNew();
+  const T = P.term, Mod = T("module");
+  const dr = e.draft, a = dr.audience, ro = !canEdit(), sh = !!e.shared, lock = ro || sh;
+  const pub = e.status === "published", cur = e.label;
+  const [maj, min] = cur ? cur.split(".").map(Number) : [0, 0];
+  const nMinor = `${maj}.${min + 1}`, nMajor = `${maj + 1}.0`;
+  const counts = d.lib.activeByPosition || {};
+  const people = a.all ? Object.values(counts).reduce((n, x) => n + x, 0) : (a.positions || []).reduce((n, p) => n + (counts[p] || 0), 0);
+  let num = 0;
+  const modules = dr.modules.map((m, i) => `<section class="card pad stack cb-module" style="gap:12px">
+    <div class="row" style="flex-wrap:nowrap;gap:8px"><span class="cb-modnum">${esc(Mod)} ${i + 1}</span><label class="sr-only" for="cm-${i}">${esc(Mod)} title</label><input id="cm-${i}" type="text" data-bind="courseEdit.draft.modules.${i}.title" value="${esc(m.title)}" placeholder="${esc(Mod)} title" style="flex:1">
+      ${lock ? "" : `<button type="button" class="btn ghost sm" data-act="cb-mod-move" data-i="${i}" data-d="-1" ${i === 0 ? "disabled" : ""} aria-label="Move up">↑</button><button type="button" class="btn ghost sm" data-act="cb-mod-move" data-i="${i}" data-d="1" ${i === dr.modules.length - 1 ? "disabled" : ""} aria-label="Move down">↓</button><button type="button" class="btn ghost sm danger" data-act="cb-mod-del" data-i="${i}" aria-label="Remove">✕</button>`}</div>
+    ${m.lessons.length ? `<ol class="cb-lessons">${m.lessons.map((l, j) => { num++; const open = e.open === l.id;
+      return `<li class="cb-lesson ${open ? "open" : ""}"><div class="cb-row"><span class="cb-icon t-${l.type}" aria-hidden="true">${LESSON_ICON[l.type]}</span><span class="ci-num tnum">${num}</span><button type="button" class="cb-title linkish" data-act="cb-les-open" data-id="${esc(l.id)}">${esc(lessonLabel(l, d))}</button><span class="chip plain">${esc(LESSON_TYPES[l.type])}</span>
+        ${lock ? "" : `<span class="cb-tools"><button type="button" class="btn ghost sm" data-act="cb-les-move" data-i="${i}" data-j="${j}" data-d="-1" ${i === 0 && j === 0 ? "disabled" : ""} aria-label="Move lesson up">↑</button><button type="button" class="btn ghost sm" data-act="cb-les-move" data-i="${i}" data-j="${j}" data-d="1" ${i === dr.modules.length - 1 && j === m.lessons.length - 1 ? "disabled" : ""} aria-label="Move lesson down">↓</button><button type="button" class="btn ghost sm danger" data-act="cb-les-del" data-i="${i}" data-j="${j}" aria-label="Remove lesson">✕</button></span>`}</div>
+        ${open ? `<div class="cb-editor stack" style="gap:12px">${lessonEditor(l, i, j, d)}</div>` : ""}</li>`; }).join("")}</ol>` : `<p class="muted" style="font-size:.9rem">No lessons in this ${esc(Mod.toLowerCase())} yet.</p>`}
+    ${lock ? "" : `<div class="row cb-add" style="gap:8px"><label class="sr-only" for="cat-${i}">Lesson type</label><select id="cat-${i}" data-bind="courseEdit.addType.${i}">${Object.entries(LESSON_TYPES).map(([k, v]) => `<option value="${k}" ${(e.addType[i] || "text") === k ? "selected" : ""}>${v}</option>`).join("")}</select><button type="button" class="btn sm" data-act="cb-les-add" data-i="${i}">Add lesson</button></div>`}
+  </section>`).join("");
+  const aud = `<label class="check"><input type="checkbox" data-bind="courseEdit.draft.audience.all" data-rerender="1" ${a.all ? "checked" : ""}><span><strong>All staff</strong></span></label>
+    ${a.all ? "" : S.org.departments.map(dp => { const ps = S.org.positions.filter(p => p.dept === dp.id); if (!ps.length) return "";
+      return `<div class="aud-dept"><div class="dh"><span>${esc(dp.name)}</span></div>${ps.map(p => `<label class="check"><input type="checkbox" data-change="cb-aud-pos" data-p="${esc(p.id)}" ${a.positions.includes(p.id) ? "checked" : ""}><span>${esc(p.name)}</span></label>`).join("")}</div>`; }).join("")}`;
+  const status = e.status === "archived" ? "Archived · hidden from staff" : pub ? `Published · version ${esc(cur)}${e.draftDirty ? " · unpublished changes" : ""}` : "Draft · staff can't see it yet";
+  return `<div class="page-head"><div class="t"><a class="back" href="#/m/library">← SOP library</a><h1>${esc(dr.title || "Untitled")}</h1><span class="muted">${status}</span></div></div>
+    ${sh ? `<div class="notice info" style="margin-bottom:16px"><strong>Provided by ${esc(e.shared.provider)}.</strong> The lessons can't be changed here. Choose who at ${esc(S.org.orgName)} must complete it, then publish.</div>` : ""}
+    ${e.dirty ? `<div class="notice" style="margin-bottom:16px">You have unsaved changes.</div>` : ""}
+    <form data-form="course" class="editor"><div class="stack" style="gap:16px;min-width:0"><fieldset ${lock ? "disabled" : ""} style="border:0;padding:0;margin:0;min-width:0;display:contents">
+      <section class="card pad stack" style="gap:14px"><div class="field"><label for="c-title">Title</label><input id="c-title" type="text" data-bind="courseEdit.draft.title" value="${esc(dr.title)}"></div>
+        <div class="field"><label for="c-desc">Description</label><textarea id="c-desc" rows="2" data-bind="courseEdit.draft.description">${esc(dr.description)}</textarea></div></section>
+      ${modules || `<div class="card empty"><h3>Start with a ${esc(Mod.toLowerCase())}</h3><p>${esc(T("modules"))} group lessons, e.g. "Welcome", "On the floor", "Check".</p></div>`}
+      ${lock ? "" : `<div class="row"><button type="button" class="btn" data-act="cb-mod-add">Add ${esc(Mod.toLowerCase())}</button></div>`}
+    </fieldset></div>
+    <aside class="side-panel">
+      <section class="card pad stack" style="gap:12px"><h3>Who must complete it</h3><fieldset ${ro ? "disabled" : ""} style="border:0;padding:0;margin:0;min-width:0;display:contents">${aud}</fieldset><p class="muted tnum" style="font-size:.86rem">${P.isAuthor() ? "Each client it's shared with chooses who completes it. This sets the starting choice." : `${plural(people, "active staff member")} will get this.`}</p></section>
+      ${e.stats ? `<section class="card pad stack" style="gap:6px"><h3>Completed</h3><p class="tnum" style="font-size:1.4rem;margin:0">${e.stats.completed} <span class="muted" style="font-size:1rem">of ${e.stats.total}</span></p><p class="muted" style="font-size:.84rem">Each one has a certificate in their training record.</p></section>` : ""}
+      ${ro ? "" : `<section class="card pad stack" style="gap:12px">
+        <button type="submit" class="btn block">Save draft</button>
+        ${pub ? `<span class="lbl">How big is this change?</span>
+          <label class="check"><input type="radio" name="cchg" data-change="cb-chg" data-v="minor" ${e.change === "minor" ? "checked" : ""}><span>Minor change (v${esc(nMinor)})<br><span class="muted" style="font-size:.84rem">Progress and certificates stay valid.</span></span></label>
+          <label class="check"><input type="radio" name="cchg" data-change="cb-chg" data-v="major" ${e.change === "major" ? "checked" : ""}><span>New version (v${esc(nMajor)})<br><span class="muted" style="font-size:.84rem">Everyone takes it again.</span></span></label>` : ""}
+        <button type="button" class="btn primary block" data-act="cb-publish" ${S.busy ? "disabled" : ""}>${pub ? `Publish version ${esc(e.change === "major" ? nMajor : nMinor)}` : "Publish to staff"}</button>
+        ${e.problems.length && !e.dirty ? `<p class="hint muted" style="font-size:.84rem">Before publishing: ${esc(e.problems[0])}${e.problems.length > 1 ? ` (and ${e.problems.length - 1} more)` : ""}</p>` : ""}
+        <p class="err" id="course-err" role="alert"></p>
+        <button type="button" class="btn sm danger" data-act="course-del">${e.label ? "Archive" : "Delete"}</button></section>`}
+      ${e.versions.length ? `<section class="card pad stack" style="gap:8px"><h3>Published versions</h3>${e.versions.map(v => `<div class="tnum" style="font-size:.9rem">Version ${esc(v.label)} <span class="muted">· ${fmtDate(v.publishedAt)}</span></div>`).join("")}</section>` : ""}
+    </aside></form>`;
 }
 
 /* ---------- editor ---------- */
@@ -144,6 +244,7 @@ function mEdit(d) {
   if (S.params.id === "new") return mNewDoc();
   const e = S.edit; if (!e) return "";
   const dr = e.draft, a = dr.audience, ro = !canEdit();
+  const sh = !!e.shared; // provided by MSP Academy: only who completes it, and its order, can change
   const pub = e.status === "published", arch = e.status === "archived", never = !e.current;
   const counts = d.lib.activeByPosition || {};
   const people = a.all ? Object.values(counts).reduce((n, x) => n + x, 0) : (a.positions || []).reduce((n, p) => n + (counts[p] || 0), 0);
@@ -163,9 +264,10 @@ function mEdit(d) {
   return `<div class="page-head"><div class="t"><a class="back" href="#/m/library">← SOP library</a><h1>${esc(dr.title || "Untitled")}</h1><span class="muted">${status}</span></div></div>
     ${e.hold && e.status === "draft" ? `<div class="banner" style="margin-bottom:16px"><div class="main"><strong>On hold</strong><div class="muted" style="font-size:.9rem">${esc(e.hold)}. It is left out of "Publish all". Publishing it here removes the hold.</div></div>${ro ? "" : `<button type="button" class="btn sm" data-act="ed-release-hold">Remove hold</button>`}</div>` : ""}
     ${e.draftDirty && !e.localDirty ? `<div class="banner" style="margin-bottom:16px"><div class="main"><strong>Saved changes not yet published</strong><div class="muted" style="font-size:.9rem">Staff still see version ${esc(cur.label)}. Publish the changes, or discard them.</div></div>${ro ? "" : `<button type="button" class="btn sm" data-act="ed-discard">Discard changes</button>`}</div>` : ""}
+    ${sh ? `<div class="notice info" style="margin-bottom:16px"><strong>Provided by ${esc(e.shared.provider)}.</strong> The content can't be changed here. Choose who at ${esc(S.org.orgName)} must complete it, and its place in the course, then publish.</div>` : ""}
     ${e.localDirty ? `<div class="notice" style="margin-bottom:16px">You have unsaved changes.</div>` : ""}
     <form data-form="doc" class="editor"><fieldset ${ro ? "disabled" : ""} style="border:0;padding:0;margin:0;min-width:0;display:contents">
-      <div class="stack" style="gap:16px;min-width:0">
+      <div class="stack" style="gap:16px;min-width:0"><fieldset ${sh ? "disabled" : ""} style="border:0;padding:0;margin:0;min-width:0;display:contents">
         <section class="card pad stack" style="gap:14px">
           <div class="grid2"><div class="field"><label for="ed-code">Document code</label><input id="ed-code" type="text" data-bind="edit.code" value="${esc(e.code)}" ${never ? "" : "disabled"}>${never ? "" : `<span class="hint">Fixed once published, because signed records use it.</span>`}</div>
           <div class="field"><label for="ed-kind">Type</label><select id="ed-kind" data-bind="edit.kind" ${never ? "" : "disabled"}>${Object.entries(KINDS).map(([k, l]) => `<option value="${k}" ${e.kind === k ? "selected" : ""}>${l}</option>`).join("")}</select></div></div>
@@ -187,11 +289,11 @@ function mEdit(d) {
           ${ro ? "" : `<div class="row"><button type="button" class="btn" data-act="q-add">Add question</button>${S.features.aiQuestions ? `<button type="button" class="btn" data-act="ed-ai" ${S.aiBusy ? "disabled" : ""}>${S.aiBusy ? "Drafting questions…" : "Draft 5 questions from the content"}</button>` : ""}</div>
           ${S.features.aiQuestions ? `<p class="muted" style="font-size:.82rem">Drafted questions are added below the others. Check each answer before publishing.</p>` : ""}`}
         </section>
-      </div>
+      </fieldset></div>
       <aside class="side-panel">
         <section class="card pad stack" style="gap:12px"><h3>Who must complete it</h3>${aud}<p class="muted tnum" style="font-size:.86rem">${plural(people, "active staff member")} will get this.</p></section>
-        <section class="card pad stack" style="gap:12px"><h3>Document details</h3><div class="field"><label for="ed-issue">Issue date</label><input id="ed-issue" type="text" data-bind="edit.draft.issueDate" value="${esc(dr.issueDate || "")}" placeholder="e.g. 10 June 2026"><span class="hint">As printed on the document.</span></div><div class="field"><label for="ed-applies">Applies to (wording)</label><input id="ed-applies" type="text" data-bind="edit.draft.appliesText" value="${esc(dr.appliesText || "")}" placeholder="e.g. All FOH staff"><span class="hint">Shown to staff. Who must sign is set above.</span></div></section>
-        <section class="card pad stack" style="gap:12px"><div class="grid2" style="grid-template-columns:1fr 1fr"><div class="field"><label for="ed-min">Minutes</label><input id="ed-min" type="number" min="1" max="600" data-bind="edit.draft.estMinutes" data-num="1" value="${esc(dr.estMinutes)}"></div><div class="field"><label for="ed-ord">Course order</label><input id="ed-ord" type="number" data-bind="edit.draft.order" data-num="1" value="${esc(dr.order)}"></div></div><span class="hint muted" style="font-size:.8rem">Lower numbers come first in the course.</span></section>
+        <section class="card pad stack" style="gap:12px"><h3>Document details</h3><fieldset ${sh ? "disabled" : ""} style="border:0;padding:0;margin:0;min-width:0;display:contents"><div class="field"><label for="ed-issue">Issue date</label><input id="ed-issue" type="text" data-bind="edit.draft.issueDate" value="${esc(dr.issueDate || "")}" placeholder="e.g. 10 June 2026"><span class="hint">As printed on the document.</span></div><div class="field"><label for="ed-applies">Applies to (wording)</label><input id="ed-applies" type="text" data-bind="edit.draft.appliesText" value="${esc(dr.appliesText || "")}" placeholder="e.g. All FOH staff"><span class="hint">Shown to staff. Who must sign is set above.</span></div></fieldset></section>
+        <section class="card pad stack" style="gap:12px"><div class="grid2" style="grid-template-columns:1fr 1fr"><div class="field"><label for="ed-min">Minutes</label><input id="ed-min" type="number" min="1" max="600" data-bind="edit.draft.estMinutes" data-num="1" value="${esc(dr.estMinutes)}" ${sh ? "disabled" : ""}></div><div class="field"><label for="ed-ord">Course order</label><input id="ed-ord" type="number" data-bind="edit.draft.order" data-num="1" value="${esc(dr.order)}"></div></div><span class="hint muted" style="font-size:.8rem">Lower numbers come first in the course.</span></section>
         ${ro ? "" : `<section class="card pad stack" style="gap:12px">
           ${pub || (arch && cur) ? `<span class="lbl">How big is this change?</span>
             <label class="check"><input type="radio" name="chg" data-change="chg" data-v="minor" ${e.change === "minor" ? "checked" : ""}><span>Minor change (v${esc(nextMinor)})<br><span class="muted" style="font-size:.84rem">Wording or formatting. Signatures stay valid.</span></span></label>
@@ -216,7 +318,7 @@ function mNewDoc() {
   return `<div class="page-head"><div class="t"><a class="back" href="#/m/library">← SOP library</a><h1>New document</h1><span class="muted">It starts as a draft. Staff see it once you publish it.</span></div></div>
     <form data-form="newdoc" class="card pad stack" style="gap:16px;max-width:560px">
       <div class="field"><label for="nd-kind">Type</label><select id="nd-kind" data-change="nd-kind">${Object.entries(KINDS).map(([k, l]) => `<option value="${k}" ${n.kind === k ? "selected" : ""}>${l}</option>`).join("")}</select></div>
-      <div class="field"><label for="nd-code">Document code</label><input id="nd-code" type="text" data-bind="newDoc.code" value="${esc(n.code)}" placeholder="PEL-SOP-013"><span class="hint">The next free number from the Document Register is filled in.</span></div>
+      <div class="field"><label for="nd-code">Document code</label><input id="nd-code" type="text" data-bind="newDoc.code" value="${esc(n.code)}" placeholder="${esc((S.brand && S.brand.docPrefix) || "DOC")}-SOP-013"><span class="hint">The next free number from the Document Register is filled in.</span></div>
       <p class="err" id="nd-err" role="alert"></p>
       <div class="row"><button type="submit" class="btn primary" ${S.busy ? "disabled" : ""}>Create draft</button><a class="btn" href="#/m/library">Cancel</a></div></form>`;
 }
@@ -272,6 +374,8 @@ function mSettings(d) {
     ${ro ? "" : `<div class="row"><button type="submit" class="btn primary" ${S.busy ? "disabled" : ""}>Save settings</button><button type="button" class="btn" data-act="cfg-reset">Discard changes</button></div>`}
     </fieldset></form>
     <section class="card pad stack" style="gap:10px"><h2>How staff sign in</h2>
+      <p>${d.domains && d.domains.length ? `Staff open <strong>${d.domains.map(esc).join("</strong> or <strong>")}</strong>, or the shared sign-in page with the client code <strong class="mono">${esc(d.loginCode || "")}</strong>.` : `On the shared sign-in page, staff first enter the client code <strong class="mono">${esc(d.loginCode || "")}</strong>. A shared tablet remembers it.`}
+        Documents are numbered ${esc(d.docPrefix || "")}-SOP-001 and so on${d.staffNoPrefix ? `, and staff numbers start with ${esc(d.staffNoPrefix)}` : ""}. To change these, contact MSP Academy.</p>
       <p>Staff sign in with their staff number and a 4 to 6 digit PIN, on the training tablet or their own phone. After 5 wrong PINs sign-in pauses for a minute, after 10 for 15 minutes, and after 15 it stays blocked until a manager resets the PIN.</p>
       <p class="muted" style="font-size:.9rem">Staff are signed out after 10 minutes without activity. Managers after 30 minutes.</p></section>
     </div>`;

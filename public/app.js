@@ -1,4 +1,4 @@
-// Pelagos Training Portal: browser client.
+// MSP Academy: browser client (every client's staff and managers).
 // Screens and wording follow the prototype. The server decides everything that matters (who gets what,
 // marking, gates, signing); this script only shows what the server sends and asks it to record actions.
 (function () {
@@ -9,13 +9,16 @@ const $app = document.getElementById("app");
 const KINDS = { sop: "SOP", manual: "Manual", policy: "Policy", memo: "Staff memo" };
 const SECTIONS = [["sop", "Standard operating procedures"], ["manual", "Manuals"], ["policy", "Policies"], ["memo", "Staff memos"]];
 const ROLE_LABEL = { staff: "Staff", hod: "Head of department", manager: "Manager", auditor: "Owner / auditor" };
+const SUPPORT_LABEL = "Platform support (read-only)";
 
 /* ---------- state ---------- */
 const S = {
   me: null, org: null, idleSeconds: 600, features: {},
+  brand: null, brandByHost: false, support: null, // the client this page is for, and a platform support or library visit
+  platformMode: location.pathname.replace(/\/+$/, "") === "/platform",
   view: "boot", params: {}, data: {}, loading: false,
   flash: null, busy: false, copyText: null,
-  login: { no: "", pin: "", err: "" },
+  login: { no: "", pin: "", err: "", code: "", remember: true },
   docv: null, decl: null, edit: null, staffEdit: null, cfgEdit: null, pinReset: null,
   filt: { q: "", dept: "", lib: "all", rdept: "" },
 };
@@ -31,9 +34,11 @@ const normName = s => String(s || "").normalize("NFKC").toLowerCase().replace(/\
 const clone = o => JSON.parse(JSON.stringify(o ?? null));
 const greeting = () => { const h = new Date().getHours(); return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening"; };
 const role = () => S.me && S.me.role;
-const isMgrish = () => ["manager", "hod", "auditor"].includes(role());
+const isMgrish = () => ["manager", "hod", "auditor", "support"].includes(role());
+const isSupport = () => role() === "support";
+const isAuthor = () => !!(S.support && S.support.author);
 const canEdit = () => role() === "manager";
-const canDocs = () => ["manager", "auditor"].includes(role());
+const canDocs = () => ["manager", "auditor", "support"].includes(role());
 const posName = id => (S.org && S.org.positions.find(p => p.id === id) || {}).name || "No position";
 const deptOfPos = id => (S.org && S.org.positions.find(p => p.id === id) || {}).dept || "";
 const deptName = id => (S.org && S.org.departments.find(d => d.id === id) || {}).name || "Unassigned";
@@ -51,6 +56,93 @@ function confirmBox(title, body, okLabel, fn, danger, extraHtml) {
   const ok = document.querySelector('[data-act="modal-ok"]'); if (ok) ok.focus();
 }
 function closeModal() { document.getElementById("modal").innerHTML = ""; modalAction = null; }
+
+/* ---------- branding ----------
+   The stylesheet's defaults are Pelagos's palette. A client's branding sets its four colours, its fonts and
+   its words; the in-between shades are worked out from those. Only what differs from the defaults is set.
+   Before a client is chosen (the shared sign-in page) the page has MSP Academy's own neutral look. */
+const CODE_KEY = "pt.clientCode";
+const storedCode = () => { try { return localStorage.getItem(CODE_KEY) || ""; } catch { return ""; } };
+const storeCode = c => { try { if (c) localStorage.setItem(CODE_KEY, c); else localStorage.removeItem(CODE_KEY); } catch {} };
+const hexRgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const rgbHex = a => "#" + a.map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("").toUpperCase();
+const mix = (a, b, t) => { const x = hexRgb(a), y = hexRgb(b); return rgbHex(x.map((v, i) => v + (y[i] - v) * t)); };
+const lum = h => { const [r, g, b] = hexRgb(h).map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+const PELAGOS_BG = "#E4E0CD";
+const BRAND_VARS = ["--bar", "--primary", "--on-bar", "--on-primary", "--bar-dim", "--lagoon", "--gold", "--bg", "--surface", "--sunk", "--line", "--sand",
+  "--ink", "--ink-2", "--muted", "--paper-ink", "--lagoon-soft", "--khaki", "--khaki-soft", "--f-display", "--f-body", "--arches"];
+
+/** The derived palette for a client's four colours (also used by the platform's branding preview). */
+function brandPalette(c) {
+  const v = {};
+  const onPrimary = contrast(c.background, c.primary) >= 4.5 ? c.background : (lum(c.primary) < 0.35 ? "#FFFFFF" : "#141A1C");
+  v["--bar"] = v["--primary"] = c.primary; v["--on-bar"] = v["--on-primary"] = onPrimary;
+  v["--bar-dim"] = contrast(c.highlight, c.primary) >= 3 ? c.highlight : mix(onPrimary, c.primary, 0.3);
+  v["--lagoon"] = c.accent; v["--gold"] = c.highlight;
+  if (c.background.toUpperCase() !== PELAGOS_BG) {
+    const ink = lum(c.primary) < 0.05 ? c.primary : "#1D2428";
+    Object.assign(v, { "--bg": c.background, "--surface": mix(c.background, "#FFFFFF", 0.6), "--sunk": mix(c.background, "#FFFFFF", 0.2),
+      "--line": mix(c.background, ink, 0.13), "--sand": mix(c.background, ink, 0.06), "--ink": ink, "--paper-ink": ink, "--ink-2": mix(ink, c.background, 0.18),
+      "--muted": mix(ink, c.background, 0.4), "--lagoon-soft": mix(c.background, c.accent, 0.14), "--khaki": mix(c.highlight, ink, 0.45), "--khaki-soft": mix(c.background, c.highlight, 0.16) });
+  }
+  return v;
+}
+function archesUrl(c) {
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 150'><path fill='${c.accent}' d='M0 150V100A100 100 0 0 1 200 100V150H150A50 50 0 0 0 50 150Z'/><path fill='${c.highlight}' d='M200 150V100A100 100 0 0 1 400 100V150H350A50 50 0 0 0 250 150Z'/></svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+}
+function applyBrand(b) {
+  const root = document.documentElement;
+  BRAND_VARS.forEach(k => root.style.removeProperty(k));
+  root.removeAttribute("data-caps");
+  if (!S.platformMode) { if (b) root.removeAttribute("data-area"); else root.setAttribute("data-area", "neutral"); }
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (!b) { document.title = "MSP Academy"; if (meta) meta.content = "#26292D"; setFaviconUrl("/favicon.svg"); return; }
+  for (const [k, v] of Object.entries(brandPalette(b.colors))) root.style.setProperty(k, v);
+  root.style.setProperty("--f-display", b.fonts.heading); root.style.setProperty("--f-body", b.fonts.body);
+  root.style.setProperty("--arches", archesUrl(b.colors));
+  if (!b.headingCaps) root.setAttribute("data-caps", "off");
+  document.title = `${b.wordmark ? b.wordmark.charAt(0) + b.wordmark.slice(1).toLowerCase() : b.name} Training`;
+  if (meta) meta.content = b.colors.primary;
+  setFavicon((b.wordmark || b.name || "T").charAt(0), b.colors.primary, brandPalette(b.colors)["--on-primary"]);
+}
+function setFaviconUrl(url) {
+  let l = document.querySelector('link[rel="icon"]'); if (!l) { l = document.createElement("link"); l.rel = "icon"; document.head.appendChild(l); }
+  l.type = "image/svg+xml"; l.href = url;
+}
+function setFavicon(letter, bg, fg = "#FFFFFF") {
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='${bg}'/><text x='32' y='44' font-family='Georgia,serif' font-size='34' font-weight='600' fill='${fg}' text-anchor='middle'>${esc(letter.toUpperCase())}</text></svg>`;
+  setFaviconUrl("data:image/svg+xml," + encodeURIComponent(svg));
+}
+/** Work out which client the sign-in page is for: the web address first, then the code this device remembers. */
+async function loadBranding() {
+  try {
+    const r = await GET("/api/branding");
+    if (r.client) { S.brand = r.client; S.brandByHost = true; applyBrand(S.brand); return; }
+  } catch {}
+  S.brandByHost = false;
+  const code = storedCode();
+  if (code) {
+    try { S.brand = (await GET(`/api/branding?code=${encodeURIComponent(code)}`)).client; }
+    catch (e) { if (e.status === 404) storeCode(""); S.brand = null; }
+  }
+  applyBrand(S.brand);
+}
+async function chooseClient() {
+  const f = S.login, code = f.code.trim();
+  if (!code) { f.err = "Enter your client code. Your manager can tell you what it is."; render(); return; }
+  S.busy = true; f.err = ""; render();
+  try {
+    S.brand = (await GET(`/api/branding?code=${encodeURIComponent(code)}`)).client;
+    if (f.remember) storeCode(S.brand.loginCode); else storeCode("");
+    applyBrand(S.brand);
+  } catch (e) { f.err = e.message; }
+  S.busy = false; render();
+}
+function changeClient() { S.brand = null; S.login = { no: "", pin: "", err: "", code: "", remember: true }; storeCode(""); applyBrand(null); render(); }
+const shortName = () => (S.brand && S.brand.wordmark) ? S.brand.wordmark.charAt(0) + S.brand.wordmark.slice(1).toLowerCase() : (S.org ? S.org.orgName : "");
+const term = k => (S.brand && S.brand.terms && S.brand.terms[k]) || { course: "Course", courses: "Courses", module: "Module", modules: "Modules" }[k];
 
 /* ---------- API ---------- */
 class ApiError extends Error { constructor(msg, status, body) { super(msg); this.status = status; this.body = body || {}; } }
@@ -102,11 +194,12 @@ async function route() {
   else if (a === "doc" && b) { view = "s-doc"; params = { code: b, step: c || null }; }
   else if (a === "declaration") view = "s-declaration";
   else if (a === "record") view = "s-record";
+  else if (a === "course" && b) { view = c === "certificate" ? "s-cert" : c ? "s-lesson" : "s-course"; params = { id: b, lesson: c && c !== "certificate" ? c : null }; }
   else if (a === "preview" && b && isMgrish()) { view = c === "doc" && d ? "p-doc" : "p-home"; params = { pos: b, code: d || null }; }
   else if (a === "m" && isMgrish()) {
     params = { id: c || null };
     view = { overview: "m-overview", staff: c === "new" ? "m-staffnew" : c ? "m-person" : "m-staff", library: "m-library", doc: "m-edit",
-      reports: "m-reports", settings: "m-settings", audit: "m-audit", version: "m-version" }[b] || "m-overview";
+      reports: "m-reports", settings: "m-settings", audit: "m-audit", version: "m-version", course: "m-course" }[b] || "m-overview";
     if (b === "version") params = { code: c, vid: d };
   }
   S.view = view; S.params = params;
@@ -122,7 +215,9 @@ async function load() {
   S.loading = true; S.sameView = S.lastKey === key; S.lastKey = key; render();
   try {
     let data = null;
-    if (v === "s-home") data = await GET("/api/my/course");
+    if (v === "s-home") { S.lcReturn = null; const [course, cs] = await Promise.all([GET("/api/my/course"), GET("/api/my/courses").catch(() => ({ courses: [] }))]); data = { ...course, courses: cs.courses }; }
+    else if (v === "s-course" || v === "s-lesson") { S.lcReturn = null; data = await GET(`/api/my/courses/${encodeURIComponent(P.id)}`); if (v === "s-lesson" && (!S.lc || S.lc.lesson !== P.lesson)) S.lc = { lesson: P.lesson, answers: [], result: null }; }
+    else if (v === "s-cert") data = await GET(`/api/my/courses/${encodeURIComponent(P.id)}/certificate`);
     else if (v === "s-doc") { data = await GET(`/api/my/documents/${encodeURIComponent(P.code)}`); S.docv = newDocView(data, P.step); }
     else if (v === "s-declaration") { data = await GET("/api/my/declaration"); if (!S.decl) S.decl = { strokes: [], agree: false, name: "" }; }
     else if (v === "s-record") data = await GET("/api/my/record");
@@ -132,7 +227,13 @@ async function load() {
     else if (v === "m-staff") data = await GET("/api/admin/staff");
     else if (v === "m-staffnew") { data = await GET("/api/admin/staff"); S.staffEdit = { id: null, name: "", staffNo: data.nextStaffNo, positionId: S.org.positions.some(p => p.id === "waitron") ? "waitron" : (S.org.positions[0] || {}).id, startDate: "", role: "staff", pin: randPin() }; }
     else if (v === "m-person") { data = await GET(`/api/admin/staff/${encodeURIComponent(P.id)}`); const p = data.person; S.staffEdit = { id: p.id, name: p.name, staffNo: p.staffNo, positionId: p.positionId, startDate: p.startDate || "", role: p.role }; S.pinReset = null; }
-    else if (v === "m-library") data = await GET("/api/admin/documents");
+    else if (v === "m-library") { const [docs, cs] = await Promise.all([GET("/api/admin/documents"), GET("/api/admin/courses")]); data = { ...docs, courses: cs.courses }; }
+    else if (v === "m-course") {
+      const [docs, c] = await Promise.all([GET("/api/admin/documents"), P.id === "new" ? null : GET(`/api/admin/courses/${encodeURIComponent(P.id)}`)]);
+      data = { lib: docs };
+      if (!c) S.courseEdit = { id: null, title: "", description: "" };
+      else if (!S.courseEdit || S.courseEdit.id !== c.id || !S.courseEdit.dirty) S.courseEdit = { ...c, change: "minor", open: S.courseEdit && S.courseEdit.id === c.id ? S.courseEdit.open : null, addType: {}, dirty: false, uploading: null };
+    }
     else if (v === "m-edit") {
       const [lib, det] = await Promise.all([GET("/api/admin/documents"), P.id === "new" ? null : GET(`/api/admin/documents/${encodeURIComponent(P.id)}`)]);
       data = { lib }; if (det) setEdit(det);
@@ -157,7 +258,8 @@ function isTyping() { const a = document.activeElement; return !!(a && $app.cont
 function render() {
   renderPending = false;
   let html;
-  if (S.view === "boot") html = `<div class="boot gutter"><div><div class="mark">PELAGOS</div><p>Opening the training portal…</p></div></div>`;
+  if (S.platformMode && window.PelPlat) { $app.innerHTML = window.PelPlat.render(); afterRender(); return; }
+  if (S.view === "boot") html = `<div class="boot gutter"><div><p>Opening…</p></div></div>`;
   else if (S.view === "login" || !S.me) html = vLogin();
   else {
     const d = S.data[S.view];
@@ -171,42 +273,78 @@ function render() {
   $app.innerHTML = html;
   afterRender();
 }
-function afterRender() { setupSig(); setupVideos(); refreshGates(); if (S.view === "login") { const el = document.getElementById(S.login.no ? "f-pin" : "f-no"); if (el) el.focus({ preventScroll: true }); } }
+function afterRender() { setupSig(); setupVideos(); refreshGates(); if (S.view === "login") { const el = document.getElementById(!S.brand ? "f-code" : S.login.no ? "f-pin" : "f-no"); if (el) el.focus({ preventScroll: true }); } }
+// The support visit's countdown; when it runs out, the server has already closed access.
+setInterval(() => {
+  if (!S.support || S.support.author) return;
+  const left = Math.max(0, Math.round((new Date(S.support.until) - Date.now()) / 60000));
+  const el = document.getElementById("support-left"); if (el) el.textContent = left;
+  if (left <= 0) location.href = "/platform";
+}, 15000);
 
 function vTop() {
   const st = S.me; const inMgr = S.view.startsWith("m-"); const inPrev = S.view.startsWith("p-");
   const right = `<div class="who"><div style="min-width:0;text-align:right"><div class="nm">${esc(st.name)}</div><div class="ps">${esc(st.positionName)}</div></div>
-      ${isMgrish() ? (inMgr ? `<a class="bar-btn" href="#/home">My training</a>` : `<a class="bar-btn" href="#/m/overview">Dashboard</a>`) : ""}
-      <button type="button" class="bar-btn" data-act="logout">Sign out</button></div>`;
+      ${isMgrish() && !isSupport() && !isAuthor() ? (inMgr ? `<a class="bar-btn" href="#/home">My training</a>` : `<a class="bar-btn" href="#/m/overview">Dashboard</a>`) : ""}
+      ${S.support ? "" : `<button type="button" class="bar-btn" data-act="logout">Sign out</button>`}</div>`;
   const band = inPrev ? `<div class="preview-band gutter"><div class="in"><strong>Preview</strong><span>You are seeing the course a ${esc(posName(S.params.pos))} gets, including drafts. Nothing you do here is saved.</span><a class="btn sm" href="#/m/settings">Exit preview</a></div></div>` : "";
-  return `<header class="topbar gutter"><div class="topbar-in"><div class="brand"><span class="mark">PELAGOS</span><span class="sub">${esc((S.org && S.org.orgName || "Pelagos Langebaan").replace(/^Pelagos\s*/, "") || "Langebaan")} · Staff Training</span></div><div class="spacer"></div>${right}</div></header>${band}`;
+  const head = `<header class="topbar gutter"><div class="topbar-in"><div class="brand">${brandMark("mark")}<span class="sub">${esc(S.brand && S.brand.subtitle ? S.brand.subtitle + " · Staff Training" : "Staff Training")}</span></div><div class="spacer"></div>${right}</div></header>`;
+  return (S.support ? `<div class="sticky-head">${supportBand()}${head}</div>` : head) + band;
+}
+/** The client's logo if it has one, otherwise its wordmark in the heading font. */
+function brandMark(cls) {
+  const b = S.brand;
+  if (b && b.logoUrl) return `<img class="${cls} logo" src="${esc(b.logoUrl)}" alt="${esc(b.name)}">`;
+  return `<span class="${cls}">${esc(b ? b.wordmark : "")}</span>`;
+}
+/** Shown on every screen while a platform admin is visiting a client or building in the library. Impossible to miss on purpose. */
+function supportBand() {
+  if (!S.support) return "";
+  if (S.support.author) return `<div class="support-band author gutter" role="status"><div class="in"><img class="sb-logo" src="/brand/msp-academy-white.svg" alt="MSP Academy"><strong>Library</strong>
+    <span>You're building MSP Academy courses. Share them with clients from the platform.</span>
+    <button type="button" class="btn sm" data-act="support-end">Back to the platform</button></div></div>`;
+  const left = Math.max(0, Math.round((new Date(S.support.until) - Date.now()) / 60000));
+  return `<div class="support-band gutter" role="status"><div class="in"><strong>Support visit to ${esc(S.support.orgName)}</strong>
+    <span>Read-only. Everything you open is recorded in their audit log. Ends in <span id="support-left" class="tnum">${left}</span> min.</span>
+    <button type="button" class="btn sm" data-act="support-end">End visit</button></div></div>`;
 }
 
 /* ---------- sign in ---------- */
 function vLogin() {
-  const f = S.login;
-  return `<main class="login">
-    <section class="login-side"><div><div class="mark">PELAGOS</div><div class="place">Langebaan · Villa Del Mare</div></div>
-      <p class="pitch">Your SOPs, manuals and policies <span>in one place</span></p><div class="coords">33°05′S · 18°02′E</div></section>
-    <section class="login-main gutter"><div class="login-card">
-      <div class="stack" style="gap:6px"><span class="eyebrow">Staff training</span><h1>Sign in</h1><p class="muted">Use your staff number and PIN.</p></div>
-      ${S.flash ? `<div class="notice info">${esc(S.flash)}</div>` : ""}
+  const f = S.login, b = S.brand;
+  const side = b ? `<section class="login-side ${b.loginArt === "arches" ? "arches" : ""}"><div>${brandMark("mark")}${b.tagline ? `<div class="place">${esc(b.tagline)}</div>` : ""}</div>
+      <p class="pitch">${esc(b.pitch)} ${b.pitchAccent ? `<span>${esc(b.pitchAccent)}</span>` : ""}</p>${b.cornerText ? `<div class="coords">${esc(b.cornerText)}</div>` : ""}</section>`
+    : `<section class="login-side neutral"><div><img class="academy-logo" src="/brand/msp-academy.svg" alt="MSP Academy"></div>
+      <div class="neutral-copy"><p class="pitch">Policies, procedures and sign\u2011offs for your workplace</p><p class="sub">Read it, check your understanding, sign it. Every step is recorded.</p></div></section>`;
+  const flash = S.flash ? `<div class="notice info">${esc(S.flash)}</div>` : "";
+  const body = !b ? `
+      <div class="stack" style="gap:6px"><span class="eyebrow">MSP Academy</span><h1>Sign in</h1><p class="muted">Start with your workplace's client code. Your manager can tell you what it is.</p></div>${flash}
+      <form data-form="client-code" autocomplete="off" novalidate>
+        <div class="field"><label for="f-code">Client code</label><input id="f-code" type="text" autocapitalize="characters" spellcheck="false" data-bind="login.code" value="${esc(f.code)}" placeholder="e.g. HARBOUR"></div>
+        <label class="check"><input type="checkbox" data-bind="login.remember" ${f.remember ? "checked" : ""}><span>Remember it on this device (good for a shared training tablet)</span></label>
+        <p class="err" id="lg-err" role="alert">${esc(f.err)}</p>
+        <button class="btn primary lg block" type="submit" ${S.busy ? "disabled" : ""}>Continue</button>
+      </form>`
+    : `
+      <div class="stack" style="gap:6px"><span class="eyebrow">${esc(b.name)}</span><h1>Sign in</h1><p class="muted">Use your staff number and PIN.</p></div>${flash}
+      ${b.active === false ? `<div class="notice bad">This training portal is paused. Speak to your manager.</div>` : ""}
       <form data-form="login" autocomplete="off" novalidate>
-        <div class="field"><label for="f-no">Staff number</label><input id="f-no" type="text" autocapitalize="characters" spellcheck="false" data-bind="login.no" value="${esc(f.no)}" placeholder="e.g. PL014"></div>
+        <div class="field"><label for="f-no">Staff number</label><input id="f-no" type="text" autocapitalize="characters" spellcheck="false" data-bind="login.no" value="${esc(f.no)}" placeholder="e.g. ${esc(b.staffNoPrefix || "")}014"></div>
         <div class="field"><label for="f-pin">PIN</label><input id="f-pin" class="pin-input" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" data-bind="login.pin" value="${esc(f.pin)}"></div>
         <p class="err" id="lg-err" role="alert">${esc(f.err)}</p>
         <button class="btn primary lg block" type="submit" ${S.busy ? "disabled" : ""}>Sign in</button>
       </form>
-      <p class="muted" style="font-size:.86rem">Forgot your PIN? Ask your manager to reset it.</p>
-    </div></section></main>`;
+      <p class="muted" style="font-size:.86rem">Forgot your PIN? Ask your manager to reset it.${S.brandByHost ? "" : ` Not at ${esc(b.name)}? <button type="button" class="linkish" data-act="change-client">Change client</button>`}</p>
+      <p class="powered">Powered by <img src="/brand/msp-academy.svg" alt="MSP Academy"></p>`;
+  return `<main class="login">${side}<section class="login-main gutter"><div class="login-card">${body}</div></section></main>`;
 }
 async function doLogin() {
   const f = S.login;
   if (!f.no.trim() || !/^\d{4,6}$/.test(f.pin)) { f.err = "Enter your staff number and your 4 to 6 digit PIN."; render(); return; }
   S.busy = true; f.err = ""; render();
   try {
-    await api("POST", "/api/auth/login", { staffNo: f.no, pin: f.pin }, { noAuthRedirect: true });
-    S.login = { no: "", pin: "", err: "" }; S.flash = null;
+    await api("POST", "/api/auth/login", { clientCode: S.brandByHost ? undefined : S.brand.loginCode, staffNo: f.no, pin: f.pin }, { noAuthRedirect: true });
+    S.login = { ...S.login, no: "", pin: "", err: "" }; S.flash = null;
     await loadMe();
     S.busy = false;
     if (location.hash && location.hash !== "#/") route(); else go(isMgrish() ? "#/m/overview" : "#/home");
@@ -214,12 +352,16 @@ async function doLogin() {
 }
 async function loadMe() {
   const r = await GET("/api/me", { noAuthRedirect: true });
-  if (!r.staff) { S.me = null; return; }
+  if (!r.staff) { S.me = null; if (r.suspended) S.flash = "This training portal is paused. Speak to your manager."; return; }
   S.me = r.staff; S.org = r.org; S.idleSeconds = r.idleSeconds; S.features = r.features || {};
+  S.support = r.support || null;
+  S.brand = { ...(S.brand || {}), ...r.brand, loginCode: (S.brand && S.brand.loginCode) || r.brand.loginCode };
+  applyBrand(S.brand);
   idle.reset();
 }
 function signedOut(msg) {
   document.getElementById("toast").hidden = true;
+  if (S.support) { location.href = "/platform"; return; }
   S.me = null; S.data = {}; S.docv = S.decl = S.edit = S.staffEdit = S.cfgEdit = null; S.flash = msg || null;
   idle.stop(); S.view = "login"; history.replaceState(null, "", "#/"); render();
 }
@@ -257,6 +399,7 @@ function vStaff() {
   if (v === "s-declaration") return vDeclaration(S.data["s-declaration"]);
   if (v === "s-record") { const r = S.data["s-record"]; return `<main class="wrap gutter stack"><div class="row between no-print"><a class="back" href="#/home">← My training</a>${r.declaration ? `<button type="button" class="btn sm" data-act="print">Print</button>` : ""}</div>${certificate(r)}</main>`; }
   if (v === "p-home") return vPreviewHome(S.data["p-home"]);
+  if (window.PelLearn) { if (v === "s-course") return window.PelLearn.vCourse(S.data[v]); if (v === "s-lesson") return window.PelLearn.vLesson(S.data[v]); if (v === "s-cert") return window.PelLearn.vCert(S.data[v]); }
   return "";
 }
 function ring(pct) {
@@ -301,14 +444,16 @@ function vHome(c) {
   else lead = `${plural(c.outstanding, "item")} to complete. Work through them in order: read, answer the questions, then sign.`;
   const alerts = c.items.filter(m => m.status === "updated" || (m.status !== "done" && m.isNew));
   const decl = !c.total ? "" : c.canDeclare
-    ? `<div class="decl-card ready"><div class="d-main"><h3>${c.declaration ? "Sign an updated declaration" : "Ready to sign your declaration"}</h3><p>${c.declaration ? "You have signed new or updated documents since your last declaration." : "Confirm that you understand the course and agree to follow Pelagos policies and procedures."}</p></div><a class="btn primary" href="#/declaration">Sign declaration</a></div>`
+    ? `<div class="decl-card ready"><div class="d-main"><h3>${c.declaration ? "Sign an updated declaration" : "Ready to sign your declaration"}</h3><p>${c.declaration ? "You have signed new or updated documents since your last declaration." : `Confirm that you understand the course and agree to follow ${esc(shortName())} policies and procedures.`}</p></div><a class="btn primary" href="#/declaration">Sign declaration</a></div>`
     : c.declaration
       ? `<div class="decl-card signed"><div class="d-main"><h3>Declaration signed</h3><p class="muted">You signed the ${esc(c.courseTitle)} declaration on ${fmtDate(c.declaration.at)}.</p></div><a class="btn" href="#/record">View my training record</a></div>`
       : `<div class="decl-card"><div class="d-main"><h3>Final declaration</h3><p class="muted">Unlocks when every document above is signed.</p></div><span class="chip plain tnum">${c.done} of ${c.total} signed</span></div>`;
   return `<main class="wrap gutter stack" style="gap:26px">
     <section class="hello">${ring(c.pct)}<div class="txt"><span class="eyebrow">${esc(c.courseTitle)}</span><h1>${greeting()}, <span class="accent">${esc(firstName(S.me.name))}</span></h1><p class="muted">${esc(lead)}</p></div></section>
+    ${S.brand && S.brand.announcement ? `<div class="announcement" role="note"><span class="a-dot" aria-hidden="true"></span><span>${esc(S.brand.announcement)}</span></div>` : ""}
+    ${window.PelLearn ? window.PelLearn.coursesSection(c.courses) : ""}
     ${alerts.length ? `<section class="stack" style="gap:10px"><div class="section-title"><h2>Action required</h2><span class="muted" style="font-size:.88rem">New or updated since you last signed</span></div><div class="alerts">${alerts.map(m => `<div class="alert"><div class="a-main"><div class="a-title">${m.status === "updated" ? "Updated" : "New"} ${esc(KINDS[m.kind] || "document")}: ${esc(m.title)}</div><div class="a-sub">${esc(m.code)} · version ${esc(m.label)} · issued ${esc(m.issueDate || fmtDate(m.publishedAt))}</div></div><a class="btn sm primary" href="${link(m)}">${m.status === "updated" ? "Read & sign" : "Start"}</a></div>`).join("")}</div></section>` : ""}
-    <section><div class="section-title"><h2>Your course</h2><span class="muted tnum" style="font-size:.88rem">${c.done} of ${c.total} signed · ${esc(c.positionName)}</span></div>
+    <section><div class="section-title"><h2>${c.courses && c.courses.length ? "Your SOPs and policies" : "Your course"}</h2><span class="muted tnum" style="font-size:.88rem">${c.done} of ${c.total} signed · ${esc(c.positionName)}</span></div>
       ${c.total ? `<div class="stack" style="gap:18px">${courseList(c.items, link)}</div>` : `<div class="card empty"><h3>No training assigned yet</h3><p>Your manager publishes SOPs and policies for each position.</p></div>`}</section>
     ${decl}
   </main>`;
@@ -343,7 +488,7 @@ function vDoc() {
   const hasQ = d.questions.length > 0, step = currentStep(dv);
   const read = !!st.readAt, passed = st.passed, doneNow = st.status === "done";
   const base = dv.preview ? `#/preview/${encodeURIComponent(S.params.pos)}/doc/${encodeURIComponent(d.code)}` : `#/doc/${encodeURIComponent(d.code)}`;
-  const back = dv.preview ? `#/preview/${encodeURIComponent(S.params.pos)}` : "#/home";
+  const back = dv.preview ? `#/preview/${encodeURIComponent(S.params.pos)}` : S.lcReturn || "#/home";
   const stepBtn = (key, n, label, enabled, okd) => `<button type="button" class="step ${step === key ? "on" : ""} ${okd ? "ok" : ""}" data-act="doc-step" data-step="${key}" ${enabled || dv.preview ? "" : "disabled"} ${step === key ? 'aria-current="step"' : ""}><span class="n">${okd ? "✓" : n}</span>${label}</button>`;
   const steps = `<div class="steps">${stepBtn("read", 1, "Read", true, read || doneNow)}${hasQ ? stepBtn("quiz", 2, "Check your understanding", read || doneNow, passed && (read || doneNow)) : ""}${stepBtn("sign", hasQ ? 3 : 2, "Sign off", (read && passed) || doneNow, doneNow)}</div>`;
   const strip = `<div class="dc-strip"><div><div class="k">Document</div><div class="v mono">${esc(d.code)}</div></div><div><div class="k">Type</div><div class="v">${esc(KINDS[d.kind] || "Document")}</div></div><div><div class="k">Version</div><div class="v tnum">${esc(d.label)}</div></div><div><div class="k">Issue date</div><div class="v">${esc(d.issueDate || "—")}</div></div><div><div class="k">Applies to</div><div class="v">${esc(d.appliesText || (S.me.positionName))}</div></div></div>`;
@@ -510,7 +655,7 @@ function vDeclaration(d) {
 }
 function certificate(r) {
   const c = r.declaration;
-  return `<section class="cert"><div class="c-head"><span class="c-mark">PELAGOS</span><span class="mono">PEL-FRM-001 · ${esc(r.staff.staffNo)}</span></div>
+  return `<section class="cert"><div class="c-head"><span class="c-mark">${esc(S.brand ? S.brand.wordmark : r.orgName)}</span><span class="mono">${esc(r.recordCode)} · ${esc(r.staff.staffNo)}</span></div>
     <div class="stack" style="gap:6px"><span class="eyebrow" style="color:#64736E">SOP and Memo Acknowledgement Record</span><h2>${esc(r.staff.name)}</h2></div>
     <div class="facts"><div><div class="k">Position</div><div class="v">${esc(r.staff.positionName)}</div></div><div><div class="k">Department</div><div class="v">${esc(r.staff.deptName)}</div></div><div><div class="k">Declaration signed</div><div class="v">${c ? fmtDT(c.at) : "Not yet"}</div></div><div><div class="k">Current status</div><div class="v">${r.outstanding ? esc(plural(r.outstanding, "item")) + " outstanding" : "Up to date"}</div></div></div>
     ${c ? `<p style="font:500 1rem/1.55 var(--f-display)">${esc(c.text)}</p>` : ""}
@@ -522,7 +667,7 @@ function certificate(r) {
 }
 const randPin = () => { const a = new Uint32Array(1); crypto.getRandomValues(a); return String(a[0] % 10000).padStart(4, "0"); };
 
-window.Pel = { S, esc, md, api, GET, POST, PUT, PATCH, go, route, load, render, toast, fail, confirmBox, closeModal, fmtDate, fmtDT, fmtDur, fmtSize, plural,
+window.Pel = { S, esc, md, api, applyBrand, brandPalette, contrast, loadBranding, chooseClient, changeClient, storeCode, SUPPORT_LABEL, isSupport, isAuthor, term, GET, POST, PUT, PATCH, go, route, load, render, toast, fail, confirmBox, closeModal, fmtDate, fmtDT, fmtDur, fmtSize, plural,
   posName, deptName, deptOfPos, KINDS, ROLE_LABEL, role, canEdit, canDocs, isMgrish, clone, setPath, getPath, upload, randPin, certificate, statusChip,
   doLogin, logout, loadMe, signedOut, refreshDoc, staleCheck, refreshGates, sigPng, idle, isTyping, newDocView,
   setModalAction: fn => { modalAction = fn; }, getModalAction: () => modalAction, setEdit: d => setEdit(d) };

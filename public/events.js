@@ -13,6 +13,7 @@ document.addEventListener("input", e => {
   if (el.dataset.num) val = Number(val);
   setPath(S, path, val);
   if (path.startsWith("edit.") && S.edit && !S.edit.localDirty) { S.edit.localDirty = true; }
+  if (path.startsWith("courseEdit.draft") && S.courseEdit) S.courseEdit.dirty = true;
   if (el.dataset.live) { clearTimeout(liveTimer); liveTimer = setTimeout(() => rerenderKeepFocus(el.id), 150); }
   P.refreshGates();
 });
@@ -22,6 +23,7 @@ document.addEventListener("change", async e => {
     let val = el.type === "checkbox" ? el.checked : el.value; if (ds.num) val = Number(val);
     setPath(S, ds.bind, val);
     if (ds.bind.startsWith("edit.") && S.edit) S.edit.localDirty = true;
+    if (ds.bind.startsWith("courseEdit.draft") && S.courseEdit) S.courseEdit.dirty = true;
     if (ds.rerender) render();
     if (ds.reload) load();
     P.refreshGates();
@@ -32,6 +34,21 @@ document.addEventListener("change", async e => {
   else if (act === "q-correct") { S.edit.draft.questions[ds.i].correct = Number(ds.j); S.edit.localDirty = true; }
   else if (act === "aud-pos") { const ps = S.edit.draft.audience.positions; const i = ps.indexOf(ds.p); if (el.checked && i < 0) ps.push(ds.p); if (!el.checked && i >= 0) ps.splice(i, 1); S.edit.localDirty = true; render(); }
   else if (act === "chg") { S.edit.change = ds.v; render(); }
+  else if (act === "cb-aud-pos") { const ps = S.courseEdit.draft.audience.positions; const i = ps.indexOf(ds.p); if (el.checked && i < 0) ps.push(ds.p); if (!el.checked && i >= 0) ps.splice(i, 1); S.courseEdit.dirty = true; render(); }
+  else if (act === "cb-q-correct") { cbLesson(ds).questions[ds.k].correct = Number(ds.n); S.courseEdit.dirty = true; }
+  else if (act === "cb-chg") { S.courseEdit.change = ds.v; render(); }
+  else if (act === "cb-upload") {
+    const f = el.files && el.files[0]; if (!f) return;
+    const e = S.courseEdit, l = cbLesson(ds);
+    e.uploading = { key: `${ds.i}-${ds.j}`, name: f.name, pct: 0 }; render();
+    try {
+      const r = await P.upload(f, pct => { e.uploading.pct = pct; const pr = $app.querySelector(".cb-editor progress"); if (pr) pr.value = pct; });
+      if (r.kind !== (l.type === "video" ? "video" : "pdf")) throw new Error(l.type === "video" ? "That isn't a video. Upload an MP4." : "That isn't a PDF.");
+      l.fileId = r.id; e.files[r.id] = r; e.dirty = true;
+      if (!l.title) l.title = f.name.replace(/\.[^.]+$/, "");
+    } catch (err) { fail(err); }
+    e.uploading = null; render();
+  }
   else if (act === "nd-kind") { S.newDoc.kind = el.value; try { S.newDoc.code = (await GET(`/api/admin/next-code?kind=${el.value}`)).code; } catch {} render(); }
   else if (act === "pdf-upload" || act === "video-upload") {
     const f = el.files && el.files[0]; if (!f) return;
@@ -68,6 +85,50 @@ const ACTIONS = {
   "modal-close": (t, ds, e) => { if (e.target.closest(".modal") && !e.target.closest("button")) return; closeModal(); },
   "modal-ok": async () => { const fn = P.getModalAction(); closeModal(); if (fn) await fn(); },
   logout: () => P.logout(),
+  "change-client": () => P.changeClient(),
+  "support-end": async () => { const author = S.support && S.support.author, org = S.me && S.brand ? S.brand.orgId : ""; await POST("/api/platform/support/end"); location.href = author ? "/platform#/library" : `/platform#/clients/${encodeURIComponent(org)}`; },
+  "course-del": () => confirmBox(S.courseEdit.label ? "Archive this course?" : "Delete this course?", S.courseEdit.label ? "Staff no longer see it. Certificates already earned are kept." : "The draft is deleted. SOPs and policies in it stay in your library.", S.courseEdit.label ? "Archive" : "Delete", async () => {
+    await api("DELETE", `/api/admin/courses/${encodeURIComponent(S.courseEdit.id)}`); toast(S.courseEdit.label ? "Archived." : "Deleted."); S.courseEdit = null; location.hash = "#/m/library";
+  }, true),
+  "cb-mod-add": () => { const e = S.courseEdit; e.draft.modules.push({ title: `${P.term("module")} ${e.draft.modules.length + 1}`, lessons: [] }); e.dirty = true; render(); },
+  "cb-mod-del": (t, ds) => {
+    const e = S.courseEdit, m = e.draft.modules[ds.i];
+    const go = () => { e.draft.modules.splice(ds.i, 1); e.dirty = true; render(); };
+    if (!m.lessons.length) return go();
+    confirmBox(`Remove ${m.title || "this " + P.term("module").toLowerCase()}?`, `Its ${plural(m.lessons.length, "lesson")} will be removed when you save.`, "Remove", go, true);
+  },
+  "cb-mod-move": (t, ds) => { const ms = S.courseEdit.draft.modules, i = Number(ds.i), k = i + Number(ds.d); if (k < 0 || k >= ms.length) return; [ms[i], ms[k]] = [ms[k], ms[i]]; S.courseEdit.dirty = true; render(); },
+  "cb-les-add": (t, ds) => {
+    const e = S.courseEdit, type = e.addType[ds.i] || "text";
+    const l = { id: "l-" + Math.random().toString(36).slice(2, 10), type, title: "" };
+    if (type === "text") l.body = ""; if (type === "video" || type === "pdf") l.fileId = null; if (type === "document") l.code = "";
+    if (type === "quiz") { l.passMark = 80; l.questions = [{ q: "", options: ["", ""], correct: -1 }]; }
+    e.draft.modules[ds.i].lessons.push(l); e.open = l.id; e.dirty = true; render();
+  },
+  "cb-les-open": (t, ds) => { S.courseEdit.open = S.courseEdit.open === ds.id ? null : ds.id; render(); },
+  "cb-les-del": (t, ds) => { S.courseEdit.draft.modules[ds.i].lessons.splice(ds.j, 1); S.courseEdit.dirty = true; render(); },
+  // Up from a module's first lesson moves it to the end of the module before; down from the last moves it into the next.
+  "cb-les-move": (t, ds) => {
+    const ms = S.courseEdit.draft.modules, i = Number(ds.i), j = Number(ds.j), d = Number(ds.d), ls = ms[i].lessons;
+    if (d < 0 && j > 0) [ls[j - 1], ls[j]] = [ls[j], ls[j - 1]];
+    else if (d > 0 && j < ls.length - 1) [ls[j + 1], ls[j]] = [ls[j], ls[j + 1]];
+    else if (d < 0 && i > 0) ms[i - 1].lessons.push(ls.splice(j, 1)[0]);
+    else if (d > 0 && i < ms.length - 1) ms[i + 1].lessons.unshift(ls.splice(j, 1)[0]);
+    else return;
+    S.courseEdit.dirty = true; render();
+  },
+  "cb-q-add": (t, ds) => { cbLesson(ds).questions.push({ q: "", options: ["", ""], correct: -1 }); S.courseEdit.dirty = true; render(); },
+  "cb-q-del": (t, ds) => { cbLesson(ds).questions.splice(ds.k, 1); S.courseEdit.dirty = true; render(); },
+  "cb-opt-add": (t, ds) => { cbLesson(ds).questions[ds.k].options.push(""); S.courseEdit.dirty = true; render(); },
+  "cb-opt-del": (t, ds) => { const q = cbLesson(ds).questions[ds.k], n = Number(ds.n); q.options.splice(n, 1); if (q.correct === n) q.correct = -1; else if (q.correct > n) q.correct--; S.courseEdit.dirty = true; render(); },
+  "cb-publish": async () => {
+    const e = S.courseEdit;
+    if (!(await saveCourse(false))) return;
+    S.busy = true; render();
+    try { const r = await POST(`/api/admin/courses/${encodeURIComponent(e.id)}/publish`, { change: e.change }); toast(`Published version ${r.result.label}.`); S.courseEdit.dirty = false; await load(); }
+    catch (err) { const el = document.getElementById("course-err"); if (el) el.textContent = err.message; else fail(err); }
+    S.busy = false; render();
+  },
   reload: () => load(),
   stay: () => P.idle.poke(),
   print: () => window.print(),
@@ -199,6 +260,15 @@ document.addEventListener("submit", async e => {
 });
 const FORMS = {
   login: () => P.doLogin(),
+  "client-code": () => P.chooseClient(),
+  "course-new": async () => {
+    const e = S.courseEdit;
+    try {
+      const r = await POST("/api/admin/courses", { draft: { title: e.title, description: e.description, audience: { all: true, positions: [] }, modules: [{ title: `${P.term("module")} 1`, lessons: [] }] } });
+      S.courseEdit = null; location.hash = `#/m/course/${encodeURIComponent(r.id)}`;
+    } catch (err) { const el = document.getElementById("course-err"); if (el) el.textContent = err.message; else fail(err); }
+  },
+  course: () => saveCourse(true),
   quiz: async () => {
     const dv = S.docv, d = dv.data.doc;
     const answers = d.questions.map((q, i) => dv.quiz.answers[i] ?? null);
@@ -268,6 +338,7 @@ const FORMS = {
 /* ---------- navigation guard for unsaved edits ---------- */
 let lastHash = location.hash;
 window.addEventListener("hashchange", () => {
+  if (S.platformMode) { if (window.PelPlat) window.PelPlat.route(); return; }
   if (S.view === "m-edit" && S.edit && S.edit.localDirty && !location.hash.startsWith(`#/m/doc/${encodeURIComponent(S.edit.code)}`) && !location.hash.startsWith("#/preview/")) {
     const target = location.hash;
     history.replaceState(null, "", lastHash);
@@ -279,12 +350,29 @@ window.addEventListener("hashchange", () => {
 });
 window.addEventListener("beforeunload", e => { if (S.edit && S.edit.localDirty) { e.preventDefault(); e.returnValue = ""; } });
 
+/* ---------- course builder helpers ---------- */
+function cbLesson(ds) { return S.courseEdit.draft.modules[Number(ds.i)].lessons[Number(ds.j)]; }
+async function saveCourse(showToast) {
+  const e = S.courseEdit;
+  try {
+    const r = await PUT(`/api/admin/courses/${encodeURIComponent(e.id)}`, { draft: e.draft });
+    e.dirty = false; e.problems = r.problems; e.draftDirty = r.draftDirty;
+    if (showToast) { toast("Saved."); await load(); }
+    return true;
+  } catch (err) { const el = document.getElementById("course-err"); if (el) el.textContent = err.message; else fail(err); return false; }
+}
+
 /* ---------- start ---------- */
-(async function boot() {
+// The platform admin screens (platform.js) and the course player (learn.js) add their own clicks and forms here.
+P.addActions = o => Object.assign(ACTIONS, o);
+P.addForms = o => Object.assign(FORMS, o);
+document.addEventListener("DOMContentLoaded", async function boot() {
+  if (S.platformMode) { if (window.PelPlat) await window.PelPlat.boot(); return; }
   if (!S.newDoc) S.newDoc = null;
+  await P.loadBranding();
   try { await P.loadMe(); } catch { S.me = null; }
   if (S.me && location.hash.startsWith("#/m/doc/new")) { try { S.newDoc = { kind: "sop", code: (await GET("/api/admin/next-code?kind=sop")).code }; } catch {} }
   P.route();
-})();
-window.addEventListener("hashchange", () => { if (S.me && location.hash === "#/m/doc/new" && (!S.newDoc || !S.newDoc.code)) { GET("/api/admin/next-code?kind=sop").then(r => { S.newDoc = { kind: "sop", code: r.code }; render(); }).catch(() => {}); } });
+});
+window.addEventListener("hashchange", () => { if (S.platformMode) return; if (S.me && location.hash === "#/m/doc/new" && (!S.newDoc || !S.newDoc.code)) { GET("/api/admin/next-code?kind=sop").then(r => { S.newDoc = { kind: "sop", code: r.code }; render(); }).catch(() => {}); } });
 })();

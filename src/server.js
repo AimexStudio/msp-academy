@@ -20,5 +20,5 @@ let fb;
 try { fb = initFirebase(); } catch (e) { console.error('\n' + e.message + '\n'); process.exit(1); }
 const app = await buildApp({ db: fb.db, storage: createBucketStorage(fb.bucket) });
 await app.listen({ port: config.port, host: config.host });
-console.log(`Pelagos Training Portal listening on http://localhost:${config.port}`);
+console.log(`MSP Academy listening on http://localhost:${config.port}`);
 for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, async () => { await app.close(); process.exit(0); });

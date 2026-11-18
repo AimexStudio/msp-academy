@@ -27,6 +27,11 @@ if (mode === 'start' || mode === 'emulators') {
   args = ['emulators:start', ...base, ...(mode === 'emulators' ? ['--only', 'firestore,storage'] : []), `--import=${DATA}`, '--export-on-exit'];
 } else if (mode === 'setup') {
   args = ['emulators:exec', ...base, '--only', 'firestore,storage', ...(hasData ? [`--import=${DATA}`] : []), `--export-on-exit=${DATA}`, 'node scripts/setup-local.js'];
+} else if (mode === 'script') {
+  if (!hasData) fail('There is no local data yet. Run  npm run setup  first (once).');
+  const name = process.argv[3], extra = process.argv.slice(4).map(a => (/[\s"]/.test(a) ? `'${a.replace(/'/g, "'\\''")}'` : a)).join(' ');
+  if (!/^[a-z-]+$/.test(name || '')) fail('Unknown script.');
+  args = ['emulators:exec', ...base, '--only', 'firestore,storage', `--import=${DATA}`, `--export-on-exit=${DATA}`, `node scripts/${name}.js ${extra}`.trim()];
 } else if (mode === 'test') {
   args = ['emulators:exec', ...base, '--only', 'firestore,storage', 'node --test --test-concurrency=1 test/*.test.js'];
 } else fail('Unknown command.');

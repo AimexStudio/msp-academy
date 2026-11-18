@@ -429,8 +429,10 @@ input[type=text],input[type=password],input[type=number],input[type=date],input[
 
 /* sign-in: the one bold moment, with the arches from the Pelagos site */
 .login-side{background:var(--bar)}
-.login-side::after{content:"";position:absolute;left:0;right:0;bottom:0;height:150px;inset:auto 0 0 0;pointer-events:none;
-  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 150'%3E%3Cpath fill='%23586F65' d='M0 150V100A100 100 0 0 1 200 100V150H150A50 50 0 0 0 50 150Z'/%3E%3Cpath fill='%23B6B185' d='M200 150V100A100 100 0 0 1 400 100V150H350A50 50 0 0 0 250 150Z'/%3E%3C/svg%3E") bottom left/400px 150px repeat-x}
+.login-side::after{display:none}
+/* The arches, drawn in the client's own accent and highlight colours (--arches is set from the branding). */
+.login-side.arches::after{content:"";display:block;position:absolute;left:0;right:0;bottom:0;height:150px;inset:auto 0 0 0;pointer-events:none;
+  background:var(--arches,url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 150'%3E%3Cpath fill='%23586F65' d='M0 150V100A100 100 0 0 1 200 100V150H150A50 50 0 0 0 50 150Z'/%3E%3Cpath fill='%23B6B185' d='M200 150V100A100 100 0 0 1 400 100V150H350A50 50 0 0 0 250 150Z'/%3E%3C/svg%3E")) bottom left/400px 150px repeat-x}
 .login-side .mark{font:400 clamp(2rem,1.4rem + 2.6vw,3rem)/1 var(--f-display);letter-spacing:.24em}
 .login-side .place{color:var(--bar-dim);letter-spacing:.08em;text-transform:none;font-size:.85rem}
 .login-side .pitch{font:400 clamp(1.3rem,1rem + 1.2vw,1.9rem)/1.18 var(--f-display);text-transform:uppercase;letter-spacing:.015em;max-width:16ch;margin-bottom:120px}
@@ -438,4 +440,162 @@ input[type=text],input[type=password],input[type=number],input[type=date],input[
 .login-side .coords{position:absolute;right:max(24px,env(safe-area-inset-right,0px));top:48px;color:var(--bar-dim)}
 .login-main{background:var(--bg)}
 .pin-input{border-radius:12px}
-@media (max-width:760px){.login-side{padding-bottom:110px}.login-side::after{height:90px;background-size:240px 90px}.login-side .pitch{margin-bottom:0}.login-side .coords{display:none}}
+.login-side:not(.arches) .pitch{margin-bottom:0}
+@media (max-width:760px){.login-side.arches{padding-bottom:110px}.login-side.arches::after{height:90px;background-size:240px 90px}.login-side .pitch{margin-bottom:0}.login-side .coords{display:none}}
+
+/* ================= Per-client branding =================
+   The rules above are Pelagos's look and stay the defaults. A client's branding (set from app.js) changes the
+   colour and font variables; these rules cover the choices that aren't variables. */
+.mark.logo{display:block;height:34px;width:auto;max-width:220px;object-fit:contain;letter-spacing:0}
+.brand .mark.logo{height:30px;max-width:180px}
+.login-side .mark.logo{height:clamp(44px,6vw,72px);max-width:min(320px,80%)}
+:root[data-caps="off"] :is(h1,h2,.login-side .pitch,.doc h3,.doc h3.caps,.cert h2){text-transform:none;letter-spacing:normal}
+:root[data-caps="off"] :is(.btn,.bar-btn){text-transform:none;letter-spacing:.01em;font-size:.86rem}
+:root[data-caps="off"] .btn.sm{font-size:.8rem}
+:root[data-caps="off"] .btn.lg{font-size:.96rem}
+:root[data-caps="off"] :is(.brand .mark,.login-side .mark,.cert .c-mark){letter-spacing:.06em}
+.linkish{background:none;border:0;padding:0;color:var(--lagoon);text-decoration:underline;cursor:pointer;font:inherit}
+.powered{display:flex;align-items:center;gap:8px;font-size:.74rem;color:var(--muted);margin-top:6px}
+.powered img{height:16px;width:auto;opacity:.85}
+.announcement{display:flex;gap:12px;align-items:flex-start;background:var(--khaki-soft);border:1px solid color-mix(in srgb,var(--gold) 45%,transparent);border-radius:12px;padding:12px 16px;font-weight:500}
+.announcement .a-dot{flex:none;width:10px;height:10px;border-radius:99px;background:var(--gold);margin-top:6px;box-shadow:0 0 0 4px color-mix(in srgb,var(--gold) 25%,transparent)}
+
+/* ================= MSP Academy's own look: the shared sign-in page and the platform =================
+   MSP orange (#DD6E3E) for the logo and accents; links use a deeper burnt orange so they stay readable. */
+:root:is([data-area="platform"],[data-area="neutral"]){
+  --bg:#F2F0ED; --surface:#FFFFFF; --sunk:#F7F6F4; --ink:#1F2124; --ink-2:#3A3D42; --muted:#5E6167; --line:#DCD8D2; --sand:#E8E5E0;
+  --bar:#26292D; --on-bar:#F2F0ED; --bar-dim:#B9B4AC; --primary:#26292D; --on-primary:#FFFFFF;
+  --lagoon:#A3461C; --lagoon-soft:#F6E6DD; --gold:#DD6E3E; --khaki:#7A4A2A; --khaki-soft:#F8EDE6; --paper-ink:#1F2124;
+  --f-display:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; --f-body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+:root:is([data-area="platform"],[data-area="neutral"]) :is(h1,h2,.btn,.bar-btn,.brand .mark){text-transform:none;letter-spacing:normal}
+:root:is([data-area="platform"],[data-area="neutral"]) h1{font:700 1.65rem/1.2 var(--f-body);letter-spacing:-.01em}
+:root:is([data-area="platform"],[data-area="neutral"]) h2{font:650 1.06rem/1.3 var(--f-body)}
+:root:is([data-area="platform"],[data-area="neutral"]) .btn{font:600 .88rem/1.2 var(--f-body);border-radius:10px}
+:root:is([data-area="platform"],[data-area="neutral"]) .btn.sm{font-size:.8rem;border-radius:8px}
+:root:is([data-area="platform"],[data-area="neutral"]) .btn.lg{font-size:1rem}
+:root[data-area="platform"] .bar-btn{font:600 .8rem/1.2 var(--f-body);border-radius:8px}
+:root[data-area="platform"] :is(.card,.tbl-wrap){border-radius:12px}
+.login-side.neutral{background:var(--bar);color:var(--on-bar);justify-content:space-between}
+.login-side.neutral::after{content:"";display:block;position:absolute;left:0;right:0;bottom:0;height:7px;background:var(--gold)}
+.login-side.neutral .pitch{color:var(--on-bar);text-transform:none;font:600 clamp(1.5rem,2.6vw,2.1rem)/1.2 var(--f-body);max-width:18ch;margin:0}
+.login-side.neutral .sub{color:var(--bar-dim);max-width:34ch;margin:10px 0 0}
+.academy-logo{display:block;width:min(340px,82%);height:auto}
+.pf-login .academy-logo{width:220px;margin-bottom:6px}
+
+/* Support visits and library authoring: striped and sticky, impossible to mistake for the client's own screen. */
+.sticky-head{position:sticky;top:env(safe-area-inset-top,0px);z-index:20}
+.sticky-head .topbar{position:static}
+.support-band{background:repeating-linear-gradient(-45deg,#F2C14E 0 14px,#E9B53C 14px 28px);color:#1F1A0E;border-bottom:2px solid #1F1A0E}
+.support-band .in{max-width:1180px;margin:0 auto;display:flex;gap:6px 14px;align-items:center;flex-wrap:wrap;padding-block:8px;font:500 .92rem/1.35 system-ui,-apple-system,"Segoe UI",sans-serif}
+.support-band strong{font-weight:700}
+.support-band .btn{margin-left:auto;background:#1F1A0E;border-color:#1F1A0E;color:#F2C14E;font:600 .8rem/1.2 system-ui,-apple-system,sans-serif;text-transform:none;letter-spacing:0}
+.support-band.author{background:#26292D;color:#F2F0ED;border-bottom:3px solid #DD6E3E}
+.support-band.author .sb-logo{height:20px;width:auto}
+.support-band.author .btn{background:#DD6E3E;border-color:#DD6E3E;color:#fff}
+
+/* ================= Platform area ================= */
+.pf-bar .brand{align-items:center;text-decoration:none;gap:12px}
+.pf-logo{display:block;height:36px;width:auto}
+.pf-nav{display:flex;gap:4px;margin-left:18px}
+.pf-nav a{color:var(--bar-dim);text-decoration:none;padding:7px 12px;border-radius:8px;font-weight:600;font-size:.9rem}
+.pf-nav a.on,.pf-nav a:hover{color:var(--on-bar);background:color-mix(in srgb,var(--on-bar) 12%,transparent)}
+.pf-nav a.on{box-shadow:inset 0 -2px 0 var(--gold)}
+@media (max-width:760px){.pf-nav{margin-left:0;overflow-x:auto}.pf-bar .sub{display:none}}
+.pf-main{max-width:1180px;margin:0 auto}
+.pf-main .page-head p a{color:inherit}
+.pf-login{min-height:100vh;display:grid;place-items:center;background:radial-gradient(1200px 500px at 50% -10%,#fff 0,transparent 70%),var(--bg)}
+.pf-login form{width:100%;max-width:420px;border-top:4px solid var(--gold)}
+.pf-group-h{display:flex;gap:8px;align-items:baseline}
+.pf-group-h .muted{font-weight:400}
+.pf-clients{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.pf-client{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface);color:inherit;text-decoration:none;transition:transform .12s ease,box-shadow .12s ease,border-color .12s}
+.pf-client:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(31,33,36,.08);border-color:color-mix(in srgb,var(--gold) 50%,var(--line))}
+.pc-band{height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;gap:10px}
+.pc-band img{max-height:34px;max-width:150px;object-fit:contain}
+.pc-band span:first-child{font:700 .95rem/1 var(--f-body);letter-spacing:.14em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc-dots{display:flex;gap:4px}.pc-dots i{display:block;width:12px;height:12px;border-radius:99px;border:2px solid rgba(255,255,255,.6)}
+.pc-body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:8px}
+.pc-name{font-size:1.02rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pc-meta{display:flex;gap:12px;font-size:.82rem;color:var(--muted)}
+.pc-stats{display:flex;gap:14px;font-size:.86rem;color:var(--ink-2)}.pc-stats b{color:var(--ink)}
+.pc-foot{font-size:.78rem;border-top:1px solid var(--line);padding-top:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pf-handover{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.pf-handover>div{background:var(--sunk);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:4px}
+.pf-handover strong{font-size:1.3rem}
+.pf-brand{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(280px,1fr);gap:24px;align-items:start}
+.pf-brand>div:last-child{position:sticky;top:80px}
+.pf-brand input[type=color]{width:48px;height:36px;padding:2px;border-radius:8px;border:1px solid var(--line);background:var(--surface);cursor:pointer}
+@media (max-width:900px){.pf-brand{grid-template-columns:1fr}.pf-brand>div:last-child{position:static}}
+.pf-terms{border:1px solid var(--line);border-radius:10px;padding:12px 14px}.pf-terms legend{font-weight:600;padding:0 6px;font-size:.88rem}
+details summary{cursor:pointer;font-weight:600;color:var(--lagoon)}
+.pf-course{border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;background:var(--sunk)}
+.pf-shared-to{display:flex;flex-wrap:wrap;gap:6px}
+.pf-target-group{border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:6px}
+.pf-target-group:first-of-type{border-top:0;padding-top:0}
+.pf-change{border-left:3px solid var(--gold);padding-left:12px;display:flex;flex-direction:column;gap:6px;margin-top:4px}
+.pf-preview{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--f-body)}
+.pf-preview .pv-side{background:var(--bar);color:var(--on-bar);padding:20px 20px 22px;display:flex;flex-direction:column;gap:18px}
+.pf-preview .mark{font:400 1.35rem/1 var(--f-display);letter-spacing:.2em;text-transform:uppercase}
+.pf-preview .mark.logo{height:30px}
+.pf-preview .place{color:var(--bar-dim);font-size:.8rem;margin-top:8px}
+.pf-preview .pitch{font:400 1.05rem/1.2 var(--f-display);text-transform:uppercase;max-width:20ch}
+.pf-preview .pitch span{color:var(--gold)}
+.pf-preview .pv-bar{background:var(--bar);color:var(--on-bar);display:flex;align-items:baseline;gap:10px;padding:10px 16px;border-top:1px solid color-mix(in srgb,var(--on-bar) 18%,transparent)}
+.pf-preview .pv-bar .mark{font-size:.9rem}
+.pf-preview .pv-bar .sub{color:var(--bar-dim);font-size:.74rem}
+.pf-preview .pv-page{padding:16px;display:flex;flex-direction:column;gap:10px;font-size:.9rem}
+.pf-preview .pv-ann{background:var(--khaki-soft);border-radius:8px;padding:8px 10px;font-size:.82rem}
+.pf-preview .pv-page h2{font:400 1rem/1.2 var(--f-display);text-transform:uppercase;letter-spacing:.03em;color:var(--ink)}
+.pf-preview .pv-page a{color:var(--lagoon)}
+.pf-preview .pv-progress{height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.pf-preview .pv-progress span{display:block;width:62%;height:100%;background:var(--lagoon)}
+:root[data-area] .pf-preview .btn{font:400 .68rem/1.2 var(--f-display);text-transform:uppercase;letter-spacing:.06em;border-radius:999px;padding:8px 14px;cursor:default}
+:root[data-area] .pf-preview .btn.primary{background:var(--primary);border-color:var(--primary);color:var(--on-primary)}
+:root[data-area] .pf-preview.nocaps :is(.btn,h2,.pitch,.mark){text-transform:none;letter-spacing:normal}
+
+/* ================= Course builder ================= */
+.cb-modnum{flex:none;font:700 .72rem/1 var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--on-primary);background:var(--primary);padding:6px 9px;border-radius:6px;white-space:nowrap}
+.cb-lessons{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.cb-lesson{border:1px solid var(--line);border-radius:10px;background:var(--surface);transition:border-color .12s}
+.cb-lesson:hover{border-color:color-mix(in srgb,var(--lagoon) 40%,var(--line))}
+.cb-lesson.open{border-color:var(--lagoon);box-shadow:0 0 0 1px var(--lagoon)}
+.cb-row{display:flex;align-items:center;gap:10px;padding:8px 10px;min-width:0}
+.cb-row .ci-num{flex:none;font-size:.78rem;color:var(--muted);min-width:1.4em;text-align:right}
+.cb-icon{flex:none;width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-size:.9rem;font-weight:700;background:var(--lagoon-soft);color:var(--lagoon)}
+.cb-icon.t-quiz{background:var(--khaki-soft);color:var(--khaki)}.cb-icon.t-document{background:var(--sunk);color:var(--ink-2)}
+.cb-title{flex:1;min-width:0;text-align:left;color:var(--ink);text-decoration:none;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cb-title:hover{text-decoration:underline}
+.cb-tools{display:flex;gap:2px;flex:none}
+.cb-editor{border-top:1px solid var(--line);padding:14px;background:var(--sunk);border-radius:0 0 10px 10px}
+.cb-add{border-top:1px dashed var(--line);padding-top:10px}
+@media (max-width:620px){.cb-row .chip{display:none}}
+
+/* ================= Taking a course ================= */
+.course-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.course-card{padding:18px;display:flex;flex-direction:column;gap:8px;color:inherit;text-decoration:none;transition:border-color .15s,transform .12s;border-top:4px solid var(--lagoon)}
+.course-card:hover{border-color:var(--lagoon);transform:translateY(-1px)}
+.course-card.complete{border-top-color:var(--ok, #2E7D4F)}
+.course-card h3{margin:0}
+.course-card p{margin:0;font-size:.92rem}
+.cc-meta{font-size:.8rem}
+.cc-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.course-hero{border-left:4px solid var(--lagoon)}
+.ci.locked{opacity:.62}
+.progress.thin{height:5px}
+.quiz-q.wrong{border-color:var(--bad, #B3261E);box-shadow:0 0 0 1px var(--bad, #B3261E)}
+.course-cert{background:#fff;color:#1D2428;border:1px solid var(--line);border-radius:14px;padding:clamp(28px,6vw,64px);text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center;max-width:860px;margin:0 auto;position:relative}
+.course-cert::before{content:"";position:absolute;inset:10px;border:2px solid var(--gold);border-radius:8px;pointer-events:none}
+.course-cert .cc-mark span{font:400 1.4rem/1 var(--f-display);letter-spacing:.2em;text-transform:uppercase;color:var(--primary)}
+.course-cert .cc-mark img{max-height:56px;max-width:240px}
+.course-cert h1{margin:6px 0 0;font-size:clamp(1.8rem,4vw,2.6rem)}
+.course-cert h2{margin:0;color:var(--primary);font-size:clamp(1.4rem,3vw,1.9rem)}
+.course-cert .cc-line{margin-top:10px;font-style:italic}
+.cc-foot{display:flex;gap:clamp(16px,5vw,48px);justify-content:center;flex-wrap:wrap;margin-top:18px}
+.cc-foot div{display:flex;flex-direction:column;gap:2px}
+.cc-note{font-size:.78rem;margin-top:10px;display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap}
+.cc-powered{height:14px;width:auto}
+@media print{.course-cert{border:0;box-shadow:none}}
+
+/* Fields that can't be changed (a provided document's content, or a read-only role) look read-only. */
+:is(input,textarea,select):disabled{background:var(--sunk);color:var(--ink-2);border-style:dashed;cursor:not-allowed;opacity:1;-webkit-text-fill-color:var(--ink-2)}

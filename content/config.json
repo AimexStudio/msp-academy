@@ -1,6 +1,30 @@
 {
   "orgName": "Pelagos Langebaan",
   "courseTitle": "Pelagos Langebaan SOPs and Policies",
+  "client": {
+    "clientNo": 1,
+    "loginCode": "PELAGOS",
+    "docPrefix": "PEL",
+    "staffNoPrefix": "PL",
+    "branding": {
+      "wordmark": "PELAGOS",
+      "subtitle": "Langebaan",
+      "tagline": "Langebaan · Villa Del Mare",
+      "pitch": "Your SOPs, manuals and policies",
+      "pitchAccent": "in one place",
+      "cornerText": "33°05′S · 18°02′E",
+      "colors": {
+        "primary": "#213537",
+        "accent": "#586F65",
+        "highlight": "#B6B185",
+        "background": "#E4E0CD"
+      },
+      "headingFont": "audiowide",
+      "bodyFont": "figtree",
+      "headingCaps": true,
+      "loginArt": "arches"
+    }
+  },
   "declarationText": "I, {name} ({position}), confirm that I have received, read and understood the following Standard Operating Procedures (SOPs), manuals, policies and staff memos, and that I will follow the standards and policies they set out. Where I did not understand something, I asked my manager to explain it.",
   "departments": [
     {

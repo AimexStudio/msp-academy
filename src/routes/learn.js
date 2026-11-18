@@ -1,0 +1,104 @@
+// Taking a course: lessons in order, quizzes marked on the server, a certificate at the end.
+import { requireStaff, now } from '../auth.js';
+import { httpError } from '../documents.js';
+import { verLabel } from '../rules.js';
+import { loadOrg } from '../course.js';
+import { coursesFor, currentCourseVersion, courseState, progressRef, issueCertificateIfDone, lessonForLearner, markQuiz, lessonsOf } from '../courses.js';
+
+export default async function (app) {
+  const { db } = app;
+  const me = req => req.session.staff;
+  const ctx = req => ({ ip: req.ip || null, userAgent: String(req.headers['user-agent'] || '').slice(0, 300) });
+
+  app.get('/api/my/courses', async (req, reply) => {
+    if (!requireStaff(req, reply)) return;
+    const s = me(req), out = [];
+    for (const c of await coursesFor(db, s)) {
+      const v = await currentCourseVersion(db, s, c.id);
+      const st = await courseState(db, s, v);
+      out.push({ id: c.id, title: v.title, description: v.description, label: verLabel(v.major, v.minor), total: st.total, done: st.done,
+        modules: v.modules.length, completedAt: st.completion ? st.completion.at : null, retake: st.retake, shared: !!c.get('shared') });
+    }
+    return { courses: out.sort((a, b) => (!!a.completedAt - !!b.completedAt) || a.title.localeCompare(b.title)) };
+  });
+
+  async function view(s, id) {
+    const v = await currentCourseVersion(db, s, id);
+    const st = await courseState(db, s, v);
+    const byId = new Map(st.lessons.map(l => [l.id, l]));
+    return { course: { id, versionId: v.versionId, title: v.title, description: v.description, label: verLabel(v.major, v.minor),
+      modules: v.modules.map(m => ({ id: m.id, title: m.title, lessons: m.lessons.map(l => ({ ...lessonForLearner(l), state: byId.get(l.id) })) })) },
+      progress: { done: st.done, total: st.total, allDone: st.allDone, completion: st.completion ? { id: st.completion.id, at: st.completion.at } : null, retake: st.retake } };
+  }
+  app.get('/api/my/courses/:id', async (req, reply) => {
+    if (!requireStaff(req, reply)) return;
+    return view(me(req), req.params.id);
+  });
+
+  // Find the lesson, check the version is the one shown, and that it's open (every lesson before it is done).
+  async function openLesson(t, s, courseId, lessonId, versionId) {
+    const v = await currentCourseVersion(db, s, courseId, t);
+    if (v.versionId !== versionId) throw httpError(409, 'This course was updated. Reload the page to continue.');
+    const lesson = lessonsOf(v).find(l => l.id === lessonId);
+    if (!lesson) throw httpError(404, 'Lesson not found.');
+    const st = await courseState(db, s, v, t);
+    const ls = st.lessons.find(l => l.id === lessonId);
+    if (ls.status === 'locked') throw httpError(400, 'Finish the lessons before this one first.');
+    return { v, lesson, ls };
+  }
+
+  app.post('/api/my/courses/:id/lessons/:lessonId/done', { schema: { body: { type: 'object', required: ['versionId'], properties: { versionId: { type: 'string', maxLength: 100 } } } } }, async (req, reply) => {
+    if (!requireStaff(req, reply)) return;
+    const s = me(req);
+    await db.runTransaction(async t => {
+      const { v, lesson, ls } = await openLesson(t, s, req.params.id, req.params.lessonId, req.body.versionId);
+      if (lesson.type === 'quiz') throw httpError(400, 'Answer the questions to finish this lesson.');
+      if (lesson.type === 'document') throw httpError(400, 'Read and sign the SOP or policy to finish this lesson.');
+      if (ls.status === 'done') return;
+      t.set(progressRef(db, s.id, v.courseId, v.major), { orgId: s.orgId, staffId: s.id, courseId: v.courseId, major: v.major, lessons: { [lesson.id]: now() } }, { merge: true });
+    });
+    await issueCertificateIfDone(db, s, req.params.id, ctx(req));
+    return view(s, req.params.id);
+  });
+
+  app.post('/api/my/courses/:id/lessons/:lessonId/quiz', { schema: { body: { type: 'object', required: ['versionId', 'answers'], properties: {
+    versionId: { type: 'string', maxLength: 100 }, answers: { type: 'array', maxItems: 100, items: { type: ['integer', 'null'] } } } } } }, async (req, reply) => {
+    if (!requireStaff(req, reply)) return;
+    const s = me(req);
+    const r = await db.runTransaction(async t => {
+      const { v, lesson, ls } = await openLesson(t, s, req.params.id, req.params.lessonId, req.body.versionId);
+      if (lesson.type !== 'quiz') throw httpError(400, 'This lesson has no questions.');
+      if (ls.status === 'done') throw httpError(400, 'You have already passed this quiz.');
+      const qs = lesson.questions, a = req.body.answers;
+      if (a.length !== qs.length || a.some((x, i) => !Number.isInteger(x) || x < 0 || x >= qs[i].options.length)) throw httpError(400, 'Answer every question.');
+      const r = markQuiz(qs, a, lesson.passMark);
+      const ref = progressRef(db, s.id, v.courseId, v.major);
+      const p = await t.get(ref), prev = ((p.exists ? p.get('quiz') : null) || {})[lesson.id] || {};
+      t.set(ref, { orgId: s.orgId, staffId: s.id, courseId: v.courseId, major: v.major,
+        quiz: { [lesson.id]: { attempts: (prev.attempts || 0) + 1, lastScore: r.score, lastAt: now() } }, ...(r.passed ? { lessons: { [lesson.id]: now() } } : {}) }, { merge: true });
+      return { ...r, passMark: lesson.passMark };
+    });
+    if (r.passed) await issueCertificateIfDone(db, s, req.params.id, ctx(req));
+    // Wrong questions are flagged; the right answers are never sent.
+    return { result: { correct: r.correct, total: r.total, score: r.score, passed: r.passed, wrong: r.passed ? [] : r.wrong, passMark: r.passMark }, ...(await view(s, req.params.id)) };
+  });
+
+  // For when the last lesson was an SOP signed in its own flow: issue the certificate now.
+  app.post('/api/my/courses/:id/certificate', async (req, reply) => {
+    if (!requireStaff(req, reply)) return;
+    const c = await issueCertificateIfDone(db, me(req), req.params.id, ctx(req));
+    if (!c) throw httpError(400, 'Finish every lesson first.');
+    return view(me(req), req.params.id);
+  });
+
+  app.get('/api/my/courses/:id/certificate', async (req, reply) => {
+    if (!requireStaff(req, reply)) return;
+    const s = me(req);
+    const q = await db.collection('courseCompletions').where('orgId', '==', s.orgId).where('staffId', '==', s.id).where('courseId', '==', String(req.params.id)).get();
+    const c = q.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.at < b.at ? 1 : -1))[0];
+    if (!c) throw httpError(404, 'You don’t have a certificate for this course yet.');
+    const org = await loadOrg(db, s.orgId);
+    return { certificate: { id: c.id, title: c.title, label: verLabel(c.major, c.minor), name: c.name, staffNo: c.staffNo, positionName: org.posName(c.positionId),
+      orgName: org.orgName, at: c.at, lessons: c.lessons, reference: c.hash.slice(0, 12).toUpperCase() } };
+  });
+}

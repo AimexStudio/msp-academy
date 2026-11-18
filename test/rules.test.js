@@ -44,8 +44,9 @@ test('video coverage is limited by real time', () => {
 });
 
 test('next document code and draft checks', () => {
-  assert.equal(nextCode('sop', ['PEL-SOP-001', 'PEL-SOP-012', 'PEL-MAN-005']), 'PEL-SOP-013');
-  assert.equal(nextCode('policy', []), 'PEL-POL-001');
+  assert.equal(nextCode('sop', ['PEL-SOP-001', 'PEL-SOP-012', 'PEL-MAN-005'], 'PEL'), 'PEL-SOP-013');
+  assert.equal(nextCode('policy', [], 'PEL'), 'PEL-POL-001');
+  assert.equal(nextCode('sop', ['PEL-SOP-001', 'HBR-SOP-004'], 'HBR'), 'HBR-SOP-005', 'each client numbers its own documents');
   const p = draftProblems({ title: 'x', body: 'y', audience: { all: false, positions: [] }, questions: [{ q: 'q', options: ['a', ''], correct: 5 }], passMark: 80 });
   assert.equal(p.length, 3);
 });

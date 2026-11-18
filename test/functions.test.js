@@ -23,7 +23,7 @@ function call(method, url, { headers = {}, body } = {}) {
 const cookieOf = r => String([].concat(r.headers['set-cookie'])[0]).split(';')[0];
 
 test('sign-in, a staff page and the __session cookie work through the function', async () => {
-  const login = await call('POST', '/api/auth/login', { headers: { 'content-type': 'application/json', 'x-pelagos': '1' }, body: Buffer.from(JSON.stringify({ staffNo: 'PL002', pin: '1234' })) });
+  const login = await call('POST', '/api/auth/login', { headers: { 'content-type': 'application/json', 'x-pelagos': '1' }, body: Buffer.from(JSON.stringify({ clientCode: 'PELAGOS', staffNo: 'PL002', pin: '1234' })) });
   assert.equal(login.status, 200);
   assert.match(cookieOf(login), /^__session=/, 'Firebase Hosting only forwards a cookie named __session');
   const course = await call('GET', '/api/my/course', { headers: { cookie: cookieOf(login) } });
@@ -34,7 +34,7 @@ test('sign-in, a staff page and the __session cookie work through the function',
 });
 
 test('a PDF upload (multipart) and a video range request work through the function', async () => {
-  const login = await call('POST', '/api/auth/login', { headers: { 'content-type': 'application/json', 'x-pelagos': '1' }, body: Buffer.from(JSON.stringify({ staffNo: 'PL001', pin: '1234' })) });
+  const login = await call('POST', '/api/auth/login', { headers: { 'content-type': 'application/json', 'x-pelagos': '1' }, body: Buffer.from(JSON.stringify({ clientCode: 'PELAGOS', staffNo: 'PL001', pin: '1234' })) });
   const cookie = cookieOf(login);
   const pdf = fs.readFileSync(`${CONTENT}files/PEL-SOP-003.pdf`);
   const b = '----pelagosboundary';

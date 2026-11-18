@@ -5,19 +5,17 @@ import path from 'node:path';
 import { mp4Duration } from './mp4.js';
 import { publishDocument, docRef, audit, now } from './documents.js';
 import { draftProblems } from './rules.js';
+import { cleanBranding, codeRef, normCode, storagePrefix, invalidate } from './tenancy.js';
 
 export async function importContent({ db, storage, dir, orgId, publish = false, log = console }) {
   const cfg = JSON.parse(fs.readFileSync(path.join(dir, 'config.json'), 'utf8'));
   const orgRef = db.collection('orgs').doc(orgId);
-  if (!(await orgRef.get()).exists) {
-    await orgRef.set({ name: cfg.orgName, courseTitle: cfg.courseTitle, declarationText: cfg.declarationText,
-      departments: cfg.departments.map(d => ({ id: d.id, name: d.name })), positions: cfg.positions.map(p => ({ id: p.id, name: p.name, dept: p.dept })), updatedAt: now() });
-  }
+  if (!(await orgRef.get()).exists) await createClientRecord(db, orgId, cfg);
   async function storeFile(file, kind, name) {
     const buf = fs.readFileSync(file);
-    const s = await storage.putBuffer(buf, kind === 'pdf' ? 'application/pdf' : 'video/mp4');
-    const ex = await db.collection('files').where('sha256', '==', s.sha256).get();
-    const same = ex.docs.find(d => d.get('orgId') === orgId && d.get('kind') === kind);
+    const s = await storage.putBuffer(buf, kind === 'pdf' ? 'application/pdf' : 'video/mp4', storagePrefix(orgId, 'files'));
+    const ex = await db.collection('files').where('orgId', '==', orgId).where('sha256', '==', s.sha256).get();
+    const same = ex.docs.find(d => d.get('kind') === kind);
     if (same) return same.id;
     const ref = db.collection('files').doc();
     await ref.create({ orgId, kind, name, mime: kind === 'pdf' ? 'application/pdf' : 'video/mp4', size: s.size, sha256: s.sha256,
@@ -63,4 +61,26 @@ export async function importContent({ db, storage, dir, orgId, publish = false, 
     }
   }
   return { added, skipped, published };
+}
+
+/** The client record for a content folder (its config.json "client" block), with its sign-in code and number. */
+export async function createClientRecord(db, orgId, cfg) {
+  const c = cfg.client || {};
+  const loginCode = normCode(c.loginCode || orgId);
+  await db.runTransaction(async t => {
+    const counterRef = db.collection('counters').doc('platform');
+    const [counter, code] = await Promise.all([t.get(counterRef), t.get(codeRef(db, loginCode))]);
+    if (code.exists) throw new Error(`The client code ${loginCode} is already in use.`);
+    const next = counter.exists ? counter.get('nextClientNo') : 1;
+    const clientNo = c.clientNo || next;
+    t.set(counterRef, { nextClientNo: Math.max(next, clientNo + 1) }, { merge: true });
+    t.create(codeRef(db, loginCode), { orgId });
+    t.create(db.collection('orgs').doc(orgId), {
+      name: cfg.orgName, courseTitle: cfg.courseTitle, declarationText: cfg.declarationText,
+      departments: cfg.departments.map(d => ({ id: d.id, name: d.name })), positions: cfg.positions.map(p => ({ id: p.id, name: p.name, dept: p.dept })),
+      status: 'active', statusReason: null, clientNo, loginCode, docPrefix: c.docPrefix || 'DOC', staffNoPrefix: c.staffNoPrefix ?? '',
+      domains: [], legacyStorage: false, groupId: null, branding: cleanBranding(c.branding || {}), createdAt: now(), updatedAt: now(),
+    });
+  });
+  invalidate(db);
 }

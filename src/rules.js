@@ -2,7 +2,9 @@
 // everything that decides who owes what lives here so it can be tested directly.
 
 export const KINDS = { sop: 'SOP', manual: 'Manual', policy: 'Policy', memo: 'Staff memo' };
-export const PREFIX = { sop: 'PEL-SOP', manual: 'PEL-MAN', policy: 'PEL-POL', memo: 'PEL-MEM' };
+// Document codes are <client prefix>-<type>-<number>, e.g. PEL-SOP-001. The prefix is set per client.
+export const KIND_CODE = { sop: 'SOP', manual: 'MAN', policy: 'POL', memo: 'MEM' };
+export const codePrefix = (kind, docPrefix) => `${docPrefix}-${KIND_CODE[kind] || 'SOP'}`;
 export const BASE_ORDER = { sop: 100, manual: 200, policy: 300, memo: 400 };
 export const VIDEO_THRESHOLD = 0.85;
 
@@ -90,8 +92,9 @@ export function acceptSegments({ existing, reported, duration, elapsedSec }) {
   return { segments: merged, watched: coverage(merged) };
 }
 
-export function nextCode(kind, codes) {
-  const p = PREFIX[kind] || 'PEL-SOP';
+export function nextCode(kind, codes, docPrefix) {
+  if (!docPrefix) throw new Error('nextCode needs the client\'s document prefix');
+  const p = codePrefix(kind, docPrefix);
   const ns = codes.filter(c => c.startsWith(p + '-')).map(c => parseInt(c.slice(p.length + 1), 10)).filter(n => !isNaN(n));
   return `${p}-${String((ns.length ? Math.max(...ns) : 0) + 1).padStart(3, '0')}`;
 }

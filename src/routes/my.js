@@ -1,5 +1,6 @@
 // The staff journey: my course, read (with the video gate), quiz (marked here), sign, declaration.
-import { requireAuth, now } from '../auth.js';
+import { requireAuth, requireStaff, now } from '../auth.js';
+import { getOrg, storagePrefix, storageKeyAllowed } from '../tenancy.js';
 import { loadOrg, loadPublishedDocs, loadProgress, summarise } from '../course.js';
 import { currentVersion, httpError } from '../documents.js';
 import { appendEvidence } from '../evidence.js';
@@ -32,11 +33,13 @@ export function publicVersion(v, files = new Map()) {
   };
 }
 
-export async function fileMeta(db, ids) {
+/** File details for the given ids, only those that belong to this client. */
+export async function fileMeta(db, orgId, ids) {
+  if (!orgId) throw new Error('fileMeta needs the client');
   ids = [...new Set(ids.filter(Boolean))];
   if (!ids.length) return new Map();
   const snaps = await db.getAll(...ids.map(id => db.collection('files').doc(id)));
-  return new Map(snaps.filter(s => s.exists).map(s => [s.id, s.data()]));
+  return new Map(snaps.filter(s => s.exists && s.get('orgId') === orgId).map(s => [s.id, s.data()]));
 }
 
 /** Read, video, quiz and sign-off state for one person on one document's current major version. */
@@ -60,28 +63,28 @@ export function stateOf(v, p, lastSignoff) {
   };
 }
 
-async function lastSignoff(db, staffId, code, t = null) {
-  const q = db.collection('signoffs').where('staffId', '==', staffId).where('code', '==', code);
+async function lastSignoff(db, orgId, staffId, code, t = null) {
+  const q = db.collection('signoffs').where('orgId', '==', orgId).where('staffId', '==', staffId).where('code', '==', code);
   const snap = t ? await t.get(q) : await q.get();
   return snap.docs.map(s => ({ id: s.id, ...s.data() })).sort((a, b) => (a.at < b.at ? 1 : -1))[0] || null;
 }
 
 export default async function (app) {
-  const { db, orgId, storage } = app;
+  const { db, storage } = app;
   const me = req => req.session.staff;
   const ctx = req => ({ ip: req.ip || null, userAgent: String(req.headers['user-agent'] || '').slice(0, 300) });
 
   async function mySummary(staff) {
-    const [docs, prog] = await Promise.all([loadPublishedDocs(db, orgId), loadProgress(db, orgId, [staff.id])]);
+    const [docs, prog] = await Promise.all([loadPublishedDocs(db, staff.orgId), loadProgress(db, staff.orgId, [staff.id])]);
     return summarise(staff, docs, prog);
   }
   async function myDoc(staff, code, t = null) {
-    const v = await currentVersion(db, orgId, code, t);
+    const v = await currentVersion(db, staff.orgId, code, t);
     if (!v || !appliesTo(v.audience, staff.positionId)) throw httpError(404, 'This document is not in your course.');
     return v;
   }
   async function docState(staff, v) {
-    const [p, so] = await Promise.all([progressRef(db, staff.id, v.code, v.major).get(), lastSignoff(db, staff.id, v.code)]);
+    const [p, so] = await Promise.all([progressRef(db, staff.id, v.code, v.major).get(), lastSignoff(db, staff.orgId, staff.id, v.code)]);
     return stateOf(v, p.exists ? p.data() : null, so);
   }
   const checkVersion = (v, versionId) => {
@@ -90,9 +93,9 @@ export default async function (app) {
   const versionBody = { type: 'object', required: ['versionId'], properties: { versionId: { type: 'string', maxLength: 80 } } };
 
   app.get('/api/my/course', async (req, reply) => {
-    if (!requireAuth(req, reply)) return;
+    if (!requireStaff(req, reply)) return;
     const s = me(req);
-    const [org, sum, st] = await Promise.all([loadOrg(db, orgId), mySummary(s), db.collection('staff').doc(s.id).get()]);
+    const [org, sum, st] = await Promise.all([loadOrg(db, s.orgId), mySummary(s), db.collection('staff').doc(s.id).get()]);
     return {
       courseTitle: org.courseTitle, positionName: org.posName(s.positionId),
       items: sum.items.map(courseItem), total: sum.total, done: sum.done, pct: sum.pct,
@@ -103,10 +106,10 @@ export default async function (app) {
   });
 
   app.get('/api/my/documents/:code', async (req, reply) => {
-    if (!requireAuth(req, reply)) return;
+    if (!requireStaff(req, reply)) return;
     const s = me(req);
-    const [org, v] = await Promise.all([loadOrg(db, orgId), myDoc(s, req.params.code)]);
-    const [files, state] = await Promise.all([fileMeta(db, [v.pdfFileId]), docState(s, v)]);
+    const [org, v] = await Promise.all([loadOrg(db, s.orgId), myDoc(s, req.params.code)]);
+    const [files, state] = await Promise.all([fileMeta(db, s.orgId, [v.pdfFileId]), docState(s, v)]);
     return { doc: publicVersion(v, files), state, statement: signoffStatement(s.name, v.code, v.title, verLabel(v.major, v.minor), org.orgName), profileName: s.name };
   });
 
@@ -117,7 +120,7 @@ export default async function (app) {
       versionId: { type: 'string', maxLength: 80 },
       segments: { type: 'array', maxItems: 200, items: { type: 'array', minItems: 2, maxItems: 2, items: { type: 'number' } } } } } },
   }, async (req, reply) => {
-    if (!requireAuth(req, reply)) return;
+    if (!requireStaff(req, reply)) return;
     const s = me(req);
     return db.runTransaction(async t => {
       const v = await myDoc(s, req.params.code, t);
@@ -133,7 +136,7 @@ export default async function (app) {
       const { segments, watched } = acceptSegments({ existing, reported: req.body.segments,
         duration: vid.duration || 0, elapsedSec: (Date.now() - new Date(row.lastReportAt || started).getTime()) / 1000 });
       const complete = (vid.duration || 0) > 0 && watched >= vid.duration * VIDEO_THRESHOLD;
-      t.set(ref, { orgId, staffId: s.id, code: v.code, major: v.major, videos: { [vid.fileId]: {
+      t.set(ref, { orgId: s.orgId, staffId: s.id, code: v.code, major: v.major, videos: { [vid.fileId]: {
         segments: segments.map(([a, b]) => ({ a, b })), watched, startedAt: started, lastReportAt: now(),
         completedAt: row.completedAt || (complete ? now() : null) } } }, { merge: true });
       return { watched: Math.round(watched), duration: vid.duration, completed: complete || !!row.completedAt };
@@ -142,24 +145,24 @@ export default async function (app) {
 
   // The video would not play on this device: the person may continue (never stuck), and it is recorded.
   app.post('/api/my/documents/:code/videos/:fileId/failed', { schema: { body: versionBody } }, async (req, reply) => {
-    if (!requireAuth(req, reply)) return;
+    if (!requireStaff(req, reply)) return;
     const s = me(req);
     const v = await myDoc(s, req.params.code);
     checkVersion(v, req.body.versionId);
     if (!(v.videos || []).some(x => x.fileId === req.params.fileId)) throw httpError(404, 'Video not found.');
-    await progressRef(db, s.id, v.code, v.major).set({ orgId, staffId: s.id, code: v.code, major: v.major,
+    await progressRef(db, s.id, v.code, v.major).set({ orgId: s.orgId, staffId: s.id, code: v.code, major: v.major,
       videos: { [req.params.fileId]: { failedAt: now() } } }, { merge: true });
     return { ok: true };
   });
 
   app.post('/api/my/documents/:code/read', { schema: { body: versionBody } }, async (req, reply) => {
-    if (!requireAuth(req, reply)) return;
+    if (!requireStaff(req, reply)) return;
     const s = me(req);
     const v = await myDoc(s, req.params.code);
     checkVersion(v, req.body.versionId);
     const st = await docState(s, v);
     if (!st.videosDone) throw httpError(400, 'Watch the training video to the end before you continue.');
-    if (!st.readAt) await progressRef(db, s.id, v.code, v.major).set({ orgId, staffId: s.id, code: v.code, major: v.major, readAt: now(), readVersionId: v.versionId }, { merge: true });
+    if (!st.readAt) await progressRef(db, s.id, v.code, v.major).set({ orgId: s.orgId, staffId: s.id, code: v.code, major: v.major, readAt: now(), readVersionId: v.versionId }, { merge: true });
     return { state: await docState(s, v) };
   });
 
@@ -167,7 +170,7 @@ export default async function (app) {
     schema: { body: { type: 'object', required: ['versionId', 'answers'], properties: {
       versionId: { type: 'string', maxLength: 80 }, answers: { type: 'array', maxItems: 100, items: { type: ['integer', 'null'] } } } } },
   }, async (req, reply) => {
-    if (!requireAuth(req, reply)) return;
+    if (!requireStaff(req, reply)) return;
     const s = me(req);
     const { r, v } = await db.runTransaction(async t => {
       const staffSnap = await t.get(db.collection('staff').doc(s.id));
@@ -175,7 +178,7 @@ export default async function (app) {
       checkVersion(v, req.body.versionId);
       const pref = progressRef(db, s.id, v.code, v.major);
       const p = await t.get(pref);
-      const st = stateOf(v, p.exists ? p.data() : null, await lastSignoff(db, s.id, v.code, t));
+      const st = stateOf(v, p.exists ? p.data() : null, await lastSignoff(db, s.orgId, s.id, v.code, t));
       if (st.signedCurrent) throw httpError(400, 'You have already signed this version.');
       if (!st.readAt) throw httpError(400, 'Read the document before you answer the questions.');
       if (!st.hasQuestions) throw httpError(400, 'This document has no questions.');
@@ -183,9 +186,9 @@ export default async function (app) {
       const qs = v.questions, answers = req.body.answers;
       if (answers.length !== qs.length || answers.some((a, i) => !Number.isInteger(a) || a < 0 || a >= qs[i].options.length)) throw httpError(400, 'Answer every question.');
       const r = markQuiz(qs, answers, v.passMark);
-      appendEvidence(t, db, staffSnap, 'quizAttempts', null, { orgId, code: v.code, versionId: v.versionId, major: v.major,
+      appendEvidence(t, db, staffSnap, 'quizAttempts', null, { orgId: s.orgId, code: v.code, versionId: v.versionId, major: v.major,
         answers, correct: r.correct, total: r.total, score: r.score, passed: r.passed, ...ctx(req), at: now() });
-      t.set(pref, { orgId, staffId: s.id, code: v.code, major: v.major, attempts: st.attempts + 1, lastScore: r.score,
+      t.set(pref, { orgId: s.orgId, staffId: s.id, code: v.code, major: v.major, attempts: st.attempts + 1, lastScore: r.score,
         passed: r.passed, ...(r.passed ? { passScore: r.score, passedAt: now() } : {}) }, { merge: true });
       return { r, v };
     });
@@ -198,15 +201,15 @@ export default async function (app) {
     schema: { body: { type: 'object', required: ['versionId', 'agree', 'typedName'], properties: {
       versionId: { type: 'string', maxLength: 80 }, agree: { type: 'boolean' }, typedName: { type: 'string', maxLength: 200 } } } },
   }, async (req, reply) => {
-    if (!requireAuth(req, reply)) return;
+    if (!requireStaff(req, reply)) return;
     const s = me(req);
-    const org = await loadOrg(db, orgId);
+    const org = await loadOrg(db, s.orgId);
     return db.runTransaction(async t => {
       const staffSnap = await t.get(db.collection('staff').doc(s.id));
       const v = await myDoc(s, req.params.code, t);
       checkVersion(v, req.body.versionId);
       const p = await t.get(progressRef(db, s.id, v.code, v.major));
-      const st = stateOf(v, p.exists ? p.data() : null, await lastSignoff(db, s.id, v.code, t));
+      const st = stateOf(v, p.exists ? p.data() : null, await lastSignoff(db, s.orgId, s.id, v.code, t));
       if (st.signedCurrent) throw httpError(400, 'You have already signed this version.');
       if (!st.readAt) throw httpError(400, 'Read the document before you sign.');
       if (!st.passed) throw httpError(400, `Pass the questions (${v.passMark}%) before you sign.`);
@@ -214,7 +217,7 @@ export default async function (app) {
       if (!namesMatch(req.body.typedName, s.name)) throw httpError(400, `Type your full name exactly as it is on your profile: ${s.name}.`);
       const label = verLabel(v.major, v.minor);
       const ref = signoffRef(db, s.id, v.code, v.major);
-      const rec = appendEvidence(t, db, staffSnap, 'signoffs', ref, { orgId, code: v.code, versionId: v.versionId, major: v.major, label,
+      const rec = appendEvidence(t, db, staffSnap, 'signoffs', ref, { orgId: s.orgId, code: v.code, versionId: v.versionId, major: v.major, label,
         typedName: req.body.typedName.trim(), statement: signoffStatement(s.name, v.code, v.title, label, org.orgName),
         score: st.hasQuestions ? st.passScore : null, attempts: st.attempts, versionHash: v.contentHash, ...ctx(req), at: now() });
       return { signoff: { id: ref.id, at: rec.at, label, score: rec.score } };
@@ -222,9 +225,9 @@ export default async function (app) {
   });
 
   app.get('/api/my/declaration', async (req, reply) => {
-    if (!requireAuth(req, reply)) return;
+    if (!requireStaff(req, reply)) return;
     const s = me(req);
-    const [org, sum] = await Promise.all([loadOrg(db, orgId), mySummary(s)]);
+    const [org, sum] = await Promise.all([loadOrg(db, s.orgId), mySummary(s)]);
     return {
       courseTitle: org.courseTitle, canDeclare: sum.canDeclare, declarationCurrent: sum.declarationCurrent,
       outstanding: sum.outstanding.length, total: sum.total, profileName: s.name,
@@ -237,15 +240,15 @@ export default async function (app) {
     schema: { body: { type: 'object', required: ['agree', 'typedName', 'signature'], properties: {
       agree: { type: 'boolean' }, typedName: { type: 'string', maxLength: 200 }, signature: { type: 'string', maxLength: 400000 } } } },
   }, async (req, reply) => {
-    if (!requireAuth(req, reply)) return;
+    if (!requireStaff(req, reply)) return;
     const s = me(req);
-    const org = await loadOrg(db, orgId);
+    const org = await loadOrg(db, s.orgId);
     const png = parseSignature(req.body.signature);
     if (!req.body.agree) throw httpError(400, 'Tick the box to confirm.');
     if (!namesMatch(req.body.typedName, s.name)) throw httpError(400, `Type your full name exactly as it is on your profile: ${s.name}.`);
     const before = await mySummary(s);
     if (!before.canDeclare) throw httpError(400, before.outstanding.length ? 'Sign every document in your course first.' : 'Your declaration is already up to date.');
-    const sig = await storage.putBuffer(png, 'image/png', 'signatures');
+    const sig = await storage.putBuffer(png, 'image/png', storagePrefix(s.orgId, 'signatures'));
     return db.runTransaction(async t => {
       const staffSnap = await t.get(db.collection('staff').doc(s.id));
       // Checked again inside the transaction: a sign-off or declaration made meanwhile changes the staff record and forces a retry.
@@ -254,27 +257,28 @@ export default async function (app) {
       const text = fillDeclaration(org.declarationText, s.name, org.posName(s.positionId));
       const items = sum.items.map(i => ({ code: i.doc.code, title: i.doc.title, label: i.signoff.label, signoffId: i.signoff.id, signedAt: i.signoff.at, score: i.signoff.score }));
       const ref = db.collection('declarations').doc();
-      const rec = appendEvidence(t, db, staffSnap, 'declarations', ref, { orgId, staffNo: s.staffNo, name: s.name, positionId: s.positionId,
+      const rec = appendEvidence(t, db, staffSnap, 'declarations', ref, { orgId: s.orgId, staffNo: s.staffNo, name: s.name, positionId: s.positionId,
         courseTitle: org.courseTitle, text, typedName: req.body.typedName.trim(), items, signatureKey: sig.key, signatureSha256: sig.sha256, ...ctx(req), at: now() });
       return { declaration: { id: ref.id, at: rec.at } };
     });
   });
 
   app.get('/api/my/record', async (req, reply) => {
-    if (!requireAuth(req, reply)) return;
-    return buildRecord(db, orgId, me(req).id);
+    if (!requireStaff(req, reply)) return;
+    return buildRecord(db, req.orgId, me(req).id);
   });
 
   app.get('/api/declarations/:id/signature.png', async (req, reply) => {
     if (!requireAuth(req, reply)) return;
     const s = me(req);
+    const orgId = req.orgId;
     const d = await db.collection('declarations').doc(String(req.params.id)).get();
-    let ok = d.exists && d.get('orgId') === orgId && (d.get('staffId') === s.id || ['manager', 'auditor'].includes(s.role));
+    let ok = d.exists && d.get('orgId') === orgId && (d.get('staffId') === s.id || ['manager', 'auditor', 'support'].includes(s.role));
     if (d.exists && !ok && s.role === 'hod' && d.get('orgId') === orgId) {
       const org = await loadOrg(db, orgId);
       ok = org.deptOf(d.get('positionId')) === org.deptOf(s.positionId);
     }
-    if (!ok) return reply.code(404).send({ error: 'Not found.' });
+    if (!ok || !storageKeyAllowed(await getOrg(db, orgId), d.get('signatureKey'))) return reply.code(404).send({ error: 'Not found.' });
     reply.header('Content-Type', 'image/png').header('Cache-Control', 'private, max-age=86400');
     return reply.send(await storage.getBuffer(d.get('signatureKey')));
   });
@@ -300,7 +304,7 @@ export async function buildRecord(db, orgId, staffId) {
   const x = st.data();
   const staff = { id: st.id, positionId: x.positionId };
   const [docs, prog, decls] = await Promise.all([
-    loadPublishedDocs(db, orgId), loadProgress(db, orgId, [st.id]), db.collection('declarations').where('staffId', '==', st.id).get(),
+    loadPublishedDocs(db, orgId), loadProgress(db, orgId, [st.id]), db.collection('declarations').where('orgId', '==', orgId).where('staffId', '==', st.id).get(),
   ]);
   const sum = summarise(staff, docs, prog);
   const list = decls.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.at < b.at ? 1 : -1));
@@ -308,7 +312,7 @@ export async function buildRecord(db, orgId, staffId) {
   return {
     staff: { id: st.id, staffNo: x.staffNo, name: x.name, positionId: x.positionId, positionName: org.posName(x.positionId),
       deptName: org.deptName(org.deptOf(x.positionId)), active: x.active, startDate: x.startDate || null },
-    orgName: org.orgName, courseTitle: org.courseTitle,
+    orgName: org.orgName, courseTitle: org.courseTitle, recordCode: `${org.docPrefix}-FRM-001`,
     total: sum.total, done: sum.done, outstanding: sum.outstanding.length, upToDate: sum.upToDate,
     declarationCurrent: sum.declarationCurrent, canDeclare: sum.canDeclare,
     items: sum.items.map(i => ({

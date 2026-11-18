@@ -4,6 +4,8 @@ import { requireAuth, isManagerish } from '../auth.js';
 import { appliesTo } from '../rules.js';
 import { loadPublishedDocs } from '../course.js';
 import { docRef } from '../documents.js';
+import { getOrg, storageKeyAllowed } from '../tenancy.js';
+import { coursesFor, fileIdsOf } from '../courses.js';
 
 // Each response is kept to 8 MB; browsers fetch videos in pieces anyway. Cloud Functions responses
 // are limited to 32 MB.
@@ -12,12 +14,19 @@ const uses = (v, id) => v && (v.pdfFileId === id || (v.videos || []).some(x => x
 
 export async function canAccessFile(db, orgId, session, fileId, file) {
   const s = session.staff;
-  if (!file || file.orgId !== orgId) return false;
+  if (!orgId || !file || file.orgId !== orgId || file.kind === 'logo') return false;
+  if (!storageKeyAllowed(await getOrg(db, orgId), file.storageKey)) return false;
   if (isManagerish(s.role)) return true;
   const docs = await loadPublishedDocs(db, orgId);
   if (docs.some(d => appliesTo(d.audience, s.positionId) && uses(d, fileId))) return true;
+  // Or a lesson in a published course they must complete.
+  for (const c of await coursesFor(db, s)) {
+    const cur = c.get('current');
+    const v = await c.ref.collection('versions').doc(`${cur.major}.${cur.minor}`).get();
+    if (v.exists && fileIdsOf(v.data()).includes(fileId)) return true;
+  }
   // Or a version they signed in the past.
-  const signed = await db.collection('signoffs').where('staffId', '==', s.id).get();
+  const signed = await db.collection('signoffs').where('orgId', '==', orgId).where('staffId', '==', s.id).get();
   for (const so of signed.docs) {
     const [code, key] = so.get('versionId').split('@');
     const v = await docRef(db, orgId, code).collection('versions').doc(key).get();
@@ -27,7 +36,7 @@ export async function canAccessFile(db, orgId, session, fileId, file) {
 }
 
 export default async function (app) {
-  const { db, orgId, storage } = app;
+  const { db, storage } = app;
 
   app.get('/api/files/:id', async (req, reply) => {
     if (!requireAuth(req, reply)) return;
@@ -35,7 +44,7 @@ export default async function (app) {
     if (!/^[A-Za-z0-9]{10,40}$/.test(id)) return reply.code(404).send({ error: 'Not found.' });
     const snap = await db.collection('files').doc(id).get();
     const f = snap.exists ? snap.data() : null;
-    if (!(await canAccessFile(db, orgId, req.session, id, f))) return reply.code(404).send({ error: 'Not found.' });
+    if (!(await canAccessFile(db, req.orgId, req.session, id, f))) return reply.code(404).send({ error: 'Not found.' });
     const size = f.size;
     reply.header('Content-Type', f.mime).header('Accept-Ranges', 'bytes').header('Cache-Control', 'private, max-age=3600').header('X-Content-Type-Options', 'nosniff');
     reply.header('Content-Disposition', `${req.query.download ? 'attachment' : 'inline'}; filename*=UTF-8''${encodeURIComponent(f.name)}`);

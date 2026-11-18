@@ -10,7 +10,8 @@ export async function loadOrg(db, orgId) {
   const posById = new Map(o.positions.map(x => [x.id, x]));
   const deptById = new Map(o.departments.map(x => [x.id, x]));
   return {
-    id: orgId, orgName: o.name, courseTitle: o.courseTitle, declarationText: o.declarationText,
+    id: orgId, orgName: o.name, courseTitle: o.courseTitle, declarationText: o.declarationText, raw: { id: orgId, ...o },
+    docPrefix: o.docPrefix || 'DOC', staffNoPrefix: o.staffNoPrefix ?? '', shortName: (o.branding && o.branding.wordmark) || o.name,
     departments: o.departments, positions: o.positions,
     posName: id => posById.get(id)?.name || 'No position',
     deptOf: id => posById.get(id)?.dept || '',
@@ -32,7 +33,7 @@ const byAtDesc = (a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0);
 /** Sign-offs, progress and declarations for the given staff ids (or everyone in the org). */
 export async function loadProgress(db, orgId, staffIds = null) {
   const one = staffIds && staffIds.length === 1;
-  const q = c => one ? db.collection(c).where('staffId', '==', staffIds[0]).get() : db.collection(c).where('orgId', '==', orgId).get();
+  const q = c => one ? db.collection(c).where('orgId', '==', orgId).where('staffId', '==', staffIds[0]).get() : db.collection(c).where('orgId', '==', orgId).get();
   const keep = staffIds ? new Set(staffIds) : null;
   const [so, pr, de] = await Promise.all([q('signoffs'), q('progress'), q('declarations')]);
   const rows = snap => snap.docs.map(s => ({ id: s.id, ...s.data() })).filter(r => !keep || keep.has(r.staffId));

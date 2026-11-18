@@ -4,7 +4,7 @@
 // record breaks the chain, which `verifyChain` (and `npm run verify`) detects.
 import crypto from 'node:crypto';
 
-export const EVIDENCE = ['quizAttempts', 'signoffs', 'declarations'];
+export const EVIDENCE = ['quizAttempts', 'signoffs', 'declarations', 'courseCompletions'];
 const sha256 = s => crypto.createHash('sha256').update(s).digest('hex');
 export function canonical(v) {
   if (Array.isArray(v)) return '[' + v.map(canonical).join(',') + ']';
@@ -29,12 +29,15 @@ export function appendEvidence(t, db, staffSnap, collection, ref, data) {
 /** Check one person's chain. Returns {ok, records, problem}. */
 export async function verifyChain(db, staffId) {
   const st = await db.collection('staff').doc(staffId).get();
+  if (!st.exists) return { ok: false, records: 0, problem: 'This person does not exist.' };
+  const orgId = st.get('orgId');
   const all = [];
   for (const c of EVIDENCE) (await db.collection(c).where('staffId', '==', staffId).get()).forEach(s => all.push({ id: `${c}/${s.id}`, ...s.data() }));
   all.sort((a, b) => a.seq - b.seq);
   let prev = null;
   for (let i = 0; i < all.length; i++) {
     const r = all[i]; const { id, ...rec } = r;
+    if (r.orgId !== orgId) return { ok: false, records: all.length, problem: `${id} belongs to a different client.` };
     if (r.seq !== i + 1) return { ok: false, records: all.length, problem: `Record number ${i + 1} is missing (found ${r.seq} at ${id}).` };
     if (r.prevHash !== prev) return { ok: false, records: all.length, problem: `${id} does not follow the record before it.` };
     if (recordHash(rec) !== r.hash) return { ok: false, records: all.length, problem: `${id} has been changed since it was written.` };

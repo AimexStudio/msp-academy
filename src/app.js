@@ -10,17 +10,22 @@ import authRoutes from './routes/auth.js';
 import myRoutes from './routes/my.js';
 import fileRoutes from './routes/files.js';
 import adminRoutes from './routes/admin.js';
+import platformRoutes from './routes/platform.js';
+import learnRoutes from './routes/learn.js';
 
 /** Build the web app. db is Firestore (or the in-memory stand-in); storage is Cloud Storage (or memory). */
-export async function buildApp({ db, storage, logger = true, orgId = config.orgId, serveStatic = true } = {}) {
+export async function buildApp({ db, storage, logger = true, serveStatic = true } = {}) {
   const app = Fastify({
-    logger: logger && { level: config.production ? 'info' : 'warn', redact: ['req.headers.cookie', 'req.body.pin'] },
+    logger: logger && { level: config.production ? 'info' : 'warn', redact: ['req.headers.cookie', 'req.body.pin', 'req.body.password', 'req.body.code'] },
     trustProxy: config.trustProxy,
     bodyLimit: 3 * 1024 * 1024, // JSON bodies; documents can be long. Files go through multipart.
   });
   app.decorate('db', db);
+  // Every route, so the isolation tests can check each one (test/isolation.test.js).
+  const routeList = [];
+  app.decorate('routeList', routeList);
+  app.addHook('onRoute', r => { for (const m of [].concat(r.method)) if (m !== 'HEAD') routeList.push({ method: m, url: r.url }); });
   app.decorate('storage', storage);
-  app.decorate('orgId', orgId);
 
   await app.register(helmet, {
     contentSecurityPolicy: {
@@ -58,9 +63,11 @@ export async function buildApp({ db, storage, logger = true, orgId = config.orgI
   await app.register(myRoutes);
   await app.register(fileRoutes);
   await app.register(adminRoutes);
+  await app.register(platformRoutes);
+  await app.register(learnRoutes);
 
   app.get('/api/healthz', async () => {
-    await db.collection('orgs').doc(orgId).get();
+    await db.collection('counters').doc('platform').get();
     return { ok: true };
   });
 

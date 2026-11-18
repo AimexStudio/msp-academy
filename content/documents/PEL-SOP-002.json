@@ -1,0 +1,108 @@
+{
+  "code": "PEL-SOP-002",
+  "title": "Handling Complaints and Food Returns",
+  "kind": "sop",
+  "summary": "How the waitron, Duty Manager and kitchen handle a complaint or returned dish using H.E.A.R.D., and how it is recorded in Pilot.",
+  "body": "## 1. PURPOSE\n\nTo make sure that every complaint and returned dish is handled quickly, calmly and consistently by the service and kitchen teams, so that the guest leaves satisfied and the correct record is kept in Pilot.\n\n## 2. SCOPE\n\nThis SOP applies to all front of house staff, the Duty Manager and the kitchen team, on the restaurant floor and in the kitchen.\n\n## 3. ROLES AND RESPONSIBILITIES\n\n### 3.1 Front of house staff\n\n- Remove the dish the guest is unhappy with immediately.\n- Follow the H.E.A.R.D. method: **H**ear, **E**mpathise, **A**pologise, **R**esolve, **D**elight (trained in PEL-MAN-004 FOH Training Manual, Module 4).\n- Alert the Duty Manager and the kitchen so that the table is prioritised.\n- Keep Pilot accurate: ring up the replacement dish, or flag the item for the Duty Manager to adjust, so that the bill is correct.\n\n### 3.2 Duty Manager\n\n- Visit the table within 2 minutes of being told about the complaint.\n- Agree a solution that meets the guest’s expectations.\n- Authorise any void or discount in Pilot.\n- Record the complaint in the handover notes (see PEL-SOP-004 Duty Manager Procedure).\n\n### 3.3 Kitchen\n\n- Treat a returned dish as the first priority.\n- Tell the Duty Manager how long the replacement will take.\n\n## 4. PROCEDURE\n\n### 4.1 The immediate response (the waitron)\n\n1.  **Hear:** listen without interrupting. Let the guest finish speaking. Do not get defensive or make excuses (for example, “we are very busy tonight”).\n2.  **Empathise and apologise** sincerely, without blaming the kitchen or a colleague.\n3.  **Remove the plate.** If the complaint is about a dish, take it off the table immediately. Never leave an unsatisfactory plate in front of the guest while you “check with the kitchen”.\n\n> **Say:** *“I am so sorry that the steak wasn’t cooked to your liking. I completely understand your disappointment.”*\n\n### 4.2 Telling the kitchen\n\n- **Priority one:** a returned dish becomes the number one priority in the kitchen and goes to the front of the queue.\n- **Clear communication:** the waitron tells the Head Chef (or the chef on the pass) exactly what is needed, for example: “Table 10, recook, medium-rare sirloin.”\n\n### 4.3 Duty Manager intervention (the table touch)\n\n- **Hand-off:** the waitron tells the Duty Manager immediately after removing the plate.\n- **Table visit:** the Duty Manager visits the table within 2 minutes and confirms the solution with the guest.\n\n> **Say:** *“I’ve put your new steak at the front of the line; it will be out in 4 minutes.”*\n\n### 4.4 Resolution and the bill\n\n- **Quality check:** where possible, the Duty Manager (not the waitron) delivers the replacement dish to make sure it is right.\n- **Delight:** check back after two bites that the replacement is perfect, and thank the guest for telling us.\n- **Pilot adjustment** (authorised by the Duty Manager only):\n  - If the dish was partly eaten but was unsatisfactory: apply a discount (for example 50%).\n  - If the dish was rejected completely: void the item in Pilot using the Management Void code.\n- **Record:** note the table, the dish, the reason and the action taken in the handover notes.\n\n> **Food safety complaints:** If a guest reports a possible allergic reaction, a foreign object in food or feeling ill, call the Duty Manager immediately, keep the dish aside for inspection and do not argue about the cause. The Duty Manager records the incident and informs the General Manager.\n\n## 5. RELATED DOCUMENTS\n\n- PEL-SOP-001 Steps of Service\n- PEL-SOP-004 Duty Manager Procedure\n- PEL-MAN-001 Pilot POS Operating Manual\n- PEL-POL-001 Staff Handbook (section 8.3, Service language and complaint handling)\n",
+  "estMinutes": 8,
+  "order": 102,
+  "audience": {
+    "all": false,
+    "positions": [
+      "headwaiter",
+      "waitron",
+      "runner",
+      "deli",
+      "host",
+      "bartender",
+      "dm",
+      "rm",
+      "headchef",
+      "chef",
+      "kitchenasst"
+    ]
+  },
+  "appliesText": "All FOH staff, the Duty Manager and the kitchen team",
+  "issueDate": "10 June 2026",
+  "questions": [
+    {
+      "q": "A guest is unhappy with their dish. What do you do with the plate?",
+      "options": [
+        "Leave it until the replacement arrives",
+        "Remove it from the table immediately",
+        "Ask the guest to finish it first",
+        "Leave it while you check with the kitchen"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What does the H in H.E.A.R.D. stand for?",
+      "options": [
+        "Hold",
+        "Help",
+        "Hear",
+        "Hurry"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "How quickly must the Duty Manager visit the table after hearing about a complaint?",
+      "options": [
+        "Within 2 minutes",
+        "Before the guest leaves",
+        "Within 15 minutes",
+        "Only if the guest asks"
+      ],
+      "correct": 0
+    },
+    {
+      "q": "Where does a returned dish go in the kitchen?",
+      "options": [
+        "After the current orders are done",
+        "Nowhere until the Duty Manager approves it",
+        "To the front of the queue, as the first priority",
+        "To the back of the queue"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "A guest rejected a dish completely. How is it handled in Pilot?",
+      "options": [
+        "It stays on the bill",
+        "The Duty Manager voids it with the Management Void code",
+        "The waitron deletes it from the bill",
+        "The guest pays half"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "A guest says they may be having an allergic reaction. What do you do?",
+      "options": [
+        "Offer a discount on the bill",
+        "Call the Duty Manager immediately and keep the dish aside",
+        "Throw the dish away straight away",
+        "Explain that the dish has no allergens"
+      ],
+      "correct": 1
+    }
+  ],
+  "passMark": 80,
+  "pdf": {
+    "id": "e7a1d88e1845658d7484f4a6cf5ef628",
+    "name": "PEL-SOP-002 Handling Complaints and Food Returns.pdf",
+    "size": 146507
+  },
+  "pdfFile": "PEL-SOP-002 Handling Complaints and Food Returns.pdf",
+  "status": "draft",
+  "version": 2,
+  "minor": 0,
+  "firstPublishedAt": null,
+  "publishedAt": null,
+  "createdAt": "2026-10-19T19:10:00.000Z",
+  "updatedAt": "2026-10-19T19:10:00.000Z",
+  "versions": [],
+  "hold": null,
+  "source": "G:/Shared drives/Pelagos Langebaan SOPs/2. Pelagos Langebaan SOPs 2026",
+  "videos": [],
+  "requireVideo": true
+}

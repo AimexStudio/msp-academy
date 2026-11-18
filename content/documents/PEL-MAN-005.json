@@ -1,0 +1,96 @@
+{
+  "code": "PEL-MAN-005",
+  "title": "New Staff Induction Guide",
+  "kind": "manual",
+  "summary": "A practical summary of the standards every new employee needs from day one.",
+  "body": "## 1. PURPOSE OF THIS GUIDE\n\nThis guide gives new employees a practical summary of the standards they need from day one. It does not replace the Staff Handbook (PEL-POL-001) or your contract of employment.\n\n## 2. WELCOME TO PELAGOS\n\n- Pelagos is a premium-casual restaurant focused on quality, consistency and real hospitality.\n- Be warm, polished, respectful and reliable in every interaction.\n- Guests must feel welcome from arrival to departure.\n\n## 3. FIRST-DAY ESSENTIALS\n\n- Arrive on time and in full uniform.\n- Bring your identification and any documents requested by management.\n- Sign the Fingerprint Clocking Consent form (PEL-FRM-002) so that your fingerprint can be registered on Pilot. From then on, clock in and out on Pilot at every shift (Staff Handbook, section 4.4).\n- Know who your manager, supervisor or trainer is for the shift.\n- Ask questions early rather than guessing.\n\n## 4. CONDUCT RULES\n\n- Be respectful to guests, colleagues, residents and suppliers.\n- No gossip, shouting, arguments or personal drama in guest areas.\n- No alcohol or drugs while on duty or before reporting for work.\n- No unauthorised use of company property, stock or information.\n\n## 5. SERVICE BASICS\n\n- Acknowledge every guest within 30 seconds, even if you are busy.\n- Greet guests as Mr, Mrs or Ms with their surname, or by their first name once they offer it. Do not use “ma’am”.\n- Smile, make eye contact and listen before responding.\n- If you do not know the answer, say “Let me find out for you.”\n- Repeat orders back and communicate allergies or changes clearly.\n- Pelagos is cashless: we never accept cash from a guest. If a guest offers cash, politely explain this and offer to take payment by card.\n\n## 6. HYGIENE AND APPEARANCE\n\n- Your uniform must be clean, pressed and complete (Staff Handbook, section 7.2).\n- Closed, non-slip shoes are compulsory.\n- Hair must be neat and tied back where required.\n- Wash your hands often and keep your nails short and clean. Kitchen staff may not wear nail polish or false nails.\n\n## 7. MOBILE PHONES AND BREAKS\n\n- Personal phones may not be kept on your person while on duty unless management authorises it.\n- At the start of your shift, store your phone in your locker or hand it in at the Duty Manager’s office. Use it only during approved breaks (Staff Handbook, section 6.3).\n- Take your breaks outside the restricted periods and return on time, ready to work (Staff Handbook, section 4.2).\n\n## 8. FOOD SAFETY REMINDERS\n\n- Follow FIFO and labelling rules.\n- Keep raw and cooked foods separate.\n- Use the correct colour-coded boards and clean as you go.\n- Report anything unsafe immediately.\n\n## 9. ESTATE RULES\n\n- Use approved estate access points and follow security instructions.\n- Park only in authorised areas.\n- Behave professionally on the estate at all times.\n- Report suspicious behaviour or incidents immediately.\n\n## 10. EMERGENCIES\n\n- Stay calm and inform management immediately.\n- Follow evacuation, fire, medical or security instructions without delay.\n- Never hide an accident, injury or unsafe condition.\n- Estate 24/7 emergency number: **081 829 3355**. Ambulance: **10177** (or **112** from a cellphone).\n\n## 11. WHERE TO FIND MORE\n\n| **Document**    | **What it covers**                                                                                                    |\n|-----------------|-----------------------------------------------------------------------------------------------------------------------|\n| **PEL-POL-001** | Staff Handbook: the full rules, including breaks, clocking, pay, leave, public holidays, phones, uniforms and hygiene |\n| **PEL-POL-002** | Disciplinary Code and Probation Policy                                                                                |\n| **PEL-SOP-001** | Steps of Service (front of house)                                                                                     |\n| **PEL-SOP-007** | Kitchen Hygiene (kitchen staff)                                                                                       |\n| **PEL-MAN-004** | FOH Training Manual (front of house training)                                                                         |\n| **PEL-MEM-015** | Hourly pay calendar (cut-off dates and paydays)                                                                       |\n\n## 12. RELATED DOCUMENTS\n\n- PEL-SOP-011 Staff Onboarding (Day 1 induction)\n- PEL-POL-001 Staff Handbook\n- PEL-FRM-001 SOP and Memo Acknowledgement Record\n- PEL-FRM-002 Fingerprint Clocking Consent Form\n",
+  "estMinutes": 8,
+  "order": 205,
+  "audience": {
+    "all": true,
+    "positions": []
+  },
+  "appliesText": "Every new employee, issued on Day 1 of induction (see PEL-SOP-011)",
+  "issueDate": "7 June 2026",
+  "questions": [
+    {
+      "q": "What must you sign on Day 1 so that your fingerprint can be registered?",
+      "options": [
+        "The Disciplinary Code",
+        "The Fingerprint Clocking Consent form (PEL-FRM-002)",
+        "Nothing",
+        "A leave form"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Within how long must every guest be acknowledged?",
+      "options": [
+        "When you are free",
+        "2 minutes",
+        "30 seconds",
+        "5 minutes"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "A guest asks something you don't know. What do you say?",
+      "options": [
+        "\"I don't know.\"",
+        "\"Ask someone else.\"",
+        "\"Let me find out for you.\"",
+        "\"Not my department.\""
+      ],
+      "correct": 2
+    },
+    {
+      "q": "What is the estate's 24/7 emergency number?",
+      "options": [
+        "081 829 3355",
+        "The restaurant landline",
+        "10111",
+        "The Duty Manager's cellphone"
+      ],
+      "correct": 0
+    },
+    {
+      "q": "What do you do about an accident, injury or unsafe condition?",
+      "options": [
+        "Report it at month-end",
+        "Fix it quietly yourself",
+        "Never hide it; inform management immediately",
+        "Ignore it if it is minor"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "A guest offers to pay in cash. What do you do?",
+      "options": [
+        "Ask the Duty Manager to take the cash",
+        "Politely explain that Pelagos is cashless and offer card payment",
+        "Put it in the tip jar",
+        "Take the cash and give change"
+      ],
+      "correct": 1
+    }
+  ],
+  "passMark": 80,
+  "pdf": {
+    "id": "6ae3778d79bee0ebec5935216c3aebb9",
+    "name": "PEL-MAN-005 New Staff Induction Guide.pdf",
+    "size": 159161
+  },
+  "pdfFile": "PEL-MAN-005 New Staff Induction Guide.pdf",
+  "status": "draft",
+  "version": 2,
+  "minor": 0,
+  "firstPublishedAt": null,
+  "publishedAt": null,
+  "createdAt": "2026-10-19T19:10:00.000Z",
+  "updatedAt": "2026-10-19T19:10:00.000Z",
+  "versions": [],
+  "hold": null,
+  "source": "G:/Shared drives/Pelagos Langebaan SOPs/2. Pelagos Langebaan SOPs 2026",
+  "videos": [],
+  "requireVideo": true
+}

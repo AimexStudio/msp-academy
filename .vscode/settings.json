@@ -1,0 +1,1 @@
+{ "editor.tabSize": 2, "files.eol": "\n", "files.exclude": { "node_modules": true }, "search.exclude": { "emulator-data": true, "content/files": true } }

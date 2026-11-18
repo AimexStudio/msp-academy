@@ -1,0 +1,86 @@
+{
+  "code": "PEL-MEM-015",
+  "title": "Hourly Pay Calendar 2026 to 2027",
+  "kind": "memo",
+  "summary": "The cut-off dates and paydays for hourly-paid staff from October 2026 to December 2027.",
+  "body": "This memo gives hourly-paid staff the cut-off dates and paydays from October 2026 to December 2027. A new calendar is issued each year.\n\n- Each month’s pay covers the hours worked from the **21st of the previous month to the 20th of the current month**. Hours worked after the 20th are paid in the following month.\n- Payday is the **last day of the month**, or the **last working day before it** if that day is a weekend or public holiday. The full pay rules are in the Staff Handbook (PEL-POL-001), section 5.1. If you have questions, please speak to Management.\n\n| **Pay month**      | **Hours worked**                    | **Payday**              |\n|--------------------|-------------------------------------|-------------------------|\n| **October 2026**   | 21 September to 20 October 2026     | Friday 30 October 2026  |\n| **November 2026**  | 21 October to 20 November 2026      | 30 November 2026        |\n| **December 2026**  | 21 November to 20 December 2026     | 31 December 2026        |\n| **January 2027**   | 21 December 2026 to 20 January 2027 | Friday 29 January 2027  |\n| **February 2027**  | 21 January to 20 February 2027      | Friday 26 February 2027 |\n| **March 2027**     | 21 February to 20 March 2027        | 31 March 2027           |\n| **April 2027**     | 21 March to 20 April 2027           | 30 April 2027           |\n| **May 2027**       | 21 April to 20 May 2027             | 31 May 2027             |\n| **June 2027**      | 21 May to 20 June 2027              | 30 June 2027            |\n| **July 2027**      | 21 June to 20 July 2027             | Friday 30 July 2027     |\n| **August 2027**    | 21 July to 20 August 2027           | 31 August 2027          |\n| **September 2027** | 21 August to 20 September 2027      | 30 September 2027       |\n| **October 2027**   | 21 September to 20 October 2027     | Friday 29 October 2027  |\n| **November 2027**  | 21 October to 20 November 2027      | 30 November 2027        |\n| **December 2027**  | 21 November to 20 December 2027     | 31 December 2027        |\n\nThank you for your cooperation.\n",
+  "estMinutes": 6,
+  "order": 415,
+  "audience": {
+    "all": true,
+    "positions": []
+  },
+  "appliesText": "All staff",
+  "issueDate": "18 October 2026",
+  "questions": [
+    {
+      "q": "What is the monthly cut-off for hourly pay?",
+      "options": [
+        "The 24th",
+        "The 20th",
+        "The 25th",
+        "The last day of the month"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "November 2026 pay covers which hours?",
+      "options": [
+        "1 to 30 November 2026",
+        "25 October to 24 November 2026",
+        "21 October to 20 November 2026",
+        "1 to 20 November 2026"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "When is payday for October 2026?",
+      "options": [
+        "Tuesday 20 October 2026",
+        "Friday 30 October 2026",
+        "Saturday 31 October 2026",
+        "Monday 2 November 2026"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Payday falls on a weekend or public holiday. When are you paid?",
+      "options": [
+        "On the weekend day",
+        "The next month",
+        "The Monday after",
+        "On the last working day before it"
+      ],
+      "correct": 3
+    },
+    {
+      "q": "Where are the full pay rules?",
+      "options": [
+        "Only in your contract",
+        "In the Disciplinary Code",
+        "Nowhere",
+        "In the Staff Handbook (PEL-POL-001), section 5.1"
+      ],
+      "correct": 3
+    }
+  ],
+  "passMark": 80,
+  "pdf": {
+    "id": "c4161d99579436de24c6a799106f7c9d",
+    "name": "PEL-MEM-015 Hourly Pay Calendar 2026 to 2027.pdf",
+    "size": 126283
+  },
+  "pdfFile": "PEL-MEM-015 Hourly Pay Calendar 2026 to 2027.pdf",
+  "status": "draft",
+  "version": 1,
+  "minor": 0,
+  "firstPublishedAt": null,
+  "publishedAt": null,
+  "createdAt": "2026-10-19T19:10:00.000Z",
+  "updatedAt": "2026-10-19T19:10:00.000Z",
+  "versions": [],
+  "hold": null,
+  "source": "G:/Shared drives/Pelagos Langebaan SOPs/2. Pelagos Langebaan SOPs 2026",
+  "videos": [],
+  "requireVideo": true
+}

@@ -1,0 +1,11 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    { "label": "Set up local data (first time)", "type": "shell", "command": "npm install && npm run setup", "problemMatcher": [] },
+    { "label": "Start the portal (Firebase emulators)", "type": "shell", "command": "npm start", "isBackground": true, "problemMatcher": [] },
+    { "label": "Start Firestore and Storage only (for F5 debugging)", "type": "shell", "command": "npm run emulators", "isBackground": true, "problemMatcher": [] },
+    { "label": "Reset local data", "type": "shell", "command": "npm run reset", "problemMatcher": [] },
+    { "label": "Run tests", "type": "shell", "command": "npm test", "group": { "kind": "test", "isDefault": true }, "problemMatcher": [] },
+    { "label": "Run tests against the Firestore emulator", "type": "shell", "command": "npm run test:emulator", "problemMatcher": [] }
+  ]
+}

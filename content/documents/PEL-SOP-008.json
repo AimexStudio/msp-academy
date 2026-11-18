@@ -1,0 +1,109 @@
+{
+  "code": "PEL-SOP-008",
+  "title": "Housekeeping",
+  "kind": "sop",
+  "summary": "Cleaning standards, methods and schedules for every Villa Del Mare area that Pelagos housekeeping services.",
+  "body": "## 1. PURPOSE\n\nTo set clear, consistent and high cleaning standards across all Villa Del Mare Estate facilities that Pelagos services, so that every area is hygienic, safe and professionally presented for guests, residents, owners and staff.\n\n## 2. SCOPE\n\nThis SOP applies to all housekeeping staff and covers the following areas:\n\n|                                     |                           |\n|-------------------------------------|---------------------------|\n| Restaurant and restaurant bathrooms | Braai Room                |\n| Function Hall and store room        | Gym                       |\n| Spectrum offices                    | Squash courts             |\n| Meeting room                        | Indoor swimming pool area |\n| Estate Manager office               | Staff room                |\n| Reception                           | Staff toilets             |\n| Co-working cubicles                 | Guardhouse                |\n| Public toilets                      | Sports field toilets      |\n\n## 3. ROLES AND RESPONSIBILITIES\n\n### 3.1 Housekeeping staff\n\n- Complete all cleaning tasks according to the schedule in sections 6 and 7.\n- Maintain cleanliness standards at all times.\n- Report damage, leaks or hazards to the Supervisor immediately.\n- Replenish consumables (hand soap, toilet paper, paper towels) during every clean.\n- Sign the daily log sheet after completing each task.\n\n### 3.2 Housekeeping Supervisor\n\n- Inspect all areas daily.\n- Make sure the cleaning schedule is followed.\n- Sign off the daily log sheets.\n- Address performance or hygiene issues immediately.\n- Pass maintenance faults to the Maintenance Worker and record them in the fault log (see PEL-SOP-009 Maintenance).\n\n## 4. CLEANING STANDARDS AND METHODS\n\n### 4.1 Laminate floors\n\n- Sweep with a microfibre broom.\n- Mop with a damp (not wet) mop and a laminate-safe cleaner.\n- Clean spills immediately to prevent damage.\n\n### 4.2 Loose carpets and rugs\n\n- Vacuum daily.\n- Shake out smaller rugs where possible.\n- Spot-clean stains with the correct cleaner.\n\n### 4.3 Windows and glass\n\n- Wash all windows and sliding doors weekly.\n- Dust frames and vacuum the sliding door tracks.\n- Clean glass with a streak-free solution, paying attention to fingerprints and smudges.\n\n### 4.4 Bathrooms and toilets\n\n- Disinfect all surfaces.\n- Clean toilets, urinals and basins thoroughly.\n- Polish mirrors.\n- Mop floors with disinfectant.\n- Replenish supplies at every clean.\n\n### 4.5 High-touch surfaces\n\n- Door handles, light switches, counters and railings.\n- Clean several times a day in high-traffic areas.\n\n## 5. AREA-SPECIFIC PROCEDURES\n\n### 5.1 Restaurant\n\n- Clean tables and chairs after use.\n- Sweep and mop floors daily.\n- Sanitise counters and service areas.\n\n### 5.2 Restaurant bathrooms\n\n- Clean every 2 hours (see the times in section 7).\n- Fully disinfect all fixtures.\n- Restock supplies.\n\n### 5.3 Function Hall and store room\n\n- Clean twice a week.\n- Dust storage shelves.\n- Remove clutter and waste.\n\n### 5.4 Offices, reception, meeting room, co-working cubicles and guardhouse\n\n- Weekly deep clean every Thursday.\n- Dust all surfaces and electronics carefully.\n- Clean floors and windows.\n\n### 5.5 Public toilets\n\n- Clean 3 times a day (08:00, 12:00 and 16:00).\n- Fully disinfect at every clean.\n\n### 5.6 Staff toilets and sports field toilets\n\n- Clean 2 times a day (08:00 and 14:00).\n- Fully disinfect at every clean.\n\n### 5.7 Braai Room, gym, squash courts, indoor pool area and staff room\n\n- Clean once a day.\n- Disinfect gym equipment.\n- Make sure the pool area floors are dry and safe.\n- Clean windows weekly.\n\n## 6. CLEANING FREQUENCY SUMMARY\n\n| **Area**                                                              | **Frequency**                                |\n|-----------------------------------------------------------------------|----------------------------------------------|\n| **Restaurant**                                                        | Daily, plus tables and chairs after each use |\n| **Restaurant bathrooms**                                              | Every 2 hours                                |\n| **Function Hall and store room**                                      | Twice a week                                 |\n| **Offices, reception, meeting room, co-working cubicles, guardhouse** | Weekly deep clean (Thursday)                 |\n| **Public toilets**                                                    | 3 times a day                                |\n| **Staff toilets and sports field toilets**                            | 2 times a day                                |\n| **Braai Room, gym, squash courts, indoor pool area, staff room**      | Daily                                        |\n| **Windows and sliding doors (all areas)**                             | Weekly                                       |\n| **High-touch surfaces**                                               | Several times a day in high-traffic areas    |\n\n## 7. DAILY CLEANING SCHEDULE\n\n| **Time**           | **Task**                                       |\n|--------------------|------------------------------------------------|\n| **06:00 to 08:00** | Initial full clean of all areas due that day   |\n| **08:00 to 18:00** | Ongoing maintenance cleaning and toilet rounds |\n\n### Toilet rounds\n\n| **Area**                                   | **Clean at**                             |\n|--------------------------------------------|------------------------------------------|\n| **Restaurant bathrooms**                   | 08:00, 10:00, 12:00, 14:00, 16:00, 18:00 |\n| **Public toilets**                         | 08:00, 12:00, 16:00                      |\n| **Staff toilets and sports field toilets** | 08:00, 14:00                             |\n\nRecord every toilet round on the Toilet Cleaning Checklist (PEL-CHK-006), one sheet per area per day. The Supervisor signs it off at the end of the day.\n\n## 8. CHEMICAL USE\n\n- Use the correct cleaning chemical for each surface.\n- Never mix chemicals.\n- Follow the dilution instructions on the label.\n- Keep chemicals in their original, labelled containers and store them safely, away from food.\n\n## 9. HEALTH AND SAFETY\n\n- Wear PPE. Gloves are compulsory.\n- Put out wet floor signs whenever floors are wet.\n- Report hazards immediately.\n- Make sure there is proper ventilation when cleaning.\n\n## 10. QUALITY CONTROL AND RECORD KEEPING\n\n- All cleaning must be recorded on the daily log sheets.\n- Staff sign the log sheet after completing each task.\n- The Supervisor inspects all areas and signs off the log sheets daily.\n- Any issues found during inspection must be corrected immediately.\n\n## 11. RELATED DOCUMENTS\n\n- PEL-CHK-006 Toilet Cleaning Checklist\n- PEL-SOP-009 Maintenance\n- PEL-SOP-010 Planned Preventative Maintenance\n- PEL-POL-001 Staff Handbook (section 7, Uniform, grooming and hygiene)\n",
+  "estMinutes": 10,
+  "order": 108,
+  "audience": {
+    "all": false,
+    "positions": [
+      "hksup",
+      "housekeeper"
+    ]
+  },
+  "appliesText": "All housekeeping staff and the Housekeeping Supervisor",
+  "issueDate": "7 June 2026",
+  "questions": [
+    {
+      "q": "How often are the restaurant bathrooms cleaned?",
+      "options": [
+        "Once a day",
+        "Every 2 hours, from 08:00 to 18:00",
+        "Twice a day",
+        "Every 4 hours"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "When are the public toilets cleaned?",
+      "options": [
+        "08:00, 12:00 and 16:00",
+        "Every hour",
+        "Only in the morning",
+        "08:00 and 14:00"
+      ],
+      "correct": 0
+    },
+    {
+      "q": "When is the weekly deep clean of the offices, reception, meeting room, co-working cubicles and guardhouse?",
+      "options": [
+        "Every Monday",
+        "Every Thursday",
+        "Once a month",
+        "Every Saturday"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What is the rule for cleaning chemicals?",
+      "options": [
+        "Decant them into unlabelled bottles",
+        "Never mix them, and follow the dilution instructions on the label",
+        "Store them with food",
+        "Mix them for a stronger clean"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What do you do after completing each cleaning task?",
+      "options": [
+        "Sign the daily log sheet",
+        "Send a photo to the staff group",
+        "Nothing",
+        "Tell a guest"
+      ],
+      "correct": 0
+    },
+    {
+      "q": "Which PPE is compulsory?",
+      "options": [
+        "Safety goggles at all times",
+        "None",
+        "A hairnet",
+        "Gloves"
+      ],
+      "correct": 3
+    },
+    {
+      "q": "Where do you record every toilet round?",
+      "options": [
+        "On the Toilet Cleaning Checklist (PEL-CHK-006), one sheet per area per day",
+        "Nowhere",
+        "In the Blue File",
+        "In the WhatsApp group"
+      ],
+      "correct": 0
+    }
+  ],
+  "passMark": 80,
+  "pdf": {
+    "id": "7cb05a5c3e026eba90f94aa00f214223",
+    "name": "PEL-SOP-008 Housekeeping.pdf",
+    "size": 190855
+  },
+  "pdfFile": "PEL-SOP-008 Housekeeping.pdf",
+  "status": "draft",
+  "version": 2,
+  "minor": 0,
+  "firstPublishedAt": null,
+  "publishedAt": null,
+  "createdAt": "2026-10-19T19:10:00.000Z",
+  "updatedAt": "2026-10-19T19:10:00.000Z",
+  "versions": [],
+  "hold": null,
+  "source": "G:/Shared drives/Pelagos Langebaan SOPs/2. Pelagos Langebaan SOPs 2026",
+  "videos": [],
+  "requireVideo": true
+}

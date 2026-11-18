@@ -1,0 +1,86 @@
+{
+  "code": "PEL-MEM-009",
+  "title": "Notice of Formal Performance and Suitability Reviews",
+  "kind": "memo",
+  "summary": "Formal performance and suitability reviews: what they are and how they will work.",
+  "body": "Since opening, we have worked hard to establish what Pelagos stands for. As we move into the next phase of our operations, we must keep a high standard of excellence and accountability in every department.\n\nTo make sure we are meeting our operational goals and giving guests the level of service they expect, formal performance reviews will be held over the coming weeks. These reviews are a standard requirement under your signed employment contract. Their purpose is to formally assess your current performance and your ongoing suitability for your position.\n\n### How the reviews will work\n\n- **Manager-led:** your line manager will conduct your review. They will assess your output, your technical skills and how well you meet the standards in your job description and our SOPs.\n- **Suitability:** we will look at how each team member’s work matches our brand values and the long-term needs of the role, so that every role is done at the level of professionalism we need.\n- **Your input:** you will have the chance to comment on your review and raise any support or training you need.\n\nThis is a formal assessment, but it is also an important tool for your development. It will show where you are doing well and where improvement is needed, so that everyone in the team is set up to succeed in their role.\n\nYour line manager will give you a date and time for your review.\n\nThank you for your continued commitment to the standards we are building together.\n\nThank you for your cooperation.\n",
+  "estMinutes": 5,
+  "order": 409,
+  "audience": {
+    "all": true,
+    "positions": []
+  },
+  "appliesText": "All staff",
+  "issueDate": "26 June 2026",
+  "questions": [
+    {
+      "q": "Who conducts your performance review?",
+      "options": [
+        "A colleague",
+        "A guest",
+        "A supplier",
+        "Your line manager"
+      ],
+      "correct": 3
+    },
+    {
+      "q": "What do the reviews assess?",
+      "options": [
+        "Only your attendance",
+        "Your tips",
+        "Your current performance and your ongoing suitability for your position",
+        "Your personal life"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Under what are the reviews a standard requirement?",
+      "options": [
+        "Nothing",
+        "Your signed employment contract",
+        "The estate rules",
+        "The liquor licence"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Will you have a chance to give your input?",
+      "options": [
+        "Only a year later, in writing",
+        "Only through a lawyer",
+        "Yes, to comment and to raise support or training you need",
+        "No"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Who gives you the date and time of your review?",
+      "options": [
+        "You choose it",
+        "The guests",
+        "Your line manager",
+        "Head office by post"
+      ],
+      "correct": 2
+    }
+  ],
+  "passMark": 80,
+  "pdf": {
+    "id": "200cc5d3ea99e4cbf947f42eae4d226c",
+    "name": "PEL-MEM-009 Notice of Formal Performance and Suitability Reviews.pdf",
+    "size": 108599
+  },
+  "pdfFile": "PEL-MEM-009 Notice of Formal Performance and Suitability Reviews.pdf",
+  "status": "draft",
+  "version": 2,
+  "minor": 0,
+  "firstPublishedAt": null,
+  "publishedAt": null,
+  "createdAt": "2026-10-19T19:10:00.000Z",
+  "updatedAt": "2026-10-19T19:10:00.000Z",
+  "versions": [],
+  "hold": null,
+  "source": "G:/Shared drives/Pelagos Langebaan SOPs/2. Pelagos Langebaan SOPs 2026",
+  "videos": [],
+  "requireVideo": true
+}

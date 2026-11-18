@@ -1,0 +1,114 @@
+{
+  "orgName": "Pelagos Langebaan",
+  "courseTitle": "Pelagos Langebaan SOPs and Policies",
+  "declarationText": "I, {name} ({position}), confirm that I have received, read and understood the following Standard Operating Procedures (SOPs), manuals, policies and staff memos, and that I will follow the standards and policies they set out. Where I did not understand something, I asked my manager to explain it.",
+  "departments": [
+    {
+      "id": "mgmt",
+      "name": "Management"
+    },
+    {
+      "id": "foh",
+      "name": "Front of House"
+    },
+    {
+      "id": "bar",
+      "name": "Bar"
+    },
+    {
+      "id": "kitchen",
+      "name": "Kitchen"
+    },
+    {
+      "id": "hk",
+      "name": "Housekeeping"
+    },
+    {
+      "id": "maint",
+      "name": "Maintenance"
+    }
+  ],
+  "positions": [
+    {
+      "id": "gm",
+      "name": "General Manager",
+      "dept": "mgmt"
+    },
+    {
+      "id": "rm",
+      "name": "FOH Manager",
+      "dept": "mgmt"
+    },
+    {
+      "id": "fnb",
+      "name": "F&B Administrator",
+      "dept": "mgmt"
+    },
+    {
+      "id": "dm",
+      "name": "Duty Manager",
+      "dept": "mgmt"
+    },
+    {
+      "id": "headwaiter",
+      "name": "Head Waiter",
+      "dept": "foh"
+    },
+    {
+      "id": "waitron",
+      "name": "Waitron",
+      "dept": "foh"
+    },
+    {
+      "id": "runner",
+      "name": "Runner",
+      "dept": "foh"
+    },
+    {
+      "id": "deli",
+      "name": "Deli Assistant",
+      "dept": "foh"
+    },
+    {
+      "id": "host",
+      "name": "Host / Reception",
+      "dept": "foh"
+    },
+    {
+      "id": "bartender",
+      "name": "Bartender",
+      "dept": "bar"
+    },
+    {
+      "id": "headchef",
+      "name": "Head Chef",
+      "dept": "kitchen"
+    },
+    {
+      "id": "chef",
+      "name": "Chef",
+      "dept": "kitchen"
+    },
+    {
+      "id": "kitchenasst",
+      "name": "Kitchen Assistant",
+      "dept": "kitchen"
+    },
+    {
+      "id": "hksup",
+      "name": "Housekeeping Supervisor",
+      "dept": "hk"
+    },
+    {
+      "id": "housekeeper",
+      "name": "Housekeeper",
+      "dept": "hk"
+    },
+    {
+      "id": "maintenance",
+      "name": "Maintenance Worker",
+      "dept": "maint"
+    }
+  ],
+  "updatedAt": "2026-10-19T13:40:00.000Z"
+}

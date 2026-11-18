@@ -1,0 +1,37 @@
+{
+  "name": "pelagos-training-portal",
+  "version": "0.1.0",
+  "description": "Pelagos Langebaan staff training and SOP sign-off portal",
+  "scripts": {
+    "start": "node scripts/firebase-run.js start",
+    "setup": "node scripts/firebase-run.js setup",
+    "reset": "node -e \"require('fs').rmSync('emulator-data',{recursive:true,force:true})\" && node scripts/firebase-run.js setup",
+    "emulators": "node scripts/firebase-run.js emulators",
+    "dev": "node --watch src/server.js",
+    "demo": "node scripts/demo.js",
+    "test": "node --test --test-concurrency=1 test/*.test.js",
+    "test:emulator": "node scripts/firebase-run.js test",
+    "verify": "node scripts/verify-evidence.js",
+    "deploy": "firebase deploy --project pelagos-portal",
+    "load-live": "node scripts/load-live.js"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^11.1.5",
+    "@fastify/helmet": "^13.2.0",
+    "@fastify/multipart": "^9.4.0",
+    "@fastify/static": "^8.3.0",
+    "argon2": "^0.41.1",
+    "fastify": "^5.12.7",
+    "firebase-admin": "^13.10.0",
+    "firebase-functions": "^6.6.0"
+  },
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": "22"
+  },
+  "devDependencies": {
+    "firebase-tools": "^14.27.0"
+  },
+  "main": "src/functions.js"
+}

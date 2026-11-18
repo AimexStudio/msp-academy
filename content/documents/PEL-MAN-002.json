@@ -1,0 +1,103 @@
+{
+  "code": "PEL-MAN-002",
+  "title": "Maxiclub POS User Guide",
+  "kind": "manual",
+  "summary": "How to identify Maxiclub members at the till, and how to earn points, burn points and claim vouchers on a bill.",
+  "body": "## 1. PURPOSE\n\nThis guide is for staff at the till. It explains how to identify Maxiclub loyalty members and how to earn points, use points and claim vouchers on a bill. Screen names can differ between POS systems, but the loyalty steps are the same.\n\nMaxiclub rewards members for visiting. At the till you either **earn** (add points for a bill) or **burn** (use points or a voucher against a bill).\n\n## 2. HOW MAXICLUB WORKS AT PELAGOS LANGEBAAN\n\n- **Earning points:** members earn points by scanning the QR code printed at the bottom of the till slip with the Maxiclub app. Staff do not need to enter a code for this.\n- **Villa Del Mare owners’ 10% discount:** the owner shows the OTP from their Maxiclub app to the waitron. The waitron calls the Duty Manager, who applies the 10% owner discount.\n- Ask every table whether they are Maxiclub members before you close the bill (see PEL-SOP-001 Steps of Service).\n\n## 3. IDENTIFYING THE MEMBER\n\nThe member must be identified before any loyalty action. Accept any one of the following:\n\n| **How they identify**         | **What to enter**    | **Notes**                 |\n|-------------------------------|----------------------|---------------------------|\n| **Loyalty card**              | 16-digit card number | Swipe, type or scan       |\n| **OTP from the Maxiclub app** | 6-digit code         | Valid for 15 minutes      |\n| **Mobile number**             | 10-digit number      | Only if the POS allows it |\n\n- **OTP:** ask the member to open the Maxiclub app, open the menu and show the OTP. Type it in promptly. If it is older than 15 minutes, ask for a new one. Never reuse an OTP from an earlier table.\n- **QR code:** the member scans the QR code on the till slip with the Maxiclub app to earn points.\n- Once identified, the POS should keep that member on the table or bill until the bill is closed.\n\n## 4. A TYPICAL VISIT\n\n| **Step** | **Action**                | **How**                                                            |\n|----------|---------------------------|--------------------------------------------------------------------|\n| 1        | Identify the member       | Card, OTP or mobile number                                         |\n| 2        | If they want a reward now | Burn points or claim a voucher                                     |\n| 3        | Close the bill            | Earn at the till, or the member scans the till-slip QR code        |\n| 4        | Done                      | The member may get a push notification; the visit clears in 3 days |\n\nYou do not always do every step. Many visits are identify and earn only.\n\n> **Remember:** Apply a redeem or voucher **before** you finalise the bill, so the credit comes off the amount the member pays. Earning is usually done when the bill is closed.\n\n## 5. EARN (ACCRUAL)\n\nUse this when the member is paying a bill and should get points.\n\n1.  Identify the member on the bill.\n2.  Enter the bill amount (the sale you are earning points on).\n3.  Enter a bill reference if the POS asks for one (invoice, table or check number).\n4.  Confirm. You should see a success message such as “accumulation completed”.\n\nThe POS may fill in the waiter, table and product lines for you. You only need to make sure the right member is on the right bill. If the member has push notifications switched on, they are told about the points earned.\n\n## 6. BURN POINTS (REDEEM)\n\nUse this when the member wants to pay part of the bill with points. **100 points = R1.00** (1 point = 1 cent).\n\n1.  Identify the member.\n2.  Check the available points on the screen.\n3.  Enter how many points to redeem (not the rand amount).\n4.  Enter the bill amount before the credit is applied.\n5.  Enter the bill reference if asked.\n6.  Confirm.\n\nThe POS should refuse the redeem if there are not enough points, or if the rand value of the points is more than the bill. On success you get a credit amount to take off the bill, a new points balance and a reference. Put the credit on the bill before you take the remaining payment.\n\n## 7. CLAIM A VOUCHER (TICKET)\n\nUse this when the member wants to use a voucher (birthday voucher, free item, value voucher and so on).\n\n1.  Identify the member.\n2.  Open the member’s voucher or ticket list. Only active vouchers can be claimed.\n3.  Select the voucher they want to use.\n4.  Enter the bill amount and the bill reference if asked.\n5.  Confirm.\n- Some promotional vouchers are linked to specific menu items (PLU codes). They only appear on the list once those items are on the bill and you request the voucher list again. If the member expects a promo voucher and it is not listed, check that the qualifying item is on the bill, then list the vouchers again.\n- On success you get the voucher name and a credit to apply to the bill. Apply the credit before taking the rest of the payment.\n- A voucher can only be claimed once. If it is already claimed, expired or not valid at this store, the POS will reject it. Ask for another voucher or continue without it.\n\n## 8. QUICK REDEEM (REDEEM CODE)\n\nSome POS systems accept a redeem code from the member’s app. This is a shortcut: you do not need an OTP first.\n\n1.  The member opens Vouchers in the app, taps the voucher and shows the Redeem Code.\n2.  Enter the code (or scan it, if the POS allows).\n3.  The POS finds the member and the voucher.\n4.  Confirm the claim against the bill and apply the credit.\n\nRedeem codes expire quickly. If a code is rejected, ask the member to open the voucher again and give you a new code.\n\n## 9. WHAT TO SHOW ON THE BILL\n\nPrint only what identifies the visit, never the full card number:\n\n- the last 6 digits of the card;\n- the credit amount (if they redeemed points or claimed a voucher);\n- the loyalty reference; and\n- the time of the transaction.\n\n> **Privacy:** Never read the full card number out loud and never write it on a docket.\n\n## 10. AFTER THE VISIT\n\n- **Clearing:** every earn and redeem is held for 3 days so that fraud checks can run. Until it has cleared, the visit may not show in the member’s balance or statement. If a member asks why today’s points are not available yet, this is the reason.\n- **Push notifications:** members with push switched on in the app are notified of points earned and redeemed. Members without the app, or with push switched off, will not get the message.\n\n## 11. OTHER TILL FUNCTIONS\n\nDepending on the POS and your login, you may also be able to:\n\n- look up a member (name, points, number of vouchers, birthday, date joined);\n- view a statement (recent visits, earns, redeems and vouchers); and\n- update member details (mobile number, name, email, birthday, promotions opt-in).\n\nOnly do these if the Duty Manager allows it. Some logins can transact but cannot open statements or edit profiles.\n\n## 12. IF SOMETHING GOES WRONG\n\n| **What you see**                         | **What to do**                                                                                      |\n|------------------------------------------|-----------------------------------------------------------------------------------------------------|\n| **OTP not accepted**                     | It has expired (15 minutes) or was mistyped. Ask for a new OTP.                                     |\n| **Card not valid**                       | Re-enter the number. If it still fails, the card may be lost, blocked or not a Pelagos group card.  |\n| **Member not found**                     | Check that you used the card, OTP or mobile number correctly. A 6-digit OTP is not a mobile number. |\n| **Insufficient points**                  | Redeem fewer points, or skip the redeem.                                                            |\n| **Voucher already claimed or not found** | It cannot be used again. Choose another voucher or continue without it.                             |\n| **Bill less than redeem**                | Lower the points so that the credit is not more than the bill.                                      |\n| **Network error**                        | Wait and try again. Never tap earn or burn twice for the same bill.                                 |\n| **Member says points are missing**       | Today’s visit takes 3 days to clear. Check a statement if you can.                                  |\n\n> **Double transactions:** If the same bill is earned twice, the member is rewarded twice. If a redeem is sent twice, the second one should fail, but always check the bill so that the credit is not applied twice.\n\n## 13. WORDS YOU WILL SEE\n\n| **Term**             | **Meaning**                                     |\n|----------------------|-------------------------------------------------|\n| **Member**           | The loyalty customer                            |\n| **Earn / accrual**   | Points added for a bill                         |\n| **Burn / redeem**    | Points used as credit on a bill                 |\n| **Voucher / ticket** | A specific reward, often with an expiry date    |\n| **Claim**            | Using a voucher against this bill               |\n| **OTP**              | One-time PIN from the app, valid for 15 minutes |\n| **Points**           | The reward balance. 100 points = R1.00          |\n| **Bill reference**   | Your invoice, table or check number             |\n| **Clearing**         | The 3-day hold while fraud checks run           |\n\n## 14. RELATED DOCUMENTS\n\n- PEL-SOP-001 Steps of Service\n- PEL-MAN-001 Pilot POS Operating Manual\n",
+  "estMinutes": 14,
+  "order": 202,
+  "audience": {
+    "all": false,
+    "positions": [
+      "waitron",
+      "headwaiter",
+      "bartender",
+      "deli",
+      "dm",
+      "rm"
+    ]
+  },
+  "appliesText": "All staff who use the till: waitrons, bartenders, deli assistants and Duty Managers",
+  "issueDate": "",
+  "questions": [
+    {
+      "q": "How does a member earn points on a bill?",
+      "options": [
+        "They scan the QR code at the bottom of the till slip with the Maxiclub app",
+        "They phone Maxiclub",
+        "Automatically, by name",
+        "The waitron types in a code"
+      ],
+      "correct": 0
+    },
+    {
+      "q": "How long is an OTP from the Maxiclub app valid?",
+      "options": [
+        "1 week",
+        "24 hours",
+        "5 minutes",
+        "15 minutes"
+      ],
+      "correct": 3
+    },
+    {
+      "q": "How many points equal R1.00?",
+      "options": [
+        "10 points",
+        "1 point",
+        "100 points",
+        "1,000 points"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "When must a redeem or voucher be applied?",
+      "options": [
+        "After payment",
+        "Before you finalise the bill",
+        "Only at month-end",
+        "The next day"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Who applies the 10% Villa Del Mare owner discount?",
+      "options": [
+        "The owner, in the app",
+        "The waitron",
+        "The Duty Manager, after the owner shows their OTP",
+        "The kitchen"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "A network error appears during an earn. What do you do?",
+      "options": [
+        "Wait and try again; never tap earn or burn twice for the same bill",
+        "Give the guest cash back",
+        "Tap it several times",
+        "Cancel the bill"
+      ],
+      "correct": 0
+    }
+  ],
+  "passMark": 80,
+  "pdf": {
+    "id": "407f7ea5b4ab55652ddcaae03ea74051",
+    "name": "PEL-MAN-002 Maxiclub POS User Guide.pdf",
+    "size": 183070
+  },
+  "pdfFile": "PEL-MAN-002 Maxiclub POS User Guide.pdf",
+  "status": "draft",
+  "version": 1,
+  "minor": 0,
+  "firstPublishedAt": null,
+  "publishedAt": null,
+  "createdAt": "2026-10-19T19:10:00.000Z",
+  "updatedAt": "2026-10-19T19:10:00.000Z",
+  "versions": [],
+  "hold": "Not yet issued (Document Register)",
+  "source": "G:/Shared drives/Pelagos Langebaan SOPs/2. Pelagos Langebaan SOPs 2026",
+  "videos": [],
+  "requireVideo": true
+}

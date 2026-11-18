@@ -1,0 +1,122 @@
+{
+  "code": "PEL-SOP-004",
+  "title": "Duty Manager Procedure",
+  "kind": "sop",
+  "summary": "What the Duty Manager does before, during and after every shift: briefing, bar, service, guests, staff, hygiene, cash and close.",
+  "body": "## 1. PURPOSE\n\nThis SOP sets out the responsibilities, expectations and operating standards for Duty Managers at Pelagos Langebaan. It ensures consistent service, effective team management and smooth daily operations. Duty Managers are responsible for the guest experience, staff performance, hygiene and financial control throughout their shift.\n\n## 2. PRE-SHIFT RESPONSIBILITIES\n\n- Hold a full staff briefing: menu changes, specials, sold-out items and VIP bookings.\n- Make sure all staff are present and on time, have clocked in on Pilot, and allocate sections.\n- Agree each staff member’s break times at the start of the shift, outside the restricted times (Staff Handbook, section 4.2).\n- Lock away phones handed in at the Duty Manager’s office, and return them at each staff member’s break and at the end of their shift (Staff Handbook, section 6.3).\n- Check uniforms and grooming: clean, correct and name badges visible (Staff Handbook, sections 7.1 and 7.2). Anyone not fit for duty is removed from the shift until it is corrected.\n- Confirm the floor is ready: tables set, stations stocked and everything clean.\n- Check that the POS terminals and card machines are working.\n\n## 3. BAR AND STOCK CONTROL\n\n- Check bar stock levels before service.\n- Make sure key items are fully stocked: spirits, wine, mixers and garnishes.\n- Confirm that ice, glassware and the bar set-up are ready.\n- Report shortages immediately.\n- Keep a close eye on high-value stock.\n\n## 4. SERVICE MANAGEMENT\n\n- Make sure guests are greeted immediately.\n- Monitor order accuracy and service times (see PEL-SOP-001 Steps of Service).\n- Make sure food and drinks are delivered promptly.\n- Keep service flowing smoothly between the kitchen and the floor.\n\n## 5. GUEST EXPERIENCE\n\n- Visit every table during service.\n- Engage with guests and confirm they are happy.\n- Resolve complaints immediately and professionally (see PEL-SOP-002).\n- Give extra attention to VIPs and large tables.\n\n## 6. STAFF BEHAVIOUR AND PERFORMANCE\n\n- Make sure all staff follow the SOPs.\n- Maintain professional behaviour at all times.\n- Enforce the personal cellphone policy (Staff Handbook, section 6.3): no phones on the floor.\n- Encourage upselling and proactive service.\n- Coach and correct staff where necessary.\n\n## 7. HYGIENE AND SAFETY\n\n- Make sure the bathrooms are clean and stocked throughout service.\n- Enforce strict hygiene practices.\n- Deal with spills and hazards immediately.\n- Keep the whole restaurant clean.\n\n## 8. PAYMENTS (CASHLESS)\n\n> **Cashless:** Pelagos is cashless. No cash is ever taken from a guest, no float is issued and no cash payouts are made. If a guest offers cash, politely explain that we are cashless and offer card payment.\n\n- Check all bills before they are presented to guests.\n- Authorise discounts, voids and complimentary items correctly in Pilot.\n- If a TABBS payment did not close its table, close it with Tabbs Manual. Never take the payment a second time.\n- Close payments that do not go through TABBS (backup FNB card machine, EFT, customer account, Maxiclub, voucher, Dineplan) with the correct payment type (PEL-MAN-001, section 5).\n- Make sure no open tables are left unattended in the system.\n\n## 9. END-OF-SHIFT DUTIES\n\n- Cash off every waitron, then complete the Admin Cashup: type in the payment types that do not come in automatically and the retained tips exactly as shown on the POS, and explain any variance on the cash-up sheet before running Day End (PEL-MAN-001, section 12).\n- Check that every staff member has clocked out on Pilot, and fix any missed clocks (section 10).\n- Check and record stock variances.\n- Make sure all closing duties and checklists are complete and signed.\n- Confirm that the restaurant is clean and reset.\n- Record incidents and complaints and prepare handover notes.\n\n## 10. CLOCKING CORRECTIONS\n\nPilot is the record used for payroll, so every missed clock must be fixed on the same day (Staff Handbook, section 4.4).\n\n1.  When a staff member tells you the scanner failed or they forgot to clock, write their actual time in or out in the Manual Clocking Register (the Blue File at the kitchen entrance). You and the staff member both sign the entry.\n2.  Correct the record in Pilot on the same day.\n3.  For staff who have not signed the Fingerprint Clocking Consent Form (PEL-FRM-002), record their times in the Blue File at every shift, both sign, and enter the times in Pilot on the same day.\n\n> **Remember:** A missed clock that is not reported and corrected on the same day is recorded as “Not at Work” for that shift. Never clock in or out for anyone else. Clocking for someone else is gross misconduct (PEL-POL-002); report it to the General Manager.\n\n## 11. MANAGER ACCOUNTABILITY\n\n- Maintain high service standards.\n- Resolve all guest issues before the shift ends.\n- Account for all variances.\n- Report performance and operational issues to the General Manager.\n\n## 12. RELATED DOCUMENTS\n\n- PEL-POL-001 Staff Handbook (sections 4.2 Breaks, 4.4 Clocking, 6.3 Cellphones and 7 Uniform and hygiene)\n- PEL-SOP-001 Steps of Service\n- PEL-SOP-002 Handling Complaints and Food Returns\n- PEL-SOP-005 Bar Stock Take\n- PEL-MAN-001 Pilot POS Operating Manual\n- PEL-FRM-002 Fingerprint Clocking Consent Form\n- PEL-CHK-001 to PEL-CHK-005 (daily checklists)\n",
+  "estMinutes": 11,
+  "order": 104,
+  "audience": {
+    "all": false,
+    "positions": [
+      "dm",
+      "rm",
+      "headwaiter",
+      "headchef",
+      "hksup"
+    ]
+  },
+  "appliesText": "All Duty Managers and heads of department on shift",
+  "issueDate": "18 October 2026",
+  "questions": [
+    {
+      "q": "What does the pre-shift briefing cover?",
+      "options": [
+        "Staff salaries",
+        "Only the roster",
+        "Menu changes, specials, sold-out items and VIP bookings",
+        "Last month's sales figures"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "When are staff break times agreed?",
+      "options": [
+        "Staff take breaks when they like",
+        "At the start of the shift, outside the restricted times",
+        "At the end of the shift",
+        "Whenever it gets quiet"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What happens to phones handed in at the Duty Manager's office?",
+      "options": [
+        "They are locked away and returned at each break and at the end of the shift",
+        "They stay on the bar",
+        "Staff collect them when they want",
+        "They are kept until the next day"
+      ],
+      "correct": 0
+    },
+    {
+      "q": "Who authorises discounts, voids and complimentary items in Pilot?",
+      "options": [
+        "Any waitron",
+        "The Duty Manager",
+        "The bartender",
+        "The kitchen"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "TABBS took a payment but did not close the table. What do you do?",
+      "options": [
+        "Leave it open until Day End",
+        "Take the payment again",
+        "Close it as cash",
+        "Close it with Tabbs Manual, and never take the payment a second time"
+      ],
+      "correct": 3
+    },
+    {
+      "q": "A staff member forgot to clock out. What does the Duty Manager do?",
+      "options": [
+        "Write the actual time in the Blue File, both sign, and correct Pilot the same day",
+        "Nothing, Pilot fixes it",
+        "Mark them absent",
+        "Clock out for them the next day"
+      ],
+      "correct": 0
+    },
+    {
+      "q": "What must happen before Day End is run?",
+      "options": [
+        "Count the cash in the till",
+        "Issue the float for tomorrow",
+        "Cash off every waitron, complete the Admin Cashup and explain any variance",
+        "Nothing, run it straight away"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "A guest offers to pay in cash. What do you do?",
+      "options": [
+        "Politely explain that Pelagos is cashless and offer card payment",
+        "Ask the Duty Manager to take the cash",
+        "Put it in the tip jar",
+        "Take the cash and give change"
+      ],
+      "correct": 0
+    }
+  ],
+  "passMark": 80,
+  "pdf": {
+    "id": "3b70a980c02cb8e4ecb724dbfbe66e8b",
+    "name": "PEL-SOP-004 Duty Manager Procedure.pdf",
+    "size": 157653
+  },
+  "pdfFile": "PEL-SOP-004 Duty Manager Procedure.pdf",
+  "status": "draft",
+  "version": 3,
+  "minor": 0,
+  "firstPublishedAt": null,
+  "publishedAt": null,
+  "createdAt": "2026-10-19T19:10:00.000Z",
+  "updatedAt": "2026-10-19T19:10:00.000Z",
+  "versions": [],
+  "hold": null,
+  "source": "G:/Shared drives/Pelagos Langebaan SOPs/2. Pelagos Langebaan SOPs 2026",
+  "videos": [],
+  "requireVideo": true
+}

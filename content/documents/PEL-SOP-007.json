@@ -1,0 +1,111 @@
+{
+  "code": "PEL-SOP-007",
+  "title": "Kitchen Hygiene",
+  "kind": "sop",
+  "summary": "Hygiene and food safety in the Pelagos kitchen: handwashing, illness, colour-coded boards, storage, temperatures, cleaning and pest control.",
+  "body": "## 1. PURPOSE\n\nTo make sure that all kitchen staff maintain the highest standards of hygiene, food safety and cleanliness at all times. This SOP sets out how to prevent contamination, handle food safely and comply with food safety law (Regulation R638 under the Foodstuffs, Cosmetics and Disinfectants Act) and health and safety regulations.\n\n## 2. PERSONAL HYGIENE\n\n### 2.1 Handwashing\n\n- Wash hands for at least 20 seconds with soap and warm water:\n  - before starting work and before preparing food;\n  - after handling raw meat, poultry or seafood;\n  - after using the toilet;\n  - after smoking, eating, coughing or sneezing;\n  - after handling rubbish or cleaning chemicals.\n- Keep nails short and clean at all times. No nail polish or false nails in the kitchen.\n\n### 2.2 Uniform\n\n- Wear a clean, complete uniform at all times (see the Staff Handbook, section 7.2).\n- Keep your hair covered at all times:\n  - chef skull cap or hairnet;\n  - beard net over facial hair in food preparation areas.\n- Wear a clean apron, change it when it is dirty and take it off when you leave the kitchen.\n\n### 2.3 Gloves\n\n- Change gloves often.\n- Always change gloves when switching between raw and cooked food.\n- Wash hands between glove changes.\n\n### 2.4 Health and illness\n\n- Tell the Head Chef or Duty Manager before your shift if you have vomiting, diarrhoea, a fever, a sore throat with fever, yellowing of the skin or eyes, or an infected cut or skin sore.\n- Staff with these symptoms may not handle food and may be sent home until they are well.\n- Cover all cuts and burns with a waterproof (blue) plaster and wear a glove over it.\n\n## 3. FOOD HANDLING AND SAFETY\n\n### 3.1 Preventing cross-contamination\n\nUse the colour-coded chopping boards:\n\n| **Colour** | **Use for**          |\n|------------|----------------------|\n| **Red**    | Raw meat             |\n| **Blue**   | Raw seafood          |\n| **Yellow** | Raw poultry          |\n| **Green**  | Fruit and vegetables |\n| **White**  | Bread and dairy      |\n| **Brown**  | Cooked meats         |\n| **Purple** | Allergen-free food   |\n\n- Wash utensils after each use.\n- Clean workstations frequently.\n\n### 3.2 Storage (FIFO)\n\n- Follow First In, First Out (FIFO): place newer stock behind older stock.\n- Store all prepared food in sealed containers, labelled with the contents, the preparation date and the use-by date.\n\n### 3.3 Storage order in fridges and cold rooms\n\n- Store raw meat on the bottom shelves only.\n- Store cooked and ready-to-eat food above raw food.\n- Keep all meat and seafood in sealed containers to prevent leaks. No open containers.\n- Store seafood, poultry, red meat and other products separately.\n\n### 3.4 Temperature control\n\n| **Equipment / food**                             | **Required temperature** |\n|--------------------------------------------------|--------------------------|\n| **Fridges and cold room**                        | 0°C to 4°C               |\n| **Freezers**                                     | -18°C or colder          |\n| **Cooking: poultry and pork (core temperature)** | 75°C or hotter           |\n| **Cooking: fish (core temperature)**             | 63°C or hotter           |\n| **Hot holding (food kept hot for service)**      | 60°C or hotter           |\n| **Reheating (once only)**                        | 75°C or hotter           |\n\n- Check and record fridge and freezer temperatures at opening and closing on the temperature log.\n- Report any fridge above 5°C or freezer warmer than -18°C to the Head Chef immediately.\n\n### 3.5 Thawing\n\n- Thaw food in the fridge, in a container to catch any liquid.\n- If food must be thawed quickly, thaw it in a sealed bag under cold running water and cook it straight away.\n- Never thaw food at room temperature.\n- Do not refreeze thawed food.\n\n## 4. CLEANING AND SANITISING\n\n### 4.1 Two-step cleaning\n\n1.  **Clean:** remove dirt, grease and food debris with hot, soapy water.\n2.  **Sanitise:** apply a food-safe sanitiser to kill bacteria, and leave it for the contact time on the label.\n\n### 4.2 Clean as you go\n\n- Clean your workstation as soon as you finish each task.\n- Keep a tidy, hygienic workspace at all times.\n\n### 4.3 Surfaces and equipment\n\n- Use only food-safe sanitisers on food-contact surfaces.\n- Regularly wipe down counters, chopping boards and preparation surfaces.\n- Clean and sanitise grinders, mixers and slicers after every use.\n- Let equipment air-dry. Do not dry with cloths or towels that may spread bacteria.\n\n## 5. WASTE MANAGEMENT AND PEST CONTROL\n\n### 5.1 Bins and waste\n\n- Use bins with lids at all times.\n- Empty bins regularly and remove waste promptly from food preparation areas.\n- Keep the bin storage area clean.\n- Never leave bin bags at the kitchen entrances.\n\n### 5.2 Pest control\n\n- Keep doors and windows closed or screened.\n- Report gaps and entry points to Maintenance so they can be sealed.\n- Clean spills immediately.\n- Report any sign of pests (droppings, insects, gnaw marks) to the Head Chef immediately.\n\n## 6. OPENING AND CLOSING\n\n### 6.1 Opening checklist\n\nComplete the kitchen opening checklist every day and confirm that:\n\n- all equipment is working;\n- all surfaces are sanitised;\n- the kitchen is clean and ready; and\n- fridge and freezer temperatures are checked and recorded.\n\n### 6.2 Closing checklist\n\nComplete the kitchen closing checklist every day and confirm that:\n\n- all equipment is cleaned and switched off;\n- all workstations are sanitised;\n- floors are swept and mopped;\n- all waste is removed; and\n- all food is covered, labelled and stored correctly.\n\n## 7. RELATED DOCUMENTS\n\n- PEL-POL-001 Staff Handbook (section 7, Uniform, grooming and hygiene, and section 10, Food safety, hygiene and allergen control)\n- PEL-SOP-010 Planned Preventative Maintenance (kitchen gulleys)\n",
+  "estMinutes": 11,
+  "order": 107,
+  "audience": {
+    "all": false,
+    "positions": [
+      "headchef",
+      "chef",
+      "kitchenasst",
+      "deli"
+    ]
+  },
+  "appliesText": "All kitchen staff and anyone working in food preparation areas",
+  "issueDate": "10 June 2026",
+  "questions": [
+    {
+      "q": "At what temperature must fridges and the cold room run?",
+      "options": [
+        "5°C to 8°C",
+        "Below 10°C",
+        "-18°C",
+        "0°C to 4°C"
+      ],
+      "correct": 3
+    },
+    {
+      "q": "At what temperature must freezers run?",
+      "options": [
+        "0°C",
+        "-18°C or colder",
+        "-5°C",
+        "-10°C or colder"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What core temperature must poultry and pork reach?",
+      "options": [
+        "63°C",
+        "60°C",
+        "75°C or hotter",
+        "50°C"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Which chopping board colour is for raw seafood?",
+      "options": [
+        "Red",
+        "Blue",
+        "Green",
+        "Yellow"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Where is raw meat stored in the fridge?",
+      "options": [
+        "Anywhere, if it is covered",
+        "On the top shelf",
+        "Next to cooked food",
+        "On the bottom shelves only"
+      ],
+      "correct": 3
+    },
+    {
+      "q": "How do you thaw food safely?",
+      "options": [
+        "In a bowl of warm water",
+        "On the counter at room temperature",
+        "In the fridge in a container, or sealed under cold running water",
+        "In the sun"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "You have diarrhoea before your shift. What do you do?",
+      "options": [
+        "Work in the scullery instead",
+        "Tell the Head Chef or Duty Manager before your shift; you may not handle food",
+        "Say nothing if you feel fine",
+        "Work, but wear gloves"
+      ],
+      "correct": 1
+    }
+  ],
+  "passMark": 80,
+  "pdf": {
+    "id": "ff27b1937e209e821ff48b914814e388",
+    "name": "PEL-SOP-007 Kitchen Hygiene.pdf",
+    "size": 178107
+  },
+  "pdfFile": "PEL-SOP-007 Kitchen Hygiene.pdf",
+  "status": "draft",
+  "version": 2,
+  "minor": 0,
+  "firstPublishedAt": null,
+  "publishedAt": null,
+  "createdAt": "2026-10-19T19:10:00.000Z",
+  "updatedAt": "2026-10-19T19:10:00.000Z",
+  "versions": [],
+  "hold": null,
+  "source": "G:/Shared drives/Pelagos Langebaan SOPs/2. Pelagos Langebaan SOPs 2026",
+  "videos": [],
+  "requireVideo": true
+}

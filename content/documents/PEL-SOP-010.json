@@ -1,0 +1,99 @@
+{
+  "code": "PEL-SOP-010",
+  "title": "Planned Preventative Maintenance",
+  "kind": "sop",
+  "summary": "The master calendar of planned preventative maintenance for the estate's facilities, and how each task is logged.",
+  "body": "## 1. PURPOSE\n\nThe Planned Preventative Maintenance (PPM) schedule is the master calendar for looking after the estate’s facilities. The daily routine in PEL-SOP-009 Maintenance keeps the facilities running; the PPM makes sure that expensive assets, such as the astro turf, pool pumps and the Frail Care facilities, do not fail early.\n\n## 2. RESPONSIBILITIES\n\n- **Maintenance Worker:** carries out the PPM tasks on schedule and logs every task.\n- **General Manager:** checks the PPM calendar monthly, books specialist contractors and approves materials.\n\n## 3. MASTER PPM SCHEDULE\n\n| **Frequency**            | **Area / asset**                | **Task**                                                                                                                                |\n|--------------------------|---------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|\n| **Weekly (Friday)**      | Kitchen and laundry gulleys     | Flush all gulleys with hot (not boiling) water and degreaser to prevent fat build-up.                                                   |\n| **Weekly**               | Sports astro                    | Power-brush the astro to spread the infill and prevent matting.                                                                         |\n| **Weekly**               | Gym                             | Deep-clean upholstery; check cable tension and lubricate the guide rods on weight stacks.                                               |\n| **Weekly**               | Pools                           | Backwash and rinse the filters; scrub the tile water line to prevent calcium build-up.                                                  |\n| **Every second Tuesday** | Paving at offices and Reception | Scrub with a mild detergent to remove leaf (tannin) stains.                                                                             |\n| **Monthly**              | Plumbing                        | Check every tap and toilet for slow leaks and “ghost flushes”.                                                                          |\n| **Monthly**              | Doors and windows               | Lubricate hinges and check door closers.                                                                                                |\n| **Monthly**              | Fire safety                     | Check all fire extinguishers and hose reels for pressure and access. Check the next service date and report if a service is coming due. |\n| **Monthly**              | Paving (all)                    | Deep-clean, using degreaser where necessary.                                                                                            |\n| **Quarterly**            | Air conditioners                | Clean or replace the filters in all air conditioning units.                                                                             |\n| **Quarterly**            | Drainage                        | High-pressure jetting of the main sewer lines and outdoor storm gulleys.                                                                |\n| **Quarterly**            | Roofs and gutters               | Inspect roofs, clear gutters of leaves and check for cracked exterior window seals.                                                     |\n| **Quarterly**            | Pests                           | Full walkthrough of the facilities for signs of termites, silverfish (Library) or rodents.                                              |\n| **Every 6 months**       | Courts                          | Professional deep grooming of the court surfaces; tighten perimeter fencing.                                                            |\n| **Every 6 months**       | Metal and outdoor furniture     | Repair outdoor pool furniture and touch up paint on exterior metal railings.                                                            |\n| **Annually**             | Electrical                      | Full distribution board (DB) scan with the electrician to find loose connections or overheating breakers.                               |\n\n## 4. TECHNICAL INSTRUCTIONS\n\n### 4.1 Astro turf\n\nSynthetic grass fails when the sand or rubber infill becomes compacted. Use a stiff, non-metal brush to pull the fibres upright. If a seam starts to lift, glue it immediately before the gap widens.\n\n### 4.2 Kitchen gulleys\n\nDo not wait for a blockage. Every Friday afternoon, flush the gulleys outside the Frail Care kitchen and the main restaurant kitchen with hot (not boiling) water and degreaser to break down fats.\n\n### 4.3 Gym and squash courts\n\n- Never mop squash court floors with a lot of water, because the floor will warp. Use only a damp microfibre cloth or mop.\n- Inspect gym cables for fraying. If even one strand of wire is broken, the cable must be replaced immediately and the machine taken out of use until it is fixed.\n\n### 4.4 Outdoor paving\n\nThe paving around the facilities offices and Reception gets heavy foot traffic and can be stained by leaves. Every second Tuesday, treat these areas with a mild detergent and scrub them to keep them looking new.\n\n## 5. PPM LOGGING PROCEDURE\n\nEvery time a PPM task is completed:\n\n1.  Mark the task as done on the master PPM calendar (date and initials).\n2.  Note the materials used (for example, “5 litres of degreaser used on kitchen gulleys”).\n3.  Flag upcoming specialist visits (for example, “air conditioning contractor due in 2 weeks”).\n\n> **Remember:** The goal of the PPM is to move from fixing things that are broken to making sure things never break. If this schedule is followed, emergency plumbing or electrical call-outs should be rare.\n\n## 6. RELATED DOCUMENTS\n\n- PEL-SOP-009 Maintenance\n- PEL-SOP-008 Housekeeping\n",
+  "estMinutes": 8,
+  "order": 110,
+  "audience": {
+    "all": false,
+    "positions": [
+      "maintenance",
+      "gm"
+    ]
+  },
+  "appliesText": "Maintenance Worker(s) and the General Manager",
+  "issueDate": "27 June 2026",
+  "questions": [
+    {
+      "q": "How often are the kitchen and laundry gulleys flushed with hot water and degreaser?",
+      "options": [
+        "Quarterly",
+        "Daily",
+        "Monthly",
+        "Weekly, on Friday"
+      ],
+      "correct": 3
+    },
+    {
+      "q": "What water is used on the gulleys?",
+      "options": [
+        "Cold",
+        "Hot, not boiling",
+        "Boiling",
+        "None, only bleach"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "How often are the air conditioner filters cleaned or replaced?",
+      "options": [
+        "Weekly",
+        "Quarterly",
+        "Daily",
+        "Annually"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "A gym cable has one broken strand of wire. What do you do?",
+      "options": [
+        "Tape it",
+        "Take the machine out of use and replace the cable immediately",
+        "Report it at the next quarterly check",
+        "Use it until it snaps"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "How are squash court floors cleaned?",
+      "options": [
+        "Pressure-washed",
+        "Mopped with plenty of water",
+        "Only with a damp microfibre cloth or mop, never a lot of water",
+        "With bleach"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "What do you record each time a PPM task is done?",
+      "options": [
+        "Tell the GM verbally",
+        "Post it in the staff group",
+        "Mark it on the master calendar with the date and your initials, and note the materials used",
+        "Nothing"
+      ],
+      "correct": 2
+    }
+  ],
+  "passMark": 80,
+  "pdf": {
+    "id": "e4442916d649637d094d575880e5024e",
+    "name": "PEL-SOP-010 Planned Preventative Maintenance.pdf",
+    "size": 150274
+  },
+  "pdfFile": "PEL-SOP-010 Planned Preventative Maintenance.pdf",
+  "status": "draft",
+  "version": 2,
+  "minor": 0,
+  "firstPublishedAt": null,
+  "publishedAt": null,
+  "createdAt": "2026-10-19T19:10:00.000Z",
+  "updatedAt": "2026-10-19T19:10:00.000Z",
+  "versions": [],
+  "hold": null,
+  "source": "G:/Shared drives/Pelagos Langebaan SOPs/2. Pelagos Langebaan SOPs 2026",
+  "videos": [],
+  "requireVideo": true
+}

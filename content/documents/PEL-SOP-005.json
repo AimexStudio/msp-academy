@@ -1,0 +1,100 @@
+{
+  "code": "PEL-SOP-005",
+  "title": "Bar Stock Take",
+  "kind": "sop",
+  "summary": "How bar stock is counted daily and monthly, how variances are investigated, and why a second person must verify every count.",
+  "body": "## 1. PURPOSE\n\nTo count and track bar stock accurately for financial accountability, consistent operations, quality control and reliable reporting.\n\n## 2. SCOPE\n\nThis SOP applies to all bar staff and Duty Managers and covers the restaurant bar, the bar store and the back store.\n\n## 3. ROLES AND RESPONSIBILITIES\n\n### 3.1 Bartenders\n\n- Keep the bar clean and hygienic.\n- Complete the opening and closing checklists.\n- Complete the daily prep sheet counts.\n- Keep the waste log up to date (breakages, spillages and spoiled stock).\n- Rotate stock using FIFO (first in, first out).\n\n### 3.2 Duty Manager\n\n- Inspect the bar areas.\n- Make sure checklists and procedures are followed.\n- Sign off the daily checklists and counts.\n- Investigate and document variances.\n- Address performance or hygiene issues.\n\n## 4. BAR STOCK TAKE\n\n### 4.1 Schedule and preparation\n\n| **Count**       | **Areas**                     | **When**                              |\n|-----------------|-------------------------------|---------------------------------------|\n| **Daily count** | Bar and bar store             | At the end of the night shift         |\n| **Full count**  | Back store, bar and bar store | Monthly, on the last day of the month |\n\n- **Organisation:** keep all storage areas neat and organised so counts are quick and accurate.\n- **Stock issues:** stock may only be issued under a manager’s supervision, and every issue must be recorded in Pilot.\n\n### 4.2 How to count\n\nBar stock is counted in two groups:\n\n### A. Full units (sealed)\n\n- Count all full cases and unopened bottles in the bar store and the under-bar fridges.\n- Count systematically, from left to right and from top to bottom.\n\n### B. Part units (opened stock)\n\n- **Spirits and liqueurs:** use the measuring tool provided (the tot ruler or stock measure) to read the volume left.\n- **Kegs:** weigh the keg, then subtract the known weight of an empty keg. The difference is the beer left in the keg (1 kg of beer is about 1 litre). Use the same method every day.\n\n### 4.3 Reconciliation and variances\n\nWhen the physical count is complete, the Duty Manager compares it with the Pilot prep sheet. If there is a difference (a variance), the Duty Manager must investigate, find the cause and record the findings.\n\n### Common causes of variances\n\n- Spillages or breakages that were not recorded.\n- Over-pouring by bar staff.\n- Complimentary drinks that were not recorded.\n- Stock loss or theft.\n\n### 4.4 After the count\n\n- **Check against the waste log:** reconcile every variance against the daily waste log. Missing stock that is not recorded as a breakage or spillage points to a control failure and must be investigated immediately.\n- **Ordering:** use the final counts to prepare the order for the following week.\n\n## 5. CONTROL MEASURE: SEGREGATION OF DUTIES\n\nThe person who places liquor orders may not be the only person who does the physical count. A second person must always verify the count, so that stock records cannot be manipulated.\n\n## 6. RELATED DOCUMENTS\n\n- PEL-MAN-001 Pilot POS Operating Manual (section 6, Daily bar stock take)\n- PEL-SOP-006 Changing Beer Kegs and Line Sanitation\n- PEL-SOP-004 Duty Manager Procedure\n",
+  "estMinutes": 7,
+  "order": 105,
+  "audience": {
+    "all": false,
+    "positions": [
+      "bartender",
+      "dm",
+      "rm"
+    ]
+  },
+  "appliesText": "All bar staff and Duty Managers",
+  "issueDate": "10 June 2026",
+  "questions": [
+    {
+      "q": "When is the daily bar count done?",
+      "options": [
+        "At the start of the morning shift",
+        "At the end of the night shift",
+        "Only at month-end",
+        "Once a week"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "When is the full count of the back store, bar and bar store done?",
+      "options": [
+        "Every Sunday at 17:00",
+        "Monthly, on the last day of the month",
+        "Every day",
+        "Twice a year"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "How do you measure the beer left in a keg?",
+      "options": [
+        "Read it off the Pilot screen",
+        "Shake it and estimate",
+        "Count the glasses poured",
+        "Weigh the keg and subtract the weight of an empty keg"
+      ],
+      "correct": 3
+    },
+    {
+      "q": "What happens to missing stock that is not recorded as a breakage or spillage?",
+      "options": [
+        "It is written off",
+        "It is ignored if small",
+        "It is carried to next month",
+        "It is investigated immediately"
+      ],
+      "correct": 3
+    },
+    {
+      "q": "Why may the person who orders liquor not be the only one who counts it?",
+      "options": [
+        "A second person must verify, so stock records cannot be manipulated",
+        "The supplier requires it",
+        "There is no such rule",
+        "Ordering takes too long"
+      ],
+      "correct": 0
+    },
+    {
+      "q": "How may stock be issued?",
+      "options": [
+        "By any bartender",
+        "Only under a manager's supervision, with every issue recorded in Pilot",
+        "By the supplier",
+        "Without recording it"
+      ],
+      "correct": 1
+    }
+  ],
+  "passMark": 80,
+  "pdf": {
+    "id": "9b8d30ef7cde296976d170579783beb0",
+    "name": "PEL-SOP-005 Bar Stock Take.pdf",
+    "size": 140400
+  },
+  "pdfFile": "PEL-SOP-005 Bar Stock Take.pdf",
+  "status": "draft",
+  "version": 2,
+  "minor": 0,
+  "firstPublishedAt": null,
+  "publishedAt": null,
+  "createdAt": "2026-10-19T19:10:00.000Z",
+  "updatedAt": "2026-10-19T19:10:00.000Z",
+  "versions": [],
+  "hold": null,
+  "source": "G:/Shared drives/Pelagos Langebaan SOPs/2. Pelagos Langebaan SOPs 2026",
+  "videos": [],
+  "requireVideo": true
+}

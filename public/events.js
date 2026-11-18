@@ -1,0 +1,290 @@
+// Clicks, typing and form submits for every screen, plus start-up.
+(function () {
+"use strict";
+const P = window.Pel, M = window.PelMgr;
+const { S, GET, POST, PUT, PATCH, api, go, render, load, toast, fail, confirmBox, closeModal, setPath, getPath, plural } = P;
+const $app = document.getElementById("app");
+
+/* ---------- typing ---------- */
+let liveTimer = null;
+document.addEventListener("input", e => {
+  const el = e.target, path = el.dataset && el.dataset.bind; if (!path) return;
+  let val = el.type === "checkbox" ? el.checked : el.value;
+  if (el.dataset.num) val = Number(val);
+  setPath(S, path, val);
+  if (path.startsWith("edit.") && S.edit && !S.edit.localDirty) { S.edit.localDirty = true; }
+  if (el.dataset.live) { clearTimeout(liveTimer); liveTimer = setTimeout(() => rerenderKeepFocus(el.id), 150); }
+  P.refreshGates();
+});
+document.addEventListener("change", async e => {
+  const el = e.target, ds = el.dataset || {};
+  if (ds.bind && (el.tagName === "SELECT" || el.type === "checkbox")) {
+    let val = el.type === "checkbox" ? el.checked : el.value; if (ds.num) val = Number(val);
+    setPath(S, ds.bind, val);
+    if (ds.bind.startsWith("edit.") && S.edit) S.edit.localDirty = true;
+    if (ds.rerender) render();
+    if (ds.reload) load();
+    P.refreshGates();
+    return;
+  }
+  const act = ds.change; if (!act) return;
+  if (act === "quiz-answer") { S.docv.quiz.answers[ds.i] = Number(el.value); el.closest("fieldset").querySelectorAll(".opt").forEach(o => o.classList.toggle("sel", o.contains(el))); P.refreshGates(); }
+  else if (act === "q-correct") { S.edit.draft.questions[ds.i].correct = Number(ds.j); S.edit.localDirty = true; }
+  else if (act === "aud-pos") { const ps = S.edit.draft.audience.positions; const i = ps.indexOf(ds.p); if (el.checked && i < 0) ps.push(ds.p); if (!el.checked && i >= 0) ps.splice(i, 1); S.edit.localDirty = true; render(); }
+  else if (act === "chg") { S.edit.change = ds.v; render(); }
+  else if (act === "nd-kind") { S.newDoc.kind = el.value; try { S.newDoc.code = (await GET(`/api/admin/next-code?kind=${el.value}`)).code; } catch {} render(); }
+  else if (act === "pdf-upload" || act === "video-upload") {
+    const f = el.files && el.files[0]; if (!f) return;
+    const kind = act === "pdf-upload" ? "pdf" : "video";
+    S.edit.uploading = { kind, name: f.name, pct: 0 }; render();
+    try {
+      const r = await P.upload(f, pct => { S.edit.uploading.pct = pct; const pr = $app.querySelector("progress"); if (pr) pr.value = pct; });
+      S.edit.files[r.id] = r;
+      if (kind === "pdf") S.edit.draft.pdfFileId = r.id; else S.edit.draft.videos.push({ fileId: r.id, title: f.name.replace(/\.[^.]+$/, "") });
+      S.edit.localDirty = true; toast(`${kind === "pdf" ? "PDF" : "Video"} uploaded. Save to keep it.`);
+    } catch (err) { fail(err); }
+    S.edit.uploading = null; render();
+  }
+});
+function rerenderKeepFocus(id) {
+  const el = document.getElementById(id); const pos = el && el.selectionStart;
+  render();
+  const n = document.getElementById(id); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch {} }
+}
+
+/* ---------- clicks ---------- */
+document.addEventListener("click", async e => {
+  const row = e.target.closest("[data-href]");
+  const t = e.target.closest("[data-act]");
+  if (!t && row && !e.target.closest("a,button,input,select,textarea,label")) { go(row.dataset.href); return; }
+  if (!t) return;
+  if (t.closest("[data-stop]") && t.dataset.act === "modal-close" && !t.matches("button")) return;
+  const a = t.dataset.act, ds = t.dataset;
+  try { await (ACTIONS[a] || (() => {}))(t, ds, e); } catch (err) { S.busy = false; fail(err); render(); }
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape" && document.getElementById("modal").innerHTML) closeModal(); });
+
+const ACTIONS = {
+  "modal-close": (t, ds, e) => { if (e.target.closest(".modal") && !e.target.closest("button")) return; closeModal(); },
+  "modal-ok": async () => { const fn = P.getModalAction(); closeModal(); if (fn) await fn(); },
+  logout: () => P.logout(),
+  reload: () => load(),
+  stay: () => P.idle.poke(),
+  print: () => window.print(),
+  "dept-staff": (t, ds, e) => { e.preventDefault(); S.filt.dept = ds.d; go("#/m/staff"); },
+
+  /* staff journey */
+  "doc-step": (t, ds) => { S.docv.step = ds.step; if (ds.step === "quiz" && S.docv.quiz.result && !S.docv.quiz.result.passed) S.docv.quiz.result = null; render(); window.scrollTo(0, 0); },
+  "mark-read": async () => {
+    const d = S.docv.data.doc; S.busy = true; P.refreshGates();
+    try {
+      const r = await POST(`/api/my/documents/${encodeURIComponent(d.code)}/read`, { versionId: d.versionId });
+      S.docv.data.state = r.state; S.docv.step = r.state.canSign ? "sign" : "quiz";
+    } catch (err) { if (!P.staleCheck(err)) fail(err); }
+    S.busy = false; render(); window.scrollTo(0, 0);
+  },
+  "quiz-retry": () => { const q = S.docv.quiz; (q.result.wrong || []).forEach(i => delete q.answers[i]); q.result = null; render(); },
+  "sig-clear": () => { S.decl.strokes = []; render(); },
+
+  /* overview and staff */
+  "copy-reminder": () => { const d = S.data["m-overview"]; offerCopy(M.reminderText(d.attention), "overview"); },
+  "copy-person": () => {
+    const d = S.data["m-person"]; const out = d.record.items.filter(i => i.status !== "done");
+    offerCopy(`Hi ${d.person.name.split(/\s+/)[0]}, please complete your outstanding training on the training tablet: ${out.map(o => o.code).join(", ")}. Sign in with your staff number and PIN. Thank you!`, "person");
+  },
+  "staff-active": (t, ds) => {
+    const p = S.data["m-person"].person, on = ds.on === "1";
+    const run = async () => { await POST(`/api/admin/staff/${p.id}/active`, { active: on }); toast(on ? `${p.name} is active again.` : `${p.name} is marked as left. Their records are kept.`); load(); };
+    if (on) return run();
+    confirmBox(`Mark ${p.name} as left?`, "They can no longer sign in and drop out of the completion figures. Their sign-offs and declaration are kept, and they stay in the register as Left.", "Mark as left", run, true);
+  },
+  "pin-new": () => { S.pinReset = { pin: P.randPin() }; render(); },
+  "pin-cancel": () => { S.pinReset = null; render(); },
+
+  /* library and editor */
+  "lib-filter": (t, ds) => { S.filt.lib = ds.k; render(); },
+  "publish-all": () => {
+    const lib = S.data["m-library"]; const ready = lib.documents.filter(d => d.ready).length, held = lib.documents.filter(d => d.status === "draft" && d.hold).length;
+    confirmBox(`Publish ${plural(ready, "document")}?`, `Staff see ${ready === 1 ? "it" : "them"} in their course straight away.${held ? ` ${plural(held, "document")} on hold stay${held === 1 ? "s" : ""} as draft${held === 1 ? "" : "s"}.` : ""}`, "Publish all", async () => {
+      const r = await POST("/api/admin/documents/publish-all"); toast(`Published ${plural(r.published.length, "document")}.`); load();
+    });
+  },
+  "aud-dept": (t, ds) => {
+    const ps = S.edit.draft.audience.positions; const inD = S.org.positions.filter(p => p.dept === ds.d).map(p => p.id);
+    const allIn = inD.every(id => ps.includes(id));
+    S.edit.draft.audience.positions = allIn ? ps.filter(id => !inD.includes(id)) : [...new Set(ps.concat(inD))];
+    S.edit.localDirty = true; render();
+  },
+  "q-add": () => { S.edit.draft.questions.push({ q: "", options: ["", "", "", ""], correct: -1 }); S.edit.localDirty = true; render(); const n = document.getElementById(`q-${S.edit.draft.questions.length - 1}`); if (n) n.focus(); },
+  "q-del": (t, ds) => { S.edit.draft.questions.splice(Number(ds.i), 1); S.edit.localDirty = true; render(); },
+  "opt-add": (t, ds) => { S.edit.draft.questions[ds.i].options.push(""); S.edit.localDirty = true; render(); },
+  "opt-del": (t, ds) => { const q = S.edit.draft.questions[ds.i]; const j = Number(ds.j); q.options.splice(j, 1); if (q.correct === j) q.correct = -1; else if (q.correct > j) q.correct--; S.edit.localDirty = true; render(); },
+  "video-remove": (t, ds) => { S.edit.draft.videos.splice(Number(ds.i), 1); S.edit.localDirty = true; render(); },
+  "pdf-remove": () => { S.edit.draft.pdfFileId = null; S.edit.localDirty = true; render(); },
+  "ed-save": async () => { await saveDoc(); toast(S.edit.status === "draft" ? "Draft saved." : "Saved. Staff still see the published version until you publish."); },
+  "ed-publish": async () => {
+    const e = S.edit;
+    const doIt = async () => {
+      if (e.localDirty) await saveDoc(true);
+      S.busy = true; render();
+      try {
+        const r = await POST(`/api/admin/documents/${encodeURIComponent(S.edit.code)}/publish`, { change: S.edit.change });
+        P.setEdit(r.document);
+        toast(r.result.restored ? `Restored version ${r.result.label}.` : `Published version ${r.result.label}.`);
+      } catch (err) { S.busy = false; showErr("ed-err", err); render(); return; }
+      S.busy = false; render();
+    };
+    if (e.current && e.change === "major") confirmBox(`Publish version ${e.current.major + 1}.0?`, "Everyone it applies to must read, pass the questions and sign it again. Their earlier sign-off stays in their history.", "Publish new version", doIt);
+    else await doIt();
+  },
+  "ed-archive": () => confirmBox("Archive this document?", "It disappears from staff courses. All sign-offs stay on record, and you can restore it later.", "Archive", async () => {
+    const d = await POST(`/api/admin/documents/${encodeURIComponent(S.edit.code)}/archive`); P.setEdit(d); toast("Archived."); render();
+  }, true),
+  "ed-hold": () => confirmBox("Put this draft on hold?", "It stays a draft and is skipped by Publish all.", "Put on hold", async () => {
+    const reason = (document.getElementById("hold-reason") || {}).value || "On hold";
+    const d = await POST(`/api/admin/documents/${encodeURIComponent(S.edit.code)}/hold`, { reason }); P.setEdit(d); render();
+  }, false, `<div class="field"><label for="hold-reason">Reason</label><input id="hold-reason" type="text" value="Not yet issued"></div>`),
+  "ed-release-hold": async () => { const d = await POST(`/api/admin/documents/${encodeURIComponent(S.edit.code)}/hold`, { reason: null }); P.setEdit(d); render(); },
+  "ed-discard": () => confirmBox("Discard the saved changes?", `The editor goes back to version ${S.edit.current.label}, which is what staff see.`, "Discard changes", async () => {
+    const d = await POST(`/api/admin/documents/${encodeURIComponent(S.edit.code)}/discard`); P.setEdit(d); render();
+  }, true),
+  "ed-delete": () => confirmBox("Delete this draft?", "It has never been published, so no one has signed it. This can't be undone.", "Delete draft", async () => {
+    await api("DELETE", `/api/admin/documents/${encodeURIComponent(S.edit.code)}`); S.edit = null; toast("Draft deleted."); go("#/m/library");
+  }, true),
+  "ed-preview": async () => {
+    if (S.edit.localDirty) await saveDoc(true);
+    const a = S.edit.draft.audience; const pos = a.all ? "waitron" : (a.positions[0] || S.org.positions[0].id);
+    go(`#/preview/${encodeURIComponent(pos)}/doc/${encodeURIComponent(S.edit.code)}`);
+  },
+  "ed-ai": async () => {
+    if (S.edit.localDirty) await saveDoc(true);
+    S.aiBusy = true; render();
+    try { const r = await POST(`/api/admin/documents/${encodeURIComponent(S.edit.code)}/draft-questions`); S.edit.draft.questions.push(...r.questions); S.edit.localDirty = true; toast(`Added ${plural(r.questions.length, "question")}. Check each answer, then save.`); }
+    catch (err) { fail(err); }
+    S.aiBusy = false; render();
+  },
+
+  /* settings */
+  "start-preview": () => go(`#/preview/${encodeURIComponent(document.getElementById("pv-pos").value)}`),
+  "dept-add": () => { S.cfgEdit.departments.push({ id: "new-" + Date.now(), name: "New department" }); render(); },
+  "dept-del": (t, ds) => { S.cfgEdit.departments.splice(Number(ds.i), 1); render(); },
+  "pos-add": (t, ds) => { S.cfgEdit.positions.push({ id: "new-" + Date.now(), name: "New position", dept: ds.d }); render(); },
+  "pos-del": (t, ds) => { S.cfgEdit.positions.splice(Number(ds.i), 1); render(); },
+  "cfg-reset": () => { S.cfgEdit = P.clone(S.data["m-settings"]); render(); },
+};
+
+function offerCopy(text, where) {
+  S.copyText = { text, where, note: "Copied. Paste it into WhatsApp." };
+  const fallback = () => { S.copyText.note = "Select the text below and copy it."; render(); const b = document.getElementById("copybox"); if (b) { b.focus(); b.select(); } };
+  try { navigator.clipboard.writeText(text).then(() => { toast("Copied to clipboard"); render(); }, fallback); } catch { fallback(); }
+}
+function showErr(id, err) { const el = document.getElementById(id); if (el) el.textContent = err.message; else fail(err); }
+
+async function saveDoc(quiet) {
+  const e = S.edit; S.busy = true;
+  try {
+    const d = await PUT(`/api/admin/documents/${encodeURIComponent(S.params.id)}`, { draft: e.draft, code: e.code, kind: e.kind });
+    const change = e.change; P.setEdit(d); S.edit.change = change;
+    if (d.code !== S.params.id) { S.params.id = d.code; history.replaceState(null, "", `#/m/doc/${encodeURIComponent(d.code)}`); }
+  } catch (err) { S.busy = false; if (!quiet) showErr("ed-err", err); throw err; }
+  S.busy = false; render();
+}
+
+/* ---------- forms ---------- */
+document.addEventListener("submit", async e => {
+  const f = e.target.closest("[data-form]"); if (!f) return;
+  e.preventDefault();
+  const kind = f.dataset.form;
+  try { await (FORMS[kind] || (() => {}))(f); } catch (err) { S.busy = false; fail(err); render(); }
+});
+const FORMS = {
+  login: () => P.doLogin(),
+  quiz: async () => {
+    const dv = S.docv, d = dv.data.doc;
+    const answers = d.questions.map((q, i) => dv.quiz.answers[i] ?? null);
+    if (answers.some(a => a == null)) { toast("Answer every question first.", "bad"); return; }
+    S.busy = true; P.refreshGates();
+    try {
+      const r = await POST(`/api/my/documents/${encodeURIComponent(d.code)}/attempts`, { versionId: d.versionId, answers });
+      dv.quiz.result = r.result; dv.data.state = r.state;
+    } catch (err) { if (!P.staleCheck(err)) fail(err); }
+    S.busy = false; render();
+    const res = document.querySelector(".result"); if (res) res.scrollIntoView({ behavior: "smooth", block: "center" });
+  },
+  sign: async () => {
+    const dv = S.docv, d = dv.data.doc;
+    S.busy = true; P.refreshGates();
+    try {
+      await POST(`/api/my/documents/${encodeURIComponent(d.code)}/signoff`, { versionId: d.versionId, agree: !!dv.ack.agree, typedName: dv.ack.name });
+      toast("Signed. Thank you.");
+      S.busy = false; await P.refreshDoc("done"); window.scrollTo(0, 0);
+    } catch (err) { S.busy = false; if (!P.staleCheck(err)) showErr("ack-err", err); P.refreshGates(); }
+  },
+  declaration: async () => {
+    S.busy = true; P.refreshGates();
+    try {
+      await POST("/api/my/declaration", { agree: !!S.decl.agree, typedName: S.decl.name, signature: P.sigPng() });
+      S.decl = null; S.busy = false; toast("Declaration signed."); go("#/record");
+    } catch (err) { S.busy = false; showErr("decl-err", err); P.refreshGates(); }
+  },
+  "staff-new": async () => {
+    const e = S.staffEdit; S.busy = true; render();
+    try {
+      const r = await POST("/api/admin/staff", { name: e.name, staffNo: e.staffNo, positionId: e.positionId, startDate: e.startDate || null, role: e.role, pin: e.pin });
+      S.busy = false; toast(`${e.name} added. Their PIN is ${e.pin}. Give it to them now.`); go(`#/m/staff/${r.id}`);
+    } catch (err) { S.busy = false; render(); showErr("se-err", err); }
+  },
+  "staff-edit": async () => {
+    const e = S.staffEdit; S.busy = true; render();
+    try {
+      const r = await PATCH(`/api/admin/staff/${e.id}`, { name: e.name, staffNo: e.staffNo, positionId: e.positionId, startDate: e.startDate || null, role: e.role });
+      S.busy = false; toast(r.changed.length ? (r.changed.includes("position") ? "Saved. Their course now follows the new position." : "Saved.") : "No changes to save.");
+      if (e.id === S.me.id) await P.loadMe();
+      load();
+    } catch (err) { S.busy = false; render(); showErr("se-err", err); }
+  },
+  pin: async () => {
+    const p = S.data["m-person"].person;
+    if (!/^\d{4,6}$/.test(S.pinReset.pin)) { toast("The PIN must be 4 to 6 digits.", "bad"); return; }
+    await POST(`/api/admin/staff/${p.id}/pin`, { pin: S.pinReset.pin });
+    toast(`New PIN for ${p.name}: ${S.pinReset.pin}. Give it to them now.`); S.pinReset = null; load();
+  },
+  newdoc: async () => {
+    S.busy = true; render();
+    try {
+      const d = await POST("/api/admin/documents", { kind: S.newDoc.kind, code: S.newDoc.code || undefined });
+      S.busy = false; S.newDoc = null; P.setEdit(d); go(`#/m/doc/${encodeURIComponent(d.code)}`);
+    } catch (err) { S.busy = false; render(); showErr("nd-err", err); }
+  },
+  config: async () => {
+    const c = S.cfgEdit; S.busy = true; render();
+    try {
+      await PUT("/api/admin/config", { orgName: c.orgName, courseTitle: c.courseTitle, declarationText: c.declarationText, departments: c.departments.map(d => ({ id: d.id, name: d.name })), positions: c.positions.map(p => ({ id: p.id, name: p.name, dept: p.dept })) });
+      await P.loadMe(); S.busy = false; toast("Settings saved."); load();
+    } catch (err) { S.busy = false; render(); fail(err); }
+  },
+};
+
+/* ---------- navigation guard for unsaved edits ---------- */
+let lastHash = location.hash;
+window.addEventListener("hashchange", () => {
+  if (S.view === "m-edit" && S.edit && S.edit.localDirty && !location.hash.startsWith(`#/m/doc/${encodeURIComponent(S.edit.code)}`) && !location.hash.startsWith("#/preview/")) {
+    const target = location.hash;
+    history.replaceState(null, "", lastHash);
+    confirmBox("Leave without saving?", "Your changes to this document haven't been saved.", "Leave", () => { S.edit.localDirty = false; lastHash = target; location.hash = target; }, true);
+    return;
+  }
+  lastHash = location.hash;
+  P.route();
+});
+window.addEventListener("beforeunload", e => { if (S.edit && S.edit.localDirty) { e.preventDefault(); e.returnValue = ""; } });
+
+/* ---------- start ---------- */
+(async function boot() {
+  if (!S.newDoc) S.newDoc = null;
+  try { await P.loadMe(); } catch { S.me = null; }
+  if (S.me && location.hash.startsWith("#/m/doc/new")) { try { S.newDoc = { kind: "sop", code: (await GET("/api/admin/next-code?kind=sop")).code }; } catch {} }
+  P.route();
+})();
+window.addEventListener("hashchange", () => { if (S.me && location.hash === "#/m/doc/new" && (!S.newDoc || !S.newDoc.code)) { GET("/api/admin/next-code?kind=sop").then(r => { S.newDoc = { kind: "sop", code: r.code }; render(); }).catch(() => {}); } });
+})();

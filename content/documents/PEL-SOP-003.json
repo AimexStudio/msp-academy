@@ -1,0 +1,105 @@
+{
+  "code": "PEL-SOP-003",
+  "title": "Dineplan Reservations",
+  "kind": "sop",
+  "summary": "How reservations and walk-ins are managed in Dineplan and matched to tables and covers in Pilot.",
+  "body": "## 1. PURPOSE\n\nThis SOP sets out how Pelagos Langebaan manages reservations and walk-ins in Dineplan, and how Dineplan works together with Pilot POS, so that tables, cover counts and guest notes are always accurate.\n\n## 2. RESPONSIBILITY\n\n- **Primary responsibility:** Duty Manager.\n- **Applies to:** all front of house staff, including waitrons, runners, deli assistants and bartenders.\n\n## 3. STAFF RESPONSIBILITIES\n\n### 3.1 Front of house team\n\n- Allocate guests to a suitable table, taking party size and any special requests into account.\n- Seat guests at the table allocated to them in Dineplan.\n- Enter every walk-in guest into Dineplan straight away.\n- Make sure the correct number of guests (covers) is recorded in Pilot.\n\n### 3.2 Duty Manager\n\n- Confirm that each table has the correct seating capacity (covers) set in Dineplan.\n- Tell all staff about menu items that are sold out, to reduce voided orders.\n- Process and record all no-show reservations in Dineplan.\n\n## 4. DINEPLAN AND PILOT WORKFLOW\n\n### 4.1 Before service (Dineplan)\n\nAbout 30 minutes before service starts, the host or Duty Manager reviews the reservations in Dineplan:\n\n- **Review:** check the Booking Sheet in Dineplan.\n- **Key reservations:** note all VIPs, large groups (6 or more guests) and any special requests or seating notes (for example “window seat”).\n- **Tagging:** use Dineplan’s tags to label tables with relevant information, such as “Birthday” or “Anniversary”.\n- **Signage:** prepare the reservation blackboards for booked tables, showing the guest’s name, the number of guests and the booking time.\n\n### 4.2 Guest arrival and check-in\n\nAn arriving reservation needs an action in both systems:\n\n1.  **Dineplan (check-in):** when the guest arrives, find the reservation in Dineplan, check the guest in and seat them at their allocated table.\n2.  **Pilot (open table):** the waitron opens the table number in Pilot that matches the table number shown in Dineplan.\n\n### 4.3 Walk-in guests\n\n1.  **Check capacity:** always check Dineplan first to make sure a table is free before offering a walk-in guest a seat.\n2.  **Enter into Dineplan:** enter every walk-in into Dineplan with the correct number of covers and the correct time, so that cover counts stay accurate.\n3.  **Open the table in Pilot** using the same table number.\n\n## 5. RELATED DOCUMENTS\n\n- PEL-SOP-001 Steps of Service\n- PEL-SOP-004 Duty Manager Procedure\n- PEL-CHK-001 FOH Opening Checklist\n- PEL-CHK-002 Daily FOH Preparatory Checklist\n",
+  "estMinutes": 6,
+  "order": 103,
+  "audience": {
+    "all": false,
+    "positions": [
+      "headwaiter",
+      "waitron",
+      "runner",
+      "deli",
+      "host",
+      "bartender",
+      "dm",
+      "rm"
+    ]
+  },
+  "appliesText": "All FOH staff: waitrons, runners, deli assistants and bartenders",
+  "issueDate": "10 June 2026",
+  "questions": [
+    {
+      "q": "When are the reservations reviewed in Dineplan before service?",
+      "options": [
+        "When the first guest arrives",
+        "Only on weekends",
+        "At the end of the previous night",
+        "About 30 minutes before service starts"
+      ],
+      "correct": 3
+    },
+    {
+      "q": "In the pre-service review, what counts as a large group?",
+      "options": [
+        "6 or more guests",
+        "10 or more guests",
+        "4 or more guests",
+        "20 or more guests"
+      ],
+      "correct": 0
+    },
+    {
+      "q": "A walk-in guest arrives. What do you do first?",
+      "options": [
+        "Open a table in Pilot",
+        "Seat them at any empty table",
+        "Ask them to come back later",
+        "Check Dineplan to make sure a table is free"
+      ],
+      "correct": 3
+    },
+    {
+      "q": "A guest with a reservation arrives. What two actions are needed?",
+      "options": [
+        "Write their name on paper and seat them",
+        "Open any free table in Pilot",
+        "Check them in on Dineplan, and open the matching table number in Pilot",
+        "Only check them in on Dineplan"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Why must every walk-in be entered into Dineplan with the right number of guests?",
+      "options": [
+        "So that cover counts stay accurate",
+        "It is optional",
+        "So the guest earns Maxiclub points",
+        "So the guest gets a confirmation SMS"
+      ],
+      "correct": 0
+    },
+    {
+      "q": "Who processes and records no-show reservations in Dineplan?",
+      "options": [
+        "Nobody, Dineplan deletes them",
+        "The waitron for that section",
+        "The kitchen",
+        "The Duty Manager"
+      ],
+      "correct": 3
+    }
+  ],
+  "passMark": 80,
+  "pdf": {
+    "id": "fe9f7e321fb53f42689a98fee3d5aaa0",
+    "name": "PEL-SOP-003 Dineplan Reservations.pdf",
+    "size": 131986
+  },
+  "pdfFile": "PEL-SOP-003 Dineplan Reservations.pdf",
+  "status": "draft",
+  "version": 2,
+  "minor": 0,
+  "firstPublishedAt": null,
+  "publishedAt": null,
+  "createdAt": "2026-10-19T19:10:00.000Z",
+  "updatedAt": "2026-10-19T19:10:00.000Z",
+  "versions": [],
+  "hold": null,
+  "source": "G:/Shared drives/Pelagos Langebaan SOPs/2. Pelagos Langebaan SOPs 2026",
+  "videos": [],
+  "requireVideo": true
+}

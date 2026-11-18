@@ -1,0 +1,98 @@
+{
+  "code": "PEL-SOP-006",
+  "title": "Changing Beer Kegs and Line Sanitation",
+  "kind": "sop",
+  "summary": "How to change a beer keg safely and hygienically, sanitise the connection, and keep the beer lines clean.",
+  "body": "## 1. PURPOSE\n\nTo make sure keg changes are done safely and hygienically, with as little beer wastage as possible, and that the beer lines are kept clean so every pour is of high quality.\n\n## 2. SAFETY FIRST\n\n- Full kegs are heavy. Lift with your legs, not your back, and ask for help or use a trolley where needed.\n- Never disconnect a coupler while the gas is still open.\n- Gas cylinders must be stored upright and secured.\n\n## 3. DISCONNECTING THE EMPTY KEG\n\n1.  **Close the gas:** shut off the gas valve on the coupler (usually a small lever).\n2.  **Disengage the coupler:** pull the handle out and lift it up (D-system or S-system), or slide it off (A-system), to unseal it from the keg.\n3.  **Remove the coupler:** twist and lift the coupler off the keg neck.\n4.  **Seal the empty keg:** put the plastic dust cap back on the empty keg to keep out fruit flies and dirt.\n\n## 4. SANITISING THE CONNECTION\n\n> **Important:** Bacteria build up at the connection point and can sour the beer. Do not skip this step.\n\n1.  **Inspect the seal:** check the rubber O-ring on the coupler for cracks or worn spots, and report damaged seals.\n2.  **Spray with sanitiser:** use a food-grade sanitiser spray on:\n    1.  the coupler probe and bottom seal; and\n    2.  the neck (“well”) of the new keg.\n3.  **Wipe clean:** use a clean, single-use paper towel to wipe away any dirt or old beer.\n4.  **Final spray:** give the coupler and the new keg neck one last mist of sanitiser and leave it for 30 seconds (or as the manufacturer instructs).\n\n## 5. CONNECTING THE NEW KEG\n\n1.  **Position the coupler:** line up the coupler lugs with the new keg neck.\n2.  **Lock in place:** twist the coupler clockwise until it stops.\n3.  **Engage the handle:** press the handle down until it clicks into the locked position.\n4.  **Open the gas:** turn the gas valve on the coupler back to the open position.\n\n## 6. RESETTING THE SYSTEM\n\n1.  **Check for leaks:** listen for hissing (a gas leak) and look for beer “weeping” around the seals.\n2.  **Test the pour:** pour a small taster. The first pour may be foamy; discard it and check that the beer is clear and correctly carbonated.\n3.  **Record the change:** note the keg change on the bar prep sheet so that stock counts stay correct.\n\n## 7. BEER LINE CLEANING\n\n- Beer lines are cleaned **once a month** by the beer supplier’s technician, and whenever a product is changed on a line.\n- Book the next clean with the supplier as soon as each clean is done, so that no month is missed.\n- After a clean, pour and discard beer until it runs clear before serving.\n- If the beer tastes sour, looks cloudy or foams badly between cleans, take that tap out of service and ask the supplier to clean the line early.\n- Record every line clean (date, lines cleaned, technician’s name) in the line cleaning log. The Duty Manager checks the log weekly.\n\n## 8. RELATED DOCUMENTS\n\n- PEL-SOP-005 Bar Stock Take\n- PEL-SOP-007 Kitchen Hygiene (cleaning and sanitising)\n",
+  "estMinutes": 8,
+  "order": 106,
+  "audience": {
+    "all": false,
+    "positions": [
+      "bartender"
+    ]
+  },
+  "appliesText": "All bar staff",
+  "issueDate": "7 June 2026",
+  "questions": [
+    {
+      "q": "What is the first step when disconnecting an empty keg?",
+      "options": [
+        "Close the gas valve on the coupler",
+        "Lift the keg",
+        "Pour a taster",
+        "Pull the coupler off"
+      ],
+      "correct": 0
+    },
+    {
+      "q": "Why must you sanitise the coupler and the new keg's neck?",
+      "options": [
+        "To make the coupler shine",
+        "Bacteria build up at the connection and can sour the beer",
+        "Only if the keg looks dirty",
+        "It is optional"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "How long do you leave the final mist of sanitiser, unless the manufacturer says otherwise?",
+      "options": [
+        "30 seconds",
+        "No time, connect straight away",
+        "1 hour",
+        "5 minutes"
+      ],
+      "correct": 0
+    },
+    {
+      "q": "The first pour from the new keg is foamy. What do you do?",
+      "options": [
+        "Serve it to the guest",
+        "Discard it and check the beer is clear and correctly carbonated",
+        "Add ice",
+        "Disconnect the keg again"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "How often does the supplier's technician clean the beer lines?",
+      "options": [
+        "Once a month, and whenever a product changes on a line",
+        "Every day",
+        "Once a year",
+        "Only when a guest complains"
+      ],
+      "correct": 0
+    },
+    {
+      "q": "The beer tastes sour between line cleans. What do you do?",
+      "options": [
+        "Keep serving it",
+        "Turn up the gas",
+        "Mix it with a fresh keg",
+        "Take the tap out of service and ask the supplier to clean the line early"
+      ],
+      "correct": 3
+    }
+  ],
+  "passMark": 80,
+  "pdf": {
+    "id": "b2599200bc41bc0d6a11391136a369fb",
+    "name": "PEL-SOP-006 Changing Beer Kegs and Line Sanitation.pdf",
+    "size": 135294
+  },
+  "pdfFile": "PEL-SOP-006 Changing Beer Kegs and Line Sanitation.pdf",
+  "status": "draft",
+  "version": 2,
+  "minor": 0,
+  "firstPublishedAt": null,
+  "publishedAt": null,
+  "createdAt": "2026-10-19T19:10:00.000Z",
+  "updatedAt": "2026-10-19T19:10:00.000Z",
+  "versions": [],
+  "hold": null,
+  "source": "G:/Shared drives/Pelagos Langebaan SOPs/2. Pelagos Langebaan SOPs 2026",
+  "videos": [],
+  "requireVideo": true
+}

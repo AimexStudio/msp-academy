@@ -1,0 +1,108 @@
+{
+  "code": "PEL-SOP-009",
+  "title": "Maintenance",
+  "kind": "sop",
+  "summary": "The Maintenance Worker's daily routine on the estate, the area protocols and the safety and quality standard.",
+  "body": "## 1. PURPOSE\n\nTo keep the estate facilities structurally sound, safe and beautifully presented through proactive repairs and careful care of the outdoor grounds.\n\n## 2. SCOPE OF RESPONSIBILITY\n\n- **Maintenance (all areas):** the Maintenance Worker is responsible for all repairs, lighting, plumbing checks, equipment servicing and the finish of walls and ceilings in every building and facility.\n- **Cleaning (outdoor only):** the Maintenance Worker is responsible for keeping outdoor paving and hard surfaces clean. Indoor cleaning (mopping, dusting, vacuuming) is done by Housekeeping (see PEL-SOP-008).\n\n## 3. DAILY ROUTINE\n\nTo make sure the estate is ready for residents and guests, follow this daily timeline and tick each task on the Daily Maintenance and Grounds Checklist (PEL-CHK-007):\n\n### 3.1 Phase 1: first light inspection (07:30 to 08:30)\n\n- **Safety check:** check the swimming pool gates, the children’s play area and the sports court fences for any hazards.\n- **Full light check:** walk through the Library, offices, Function Hall, gym and Frail Care. Replace any blown bulbs immediately.\n- **Plumbing check:** flush toilets and run taps in the public bathrooms and staff rooms to check for leaks or slow drainage.\n- **Pools:** clean and treat the pools so they are ready for use for the day.\n\n### 3.2 Phase 2: outdoor grounds and drainage (08:30 to 11:00)\n\n- **Paving:** sweep all paving at Reception, the courtyard and the restaurant free of debris and cigarette butts.\n- **Gulleys:** every morning, inspect all storm drains and gulleys and remove leaves, sand or plastic that could cause a blockage.\n- **Lapa:** remove ash from the braai area and sweep the paving, hosing it down if stained.\n\n### 3.3 Phase 3: repairs and structural maintenance (11:00 to 16:00)\n\n- **The invisible repair rule:** when repairing chips or scuffs on walls, sand the area, fill where necessary and paint with the exact colour code from the Villa Del Mare Paint Log (PEL-REG-002). Never paint over dust.\n- **Paint Log:** when a new paint is bought or a new colour is mixed, add it to the Paint Log with a photo of the tin label and a photo of the paint, and record the batch number.\n- **Frail Care protocol:** knock and announce “Maintenance” before entering any of the 6 rooms. If a resident is resting or being treated, come back later.\n- **Equipment checks:** do the daily checks on the gym machines, laundry equipment and pool pumps.\n\n### 3.4 Tool return and fault log (16:00 to 16:30)\n\n- **Tool check:** at 16:00 every day, clean all tools of dust and paint and return them to the maintenance store. Report missing tools immediately.\n- **Fault log:** record every repair done during the day in the daily fault log. Report any major breakage you cannot fix to the General Manager with a photo and a list of parts needed.\n\n## 4. SPECIFIC AREA PROTOCOLS\n\n### 4.1 Drainage and gulleys\n\n- **Rain protocol:** if rain is forecast, all other tasks come second. Check and clear every drainage point on the estate.\n- **Kitchen gulleys:** every Friday, treat the restaurant and Frail Care kitchen gulleys as set out in PEL-SOP-010 Planned Preventative Maintenance (hot water and degreaser) to prevent fat-trap overflow.\n\n### 4.2 Sports facilities\n\n- **Astro care:** use the designated brush to keep the fibres upright on the soccer and bowls astro. Check for lifting seams weekly.\n- **Courts:** check the net tension on the padel and tennis courts. Make sure gate latches are lubricated and close automatically.\n\n### 4.3 Offices and co-working space\n\n- Test all power points and make sure furniture is stable.\n- Inspect walls for chair-back scuffs and repair them immediately.\n\n## 5. HEALTH, SAFETY AND CONDUCT\n\n- **Signage:** put out “Work in progress” or “Wet floor” signs whenever you pressure-wash paving or work on plumbing in public areas.\n- **Chemicals:** keep all pool chemicals and maintenance solvents in the locked maintenance store.\n- **PPE:** wear safety boots at all times, and gloves, goggles or a mask when the task requires it.\n- **Professionalism:** wear the full maintenance uniform (see the Staff Handbook, section 7.2) and be polite to residents at all times, especially in the Frail Care wing.\n\n## 6. MAINTENANCE QUALITY STANDARD\n\n> **The gold standard:** “If a guest walks past, the estate should look like it was built yesterday.”\n\nThis means no flickering lights, no chipped paint, no sand on the paving and no slow-draining gulleys.\n\n## 7. RELATED DOCUMENTS\n\n- PEL-CHK-007 Daily Maintenance and Grounds Checklist\n- PEL-REG-002 Villa Del Mare Paint Log\n- PEL-SOP-010 Planned Preventative Maintenance\n- PEL-SOP-008 Housekeeping\n- PEL-POL-001 Staff Handbook (section 7.2, Uniform and appearance)\n",
+  "estMinutes": 10,
+  "order": 109,
+  "audience": {
+    "all": false,
+    "positions": [
+      "maintenance"
+    ]
+  },
+  "appliesText": "Maintenance Worker(s) on Villa Del Mare Estate",
+  "issueDate": "19 October 2026",
+  "questions": [
+    {
+      "q": "What do you check in the first light inspection (07:30 to 08:30)?",
+      "options": [
+        "Staff uniforms",
+        "Pool gates, play area, court fences, lights, plumbing and the pools",
+        "Only the gym",
+        "The restaurant stock"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Rain is forecast. What comes first?",
+      "options": [
+        "Brush the astro",
+        "Paint the walls",
+        "Check and clear every drainage point on the estate",
+        "Clean the offices"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "What is the invisible repair rule?",
+      "options": [
+        "Sand, fill and paint with the exact colour code, and never paint over dust",
+        "Use any white paint",
+        "Hang a picture over the mark",
+        "Leave small chips"
+      ],
+      "correct": 0
+    },
+    {
+      "q": "How do you enter a Frail Care room?",
+      "options": [
+        "Walk straight in",
+        "Only with a family member present",
+        "Knock and announce \"Maintenance\"; come back later if the resident is resting or being treated",
+        "Never enter"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "What happens at 16:00 every day?",
+      "options": [
+        "Start cleaning the pools",
+        "Lock the gym",
+        "Collect the rubbish",
+        "Clean and return all tools to the store, and complete the fault log"
+      ],
+      "correct": 3
+    },
+    {
+      "q": "Where are pool chemicals and maintenance solvents kept?",
+      "options": [
+        "At the pool",
+        "In the restaurant store",
+        "In the locked maintenance store",
+        "In the staff room"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "A new paint is bought or mixed. What do you do?",
+      "options": [
+        "Tell the GM verbally",
+        "Nothing",
+        "Write the colour on the wall",
+        "Add it to the Villa Del Mare Paint Log with photos and the batch number"
+      ],
+      "correct": 3
+    }
+  ],
+  "passMark": 80,
+  "pdf": {
+    "id": "f7ee5894ecede1575e0d0d10da531c9a",
+    "name": "PEL-SOP-009 Maintenance.pdf",
+    "size": 146472
+  },
+  "pdfFile": "PEL-SOP-009 Maintenance.pdf",
+  "status": "draft",
+  "version": 2,
+  "minor": 1,
+  "firstPublishedAt": null,
+  "publishedAt": null,
+  "createdAt": "2026-10-19T19:10:00.000Z",
+  "updatedAt": "2026-10-19T19:10:00.000Z",
+  "versions": [],
+  "hold": null,
+  "source": "G:/Shared drives/Pelagos Langebaan SOPs/2. Pelagos Langebaan SOPs 2026",
+  "videos": [],
+  "requireVideo": true
+}

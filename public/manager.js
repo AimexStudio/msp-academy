@@ -164,7 +164,7 @@ function mCourseNew() {
 }
 function lessonEditor(l, i, j, d) {
   const e = S.courseEdit, p = `courseEdit.draft.modules.${i}.lessons.${j}`;
-  const title = `<div class="field"><label for="le-t-${i}-${j}">Lesson title</label><input id="le-t-${i}-${j}" type="text" data-bind="${p}.title" value="${esc(l.title)}"></div>`;
+  const title = `<div class="field"><label for="le-t-${i}-${j}">Lesson title</label><input id="le-t-${i}-${j}" type="text" data-bind="${p}.title" data-live="1" value="${esc(l.title)}"></div>`;
   if (l.type === "text") return `${title}<div class="field"><label for="le-b-${i}-${j}">Text</label><textarea id="le-b-${i}-${j}" rows="10" data-bind="${p}.body">${esc(l.body || "")}</textarea><span class="hint">## for a heading, - for a bullet, 1. for a numbered step, **bold**.</span></div>`;
   if (l.type === "video" || l.type === "pdf") {
     const f = l.fileId && e.files[l.fileId], up = e.uploading && e.uploading.key === `${i}-${j}`;

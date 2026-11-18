@@ -103,7 +103,7 @@ function clientCard(c) {
     <div class="pc-band" style="background:${esc(col.primary || "#26292D")}">${c.logoUrl ? `<img src="${esc(c.logoUrl)}" alt="">` : `<span style="color:${esc(col.background || "#fff")}">${esc(c.wordmark || c.name)}</span>`}<span class="pc-dots"><i style="background:${esc(col.accent || "#888")}"></i><i style="background:${esc(col.highlight || "#aaa")}"></i></span></div>
     <div class="pc-body"><div class="row between" style="gap:8px;flex-wrap:nowrap"><strong class="pc-name">${esc(c.name)}</strong>${statusChip(c.status)}</div>
       <div class="pc-meta"><span class="mono">${esc(c.loginCode || "—")}</span><span>No. ${c.clientNo ?? "—"}</span></div>
-      <div class="pc-stats"><span><b class="tnum">${c.staff}</b> staff</span><span><b class="tnum">${c.published}</b> documents</span><span><b class="tnum">${c.courses}</b> courses</span></div>
+      <div class="pc-stats"><span>${plural(c.staff, "staff member")}</span><span>${plural(c.published, "document")}</span><span>${plural(c.courses, "course")}</span></div>
       <div class="pc-foot muted">${c.domains.length ? esc(c.domains[0]) : "Shared sign-in page"} · last sign-in ${fmtDate(c.lastSignInAt)}</div></div></a>`;
 }
 function vClients() {

@@ -19,7 +19,8 @@
     "migrate:local": "node scripts/firebase-run.js script migrate",
     "platform-admin": "node scripts/create-platform-admin.js",
     "platform-admin:local": "node scripts/firebase-run.js script create-platform-admin",
-    "update": "bash scripts/update-from-zip.sh"
+    "update": "bash scripts/update-from-zip.sh",
+    "predeploy": "npm test"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.5",

@@ -116,3 +116,22 @@ export async function seedDemoLibrary(db) {
   await publishCourse(db, { orgId: LIBRARY_ORG_ID, courseId: ref.id, actorName: 'MSP Academy' });
   return true;
 }
+
+/** A second sample library course showing the richer lesson types (checklist, policy sign-off, field evidence). */
+export async function seedDemoLibraryLessons(db) {
+  await ensureLibrary(db);
+  const all = await db.collection('courses').where('orgId', '==', LIBRARY_ORG_ID).get();
+  if (all.docs.some(d => d.get('title') === 'Workplace Safety Starter')) return false;
+  const ref = db.collection('courses').doc();
+  const draft = { title: 'Workplace Safety Starter', description: 'Checklist, sign-off and a photo of your work area.', audience: { all: true, positions: [] }, modules: [
+    { id: 'm-daily', title: 'Every shift', lessons: [
+      { id: 'l-start', type: 'checklist', title: 'Start-of-shift checks', summary: 'Do these before you start work.', steps: ['Sign the attendance register', 'Put on the right safety gear', 'Check the first aid box is stocked', 'Report anything broken to your supervisor'] },
+      { id: 'l-why', type: 'text', title: 'Why it matters', body: '## Safety first\n\nMost injuries at work happen in the first minutes of a shift, when people rush. The checks take two minutes.' }] },
+    { id: 'm-commit', title: 'Your commitment', lessons: [
+      { id: 'l-quiz', type: 'quiz', title: 'Quick check', passMark: 100, questions: [{ q: 'Who do you report broken equipment to?', options: ['Your supervisor', 'Nobody', 'A guest'], correct: 0 }] },
+      { id: 'l-sign', type: 'signoff', title: 'Safety policy', code: 'SAFE-01', statement: 'I will complete the start-of-shift checks every shift and report anything unsafe straight away.' },
+      { id: 'l-ev', type: 'evidence', title: 'Show your work area', prompt: 'Take a photo of your work area after your start-of-shift checks and describe anything you reported.', placeholder: 'e.g. All clear, first aid box restocked', photo: 'optional' }] }] };
+  await ref.set({ orgId: LIBRARY_ORG_ID, title: draft.title, description: draft.description, codes: [], draft, status: 'draft', draftDirty: false, current: null, shared: null, createdAt: now(), updatedAt: now(), createdBy: null });
+  await publishCourse(db, { orgId: LIBRARY_ORG_ID, courseId: ref.id, actorName: 'MSP Academy' });
+  return true;
+}

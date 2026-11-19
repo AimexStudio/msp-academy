@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { MemoryFirestore } from '../src/memory-firestore.js';
 import { createMemoryStorage } from '../src/storage.js';
 import { importContent } from '../src/importer.js';
-import { seedDemoStaff, seedDemoPlatform, seedDemoSharing, seedDemoLibrary, DEMO_ADMIN } from '../src/staff-admin.js';
+import { seedDemoStaff, seedDemoPlatform, seedDemoSharing, seedDemoLibrary, seedDemoLibraryLessons, DEMO_ADMIN } from '../src/staff-admin.js';
 import { buildApp } from '../src/app.js';
 import { config } from '../src/config.js';
 
@@ -14,6 +14,7 @@ await seedDemoStaff(db, config.orgId);
 await seedDemoPlatform(db);
 await seedDemoSharing(db, config.orgId);
 await seedDemoLibrary(db);
+await seedDemoLibraryLessons(db);
 const app = await buildApp({ db, storage, logger: false });
 await app.listen({ port: config.port, host: config.host });
 console.log(`MSP Academy quick-look demo (nothing is saved): Pelagos with ${r.published.length} documents, Harbour Demo, HR Demo, and a library course.`);

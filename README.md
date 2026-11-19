@@ -48,7 +48,7 @@ Open **http://localhost:5050**. Press **Ctrl+C** in that terminal to stop (alway
 | | `HARBOUR` | HB001 | 123456 | Harbour Demo manager |
 | | `HARBOUR` | HB002 | 1234 | Harbour Demo staff |
 | | `HRDEMO` | HR001 | 123456 | HR Demo manager, with an "HR Essentials" course to share |
-| http://localhost:5050/platform | | | | `admin@example.com` / `platform-demo-only`, no code needed locally |
+| http://localhost:5050/platform | | | | `admin@example.com` / `platform-demo-only`, no code needed locally. The Library holds two sample courses to share, one showing checklists, policy sign-off and field evidence |
 
 To switch client on one browser: sign out, then **Change client** under the sign-in button.
 
@@ -85,12 +85,24 @@ Everything below is at `/platform`, for the MSP Academy team.
 
 ## Building courses
 
-Client managers: **SOP library → Courses → New course** (the library uses the same builder).
+Client managers: **SOP library → Courses → New course** (MSP Academy's library uses the same builder). Add **modules**, then use the **Add a lesson** buttons under each module:
 
-- Add **modules**, then **lessons**: text, video (MP4), PDF, quiz, or one of your SOPs and policies (read and signed as usual).
+| Lesson | What the learner does | Settings |
+|---|---|---|
+| Text | Reads it | Headings, bullets, numbered steps, **bold** |
+| Video | Watches an uploaded MP4 | **Must watch at least** 75–100% (or optional), **no skipping ahead**, **pause when the person switches tab or app**, **chapters** (time + name), and an optional **check question** after the video. The server counts only the parts really played, never faster than real time. If the video won't play on someone's device they can say so and continue; it's recorded |
+| PDF | Opens and reads it | Upload the PDF |
+| Checklist | Ticks every step to confirm they follow it | A summary and the steps |
+| Quiz | Answers multiple-choice questions | Pass mark; marked on the server, answers never sent to the device; unlimited tries |
+| Policy sign-off | Agrees to a statement and types their full name (must match their profile) | Reference and statement; the sign-off is recorded in their certificate |
+| Field evidence | Describes what they did and adds a photo, for a manager to approve | Instructions, example answer, photo optional / required / none |
+| SOP or policy | Reads, answers and signs one of your documents as usual | Choose the document |
+
 - Click a lesson to edit it; ↑ ↓ reorder (and move lessons between modules); choose **who must complete it**; **Publish**.
 - Publishing freezes a version. A **minor change** keeps everyone's progress; a **new version** asks everyone to take it again. Published courses can be archived, not deleted, so certificates stay valid.
-- Staff see courses on **My training**; lessons unlock in order; quizzes are marked on the server; finishing gives a printable certificate in the client's branding.
+- Lessons unlock in order. Field evidence waiting for review doesn't hold people up, but the certificate waits until it's approved.
+- **Reviews** (manager menu, and a banner on the overview): approve evidence, or return it with a note so the person can submit again. Approving the last outstanding lesson issues the certificate.
+- Finishing a course gives a printable certificate in the client's branding, recorded in the tamper-evident training record (including any policy sign-offs).
 
 ---
 
@@ -149,4 +161,4 @@ Do this once, **before** deploying this version. The move only adds information 
 
 ## Not yet in this version
 
-Self-service Word/PDF import, AI question drafting per client, staff import, email or WhatsApp reminders, drag-and-drop in the builder, a learner preview of courses, course results in reports, server-side tracking of course videos, billing, SSO, expiring certifications and due dates.
+Self-service Word/PDF import, AI question drafting per client, staff import, email or WhatsApp reminders, drag-and-drop in the builder, a learner preview of courses, course results in reports, YouTube or Vimeo videos (uploads only, so watching can be checked), billing, SSO, expiring certifications and due dates.

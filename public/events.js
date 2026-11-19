@@ -36,6 +36,7 @@ document.addEventListener("change", async e => {
   else if (act === "chg") { S.edit.change = ds.v; render(); }
   else if (act === "cb-aud-pos") { const ps = S.courseEdit.draft.audience.positions; const i = ps.indexOf(ds.p); if (el.checked && i < 0) ps.push(ds.p); if (!el.checked && i >= 0) ps.splice(i, 1); S.courseEdit.dirty = true; render(); }
   else if (act === "cb-q-correct") { cbLesson(ds).questions[ds.k].correct = Number(ds.n); S.courseEdit.dirty = true; }
+  else if (act === "cb-cp-correct") { cbLesson(ds).checkpoint.correct = Number(ds.n); S.courseEdit.dirty = true; }
   else if (act === "cb-chg") { S.courseEdit.change = ds.v; render(); }
   else if (act === "cb-upload") {
     const f = el.files && el.files[0]; if (!f) return;
@@ -99,10 +100,14 @@ const ACTIONS = {
   },
   "cb-mod-move": (t, ds) => { const ms = S.courseEdit.draft.modules, i = Number(ds.i), k = i + Number(ds.d); if (k < 0 || k >= ms.length) return; [ms[i], ms[k]] = [ms[k], ms[i]]; S.courseEdit.dirty = true; render(); },
   "cb-les-add": (t, ds) => {
-    const e = S.courseEdit, type = e.addType[ds.i] || "text";
+    const e = S.courseEdit, type = ds.type || "text";
     const l = { id: "l-" + Math.random().toString(36).slice(2, 10), type, title: "" };
     if (type === "text") l.body = ""; if (type === "video" || type === "pdf") l.fileId = null; if (type === "document") l.code = "";
     if (type === "quiz") { l.passMark = 80; l.questions = [{ q: "", options: ["", ""], correct: -1 }]; }
+    if (type === "video") Object.assign(l, { minWatchPct: 90, noSkipAhead: true, pauseWhenHidden: true, chapters: [], checkpoint: null });
+    if (type === "checklist") Object.assign(l, { summary: "", steps: ["", ""] });
+    if (type === "signoff") Object.assign(l, { code: "", statement: "" });
+    if (type === "evidence") Object.assign(l, { prompt: "", placeholder: "", photo: "optional" });
     e.draft.modules[ds.i].lessons.push(l); e.open = l.id; e.dirty = true; render();
   },
   "cb-les-open": (t, ds) => { S.courseEdit.open = S.courseEdit.open === ds.id ? null : ds.id; render(); },
@@ -116,6 +121,21 @@ const ACTIONS = {
     else if (d > 0 && i < ms.length - 1) ms[i + 1].lessons.unshift(ls.splice(j, 1)[0]);
     else return;
     S.courseEdit.dirty = true; render();
+  },
+  "cb-step-add": (t, ds) => { cbLesson(ds).steps.push(""); S.courseEdit.dirty = true; render(); },
+  "cb-step-del": (t, ds) => { cbLesson(ds).steps.splice(ds.k, 1); S.courseEdit.dirty = true; render(); },
+  "cb-ch-add": (t, ds) => { cbLesson(ds).chapters.push({ time: "", label: "" }); S.courseEdit.dirty = true; render(); },
+  "cb-ch-del": (t, ds) => { cbLesson(ds).chapters.splice(ds.k, 1); S.courseEdit.dirty = true; render(); },
+  "cb-cp-add": (t, ds) => { cbLesson(ds).checkpoint = { q: "", options: ["", ""], correct: -1 }; S.courseEdit.dirty = true; render(); },
+  "cb-cp-del": (t, ds) => { cbLesson(ds).checkpoint = null; S.courseEdit.dirty = true; render(); },
+  "cb-cp-opt-add": (t, ds) => { cbLesson(ds).checkpoint.options.push(""); S.courseEdit.dirty = true; render(); },
+  "cb-cp-opt-del": (t, ds) => { const q = cbLesson(ds).checkpoint, n = Number(ds.n); q.options.splice(n, 1); if (q.correct === n) q.correct = -1; else if (q.correct > n) q.correct--; S.courseEdit.dirty = true; render(); },
+  "rv-approve": async (t, ds) => { try { await POST(`/api/admin/evidence/${encodeURIComponent(ds.id)}/review`, { decision: "approve" }); toast("Approved."); load(); } catch (e) { fail(e); } },
+  "rv-reject": (t, ds) => {
+    S.rvNote = "";
+    confirmBox(`Return ${ds.name}'s evidence?`, "They'll see your note and can submit again.", "Return it", async () => {
+      try { await POST(`/api/admin/evidence/${encodeURIComponent(ds.id)}/review`, { decision: "reject", note: S.rvNote }); toast("Returned."); load(); } catch (e) { fail(e); }
+    }, false, `<div class="field" style="margin:14px 0"><label for="rv-note">What needs to change?</label><textarea id="rv-note" rows="3" data-bind="rvNote" placeholder="e.g. The photo is blurred; please take it again."></textarea></div>`);
   },
   "cb-q-add": (t, ds) => { cbLesson(ds).questions.push({ q: "", options: ["", ""], correct: -1 }); S.courseEdit.dirty = true; render(); },
   "cb-q-del": (t, ds) => { cbLesson(ds).questions.splice(ds.k, 1); S.courseEdit.dirty = true; render(); },
@@ -355,7 +375,9 @@ function cbLesson(ds) { return S.courseEdit.draft.modules[Number(ds.i)].lessons[
 async function saveCourse(showToast) {
   const e = S.courseEdit;
   try {
-    const r = await PUT(`/api/admin/courses/${encodeURIComponent(e.id)}`, { draft: e.draft });
+    const toSec = t => { const m = String(t ?? "").trim().match(/^(?:(\d+):)?(\d{1,2}):(\d{2})$|^(\d+)$/); if (!m) return 0; return m[4] ? Number(m[4]) : (Number(m[1] || 0) * 3600 + Number(m[2]) * 60 + Number(m[3])); };
+    const draft = { ...e.draft, modules: e.draft.modules.map(m => ({ ...m, lessons: m.lessons.map(l => l.type === "video" ? { ...l, chapters: (l.chapters || []).map(c => ({ at: c.time !== undefined ? toSec(c.time) : c.at, label: c.label })) } : l) })) };
+    const r = await PUT(`/api/admin/courses/${encodeURIComponent(e.id)}`, { draft });
     e.dirty = false; e.problems = r.problems; e.draftDirty = r.draftDirty;
     if (showToast) { toast("Saved."); await load(); }
     return true;

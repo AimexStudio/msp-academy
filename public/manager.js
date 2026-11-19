@@ -11,13 +11,14 @@ function vMgr(inner) {
   const on = keys => keys.includes(v) ? "on" : "";
   const nav = (href, label, keys, extra = "") => `<a class="nav ${on(keys)}" href="${href}" ${on(keys) ? 'aria-current="page"' : ""}><span>${label}</span>${extra}</a>`;
   const body = inner || ({ "m-overview": mOverview, "m-staff": mStaff, "m-staffnew": mStaffNew, "m-person": mPerson, "m-library": mLibrary,
-    "m-edit": mEdit, "m-version": mVersion, "m-course": mCourse, "m-reports": mReports, "m-settings": mSettings, "m-audit": mAudit }[v] || (() => ""))(S.data[v]);
+    "m-edit": mEdit, "m-version": mVersion, "m-course": mCourse, "m-reviews": mReviews, "m-reports": mReports, "m-settings": mSettings, "m-audit": mAudit }[v] || (() => ""))(S.data[v]);
   return `<div class="gutter"><div class="mgr"><nav class="rail" aria-label="Manager"><span class="eyebrow">${esc(P.isAuthor() ? "MSP Academy author" : P.isSupport() ? P.SUPPORT_LABEL : ROLE_LABEL[P.role()])}</span>
     ${nav("#/m/overview", "Overview", ["m-overview"])}
     ${nav("#/m/staff", "Staff", ["m-staff", "m-person", "m-staffnew"])}
     ${canDocs() ? nav("#/m/library", "SOP library", ["m-library", "m-edit", "m-version", "m-course"], drafts ? `<span class="count tnum">${drafts} draft${drafts > 1 ? "s" : ""}</span>` : "") : ""}
     ${nav("#/m/reports", "Reports", ["m-reports"])}
     ${canDocs() ? nav("#/m/settings", "Settings", ["m-settings"]) : ""}
+    ${nav("#/m/reviews", "Reviews", ["m-reviews"])}
     ${canDocs() ? nav("#/m/audit", "Audit log", ["m-audit"]) : ""}
     ${P.isSupport() || P.isAuthor() ? "" : `<hr><a class="nav" href="#/home"><span>My training</span></a>`}</nav>
     <main style="min-width:0">${body}</main></div></div>`;
@@ -32,6 +33,7 @@ function mOverview(d) {
   return `<div class="page-head"><div class="t"><span class="eyebrow">${esc(d.orgName)}${d.scopeDept ? " · " + esc(d.scopeDept) : ""}</span><h1>Training overview</h1></div>
     <div class="row"><a class="btn" href="#/m/reports">Reports</a>${canEdit() ? `<a class="btn primary" href="#/m/doc/new">New SOP or policy</a>` : ""}</div></div>
     <div class="stack" style="gap:18px">
+    ${d.evidencePending ? `<div class="banner"><div class="main"><strong>${plural(d.evidencePending, "evidence submission")} waiting for review</strong><div class="muted" style="font-size:.9rem">Staff submitted proof in a course. Approve it to complete that lesson.</div></div><a class="btn" href="#/m/reviews">Review</a></div>` : ""}
     ${d.drafts && canEdit() ? `<div class="banner"><div class="main"><strong>${plural(d.drafts, "draft document")} waiting for review</strong><div class="muted" style="font-size:.9rem">Staff only see documents once you publish them. Check the wording, then publish each one.</div></div><a class="btn" href="#/m/library">Review drafts</a></div>` : ""}
     ${!d.staffCount && canEdit() ? `<div class="banner"><div class="main"><strong>No staff yet</strong><div class="muted" style="font-size:.9rem">Add your team with their position. Each person gets a staff number and PIN to sign in on the training tablet.</div></div><a class="btn primary" href="#/m/staff/new">Add staff member</a></div>` : ""}
     <div class="kpis">${kpi("Staff on the portal", d.staffCount, plural(d.departments.length, "department"))}${kpi("Fully up to date", d.staffCount ? Math.round(d.upToDate / d.staffCount * 100) + "%" : "—", `${d.upToDate} of ${d.staffCount} staff`)}${kpi("Sign-offs outstanding", d.outstanding, `across ${plural(d.peopleBehind, "person", "people")}`)}${kpi("Declarations signed", `${d.declarations}<span class="muted" style="font-size:1.1rem">/${d.staffCount}</span>`, plural(d.publishedCount, "published document"))}</div>
@@ -140,8 +142,10 @@ function mLibrary(d) {
 }
 
 /* ---------- courses: built from modules and lessons ---------- */
-const LESSON_TYPES = { text: "Text", video: "Video", pdf: "PDF", quiz: "Quiz", document: "SOP or policy" };
-const LESSON_ICON = { text: "¶", video: "▶", pdf: "⎙", quiz: "?", document: "✎" };
+const LESSON_TYPES = { text: "Text", video: "Video", pdf: "PDF", checklist: "Checklist", quiz: "Quiz", signoff: "Policy sign-off", evidence: "Field evidence", document: "SOP or policy" };
+const LESSON_ICON = { text: "¶", video: "▶", pdf: "⎙", checklist: "☑", quiz: "?", signoff: "✍", evidence: "📷", document: "✎" };
+const LESSON_HINT = { text: "Something to read", video: "An uploaded video, with watch rules", pdf: "A PDF to open and read", checklist: "Steps to tick off",
+  quiz: "Questions with a pass mark", signoff: "Agree to a statement and sign", evidence: "Proof for a manager to approve", document: "One of your SOPs or policies" };
 function courseChip(c) {
   if (c.status === "archived") return '<span class="chip">Archived</span>';
   if (c.status === "published") return `<span class="chip ok">Published v${esc(c.label)}</span>${c.draftDirty ? ' <span class="chip plain tag-dirty">Unpublished changes</span>' : ""}`;
@@ -171,19 +175,45 @@ function lessonEditor(l, i, j, d) {
     return `${title}<div class="field"><span class="lbl">${l.type === "video" ? "Video (MP4)" : "PDF"}</span>
       ${f ? `<div class="attach"><span class="chip plain ${l.type === "video" ? "info" : "khaki"}">${l.type === "video" ? "Video" : "PDF"}</span><span style="flex:1;min-width:0;overflow-wrap:anywhere">${esc(f.name)}${f.duration ? " · " + esc(P.fmtDur(f.duration)) : ""}${f.size ? " · " + esc(P.fmtSize(f.size)) : ""}</span><a class="btn sm" href="/api/files/${esc(l.fileId)}" target="_blank" rel="noopener">Open</a></div>` : ""}
       ${up ? `<div class="upload-row"><span>Uploading ${esc(e.uploading.name)}…</span><progress max="1" value="${e.uploading.pct || 0}"></progress></div>`
-        : `<input type="file" accept="${l.type === "video" ? "video/mp4,.mp4,.m4v,.mov" : "application/pdf,.pdf"}" data-change="cb-upload" data-i="${i}" data-j="${j}"><span class="hint">${f ? "Choose a file to replace it." : l.type === "video" ? "MP4 (H.264), under 30 MB." : "Up to 25 MB."}</span>`}</div>`;
+        : `<input type="file" accept="${l.type === "video" ? "video/mp4,.mp4,.m4v,.mov" : "application/pdf,.pdf"}" data-change="cb-upload" data-i="${i}" data-j="${j}"><span class="hint">${f ? "Choose a file to replace it." : l.type === "video" ? "MP4 (H.264), under 30 MB." : "Up to 25 MB."}</span>`}</div>
+      ${l.type === "video" ? videoSettings(l, i, j, p) : ""}`;
   }
   if (l.type === "document") {
     const docs = d.lib.documents.filter(m => m.status !== "archived" || m.code === l.code);
     return `<div class="field"><label for="le-d-${i}-${j}">SOP or policy</label><select id="le-d-${i}-${j}" data-bind="${p}.code" data-rerender="1"><option value="">Choose…</option>${docs.map(m => `<option value="${esc(m.code)}" ${l.code === m.code ? "selected" : ""}>${esc(m.code)} · ${esc(m.title)}${m.status !== "published" ? " (draft)" : ""}</option>`).join("")}</select>
       <span class="hint">People read and sign it as usual; signing it finishes this lesson. Who must sign it is still set on the document.</span></div>`;
   }
+  if (l.type === "checklist") return `${title}<div class="field"><label for="le-s-${i}-${j}">Summary (optional)</label><input id="le-s-${i}-${j}" type="text" data-bind="${p}.summary" value="${esc(l.summary || "")}" placeholder="e.g. Do these at the start of every shift"></div>
+    <div class="field"><span class="lbl">Steps people tick off</span>${(l.steps || []).map((st, k) => `<div class="opt-row"><span class="cl-num tnum">${k + 1}</span><input type="text" aria-label="Step ${k + 1}" data-bind="${p}.steps.${k}" value="${esc(st)}" placeholder="Step ${k + 1}"><button type="button" class="btn ghost sm" data-act="cb-step-del" data-i="${i}" data-j="${j}" data-k="${k}" aria-label="Remove step">✕</button></div>`).join("")}
+    <div class="row"><button type="button" class="btn sm" data-act="cb-step-add" data-i="${i}" data-j="${j}">Add step</button></div></div>`;
+  if (l.type === "signoff") return `${title}<div class="grid2"><div class="field"><label for="le-c-${i}-${j}">Policy reference (optional)</label><input id="le-c-${i}-${j}" type="text" data-bind="${p}.code" value="${esc(l.code || "")}" placeholder="e.g. POL-009"></div></div>
+    <div class="field"><label for="le-st-${i}-${j}">Statement people agree to</label><textarea id="le-st-${i}-${j}" rows="4" data-bind="${p}.statement" placeholder="e.g. I have read the safety policy and will follow it at all times.">${esc(l.statement || "")}</textarea><span class="hint">People tick to agree and type their full name, which must match their profile. It's recorded in their certificate.</span></div>`;
+  if (l.type === "evidence") return `${title}<div class="field"><label for="le-pr-${i}-${j}">What must people submit?</label><textarea id="le-pr-${i}-${j}" rows="3" data-bind="${p}.prompt" placeholder="e.g. Describe how you set up your station, and add a photo.">${esc(l.prompt || "")}</textarea></div>
+    <div class="grid2"><div class="field"><label for="le-ph-${i}-${j}">Example answer (optional)</label><input id="le-ph-${i}-${j}" type="text" data-bind="${p}.placeholder" value="${esc(l.placeholder || "")}"></div>
+      <div class="field"><label for="le-pho-${i}-${j}">Photo</label><select id="le-pho-${i}-${j}" data-bind="${p}.photo">${[["optional", "Optional"], ["required", "Required"], ["none", "No photo"]].map(([v, t]) => `<option value="${v}" ${l.photo === v ? "selected" : ""}>${t}</option>`).join("")}</select></div></div>
+    <p class="hint muted" style="font-size:.84rem">A manager approves or returns each submission under <strong>Reviews</strong>. People can carry on with the next lessons meanwhile; the certificate waits for approval.</p>`;
   const qs = (l.questions || []).map((q, k) => `<div class="qe"><div class="row between"><span class="lbl">Question ${k + 1}</span><button type="button" class="btn ghost sm" data-act="cb-q-del" data-i="${i}" data-j="${j}" data-k="${k}">Remove</button></div>
     <input type="text" aria-label="Question ${k + 1}" data-bind="${p}.questions.${k}.q" value="${esc(q.q)}" placeholder="Question">
     ${q.options.map((o, n) => `<div class="opt-row"><input type="radio" name="cq-${i}-${j}-${k}" aria-label="Mark option ${n + 1} correct" data-change="cb-q-correct" data-i="${i}" data-j="${j}" data-k="${k}" data-n="${n}" ${q.correct === n ? "checked" : ""}><input type="text" aria-label="Option ${n + 1}" data-bind="${p}.questions.${k}.options.${n}" value="${esc(o)}" placeholder="Option ${n + 1}"><button type="button" class="btn ghost sm" data-act="cb-opt-del" data-i="${i}" data-j="${j}" data-k="${k}" data-n="${n}" ${q.options.length <= 2 ? "disabled" : ""} aria-label="Remove option">✕</button></div>`).join("")}
     <div class="row between"><span class="hint muted" style="font-size:.8rem">Tick the correct answer.</span>${q.options.length < 6 ? `<button type="button" class="btn ghost sm" data-act="cb-opt-add" data-i="${i}" data-j="${j}" data-k="${k}">Add option</button>` : ""}</div></div>`).join("");
   return `${title}<div class="field" style="max-width:160px"><label for="le-pm-${i}-${j}">Pass mark</label><select id="le-pm-${i}-${j}" data-bind="${p}.passMark" data-num="1">${[60, 70, 80, 90, 100].map(n => `<option value="${n}" ${Number(l.passMark) === n ? "selected" : ""}>${n}%</option>`).join("")}</select></div>
     ${qs}<div class="row"><button type="button" class="btn sm" data-act="cb-q-add" data-i="${i}" data-j="${j}">Add question</button></div>`;
+}
+function videoSettings(l, i, j, p) {
+  const cp = l.checkpoint;
+  return `<div class="cb-subcard stack" style="gap:10px"><span class="lbl">Watch rules</span>
+      <div class="grid2"><div class="field"><label for="le-mw-${i}-${j}">Must watch at least</label><select id="le-mw-${i}-${j}" data-bind="${p}.minWatchPct" data-num="1">${[[0, "Optional"], [75, "75%"], [80, "80%"], [85, "85%"], [90, "90%"], [100, "The whole video"]].map(([v, t]) => `<option value="${v}" ${Number(l.minWatchPct ?? 90) === v ? "selected" : ""}>${t}</option>`).join("")}</select></div></div>
+      <label class="check"><input type="checkbox" data-bind="${p}.noSkipAhead" ${l.noSkipAhead !== false ? "checked" : ""}><span>Don't allow skipping ahead</span></label>
+      <label class="check"><input type="checkbox" data-bind="${p}.pauseWhenHidden" ${l.pauseWhenHidden !== false ? "checked" : ""}><span>Pause when the person switches to another tab or app</span></label>
+      <p class="hint muted" style="font-size:.82rem">The server counts only the parts really played, and never faster than real time.</p></div>
+    <div class="cb-subcard stack" style="gap:8px"><span class="lbl">Chapters (optional)</span>
+      ${(l.chapters || []).map((c, k) => `<div class="opt-row"><input type="text" class="ch-time mono" aria-label="Chapter ${k + 1} time" data-bind="${p}.chapters.${k}.time" value="${esc(c.time ?? "")}" placeholder="0:00"><input type="text" aria-label="Chapter ${k + 1} name" data-bind="${p}.chapters.${k}.label" value="${esc(c.label)}" placeholder="Chapter name"><button type="button" class="btn ghost sm" data-act="cb-ch-del" data-i="${i}" data-j="${j}" data-k="${k}" aria-label="Remove chapter">✕</button></div>`).join("")}
+      <div class="row"><button type="button" class="btn sm" data-act="cb-ch-add" data-i="${i}" data-j="${j}">Add chapter</button><span class="hint muted" style="font-size:.8rem">Time as minutes:seconds, e.g. 1:30.</span></div></div>
+    <div class="cb-subcard stack" style="gap:8px"><span class="lbl">Check question after the video (optional)</span>
+      ${cp ? `<input type="text" aria-label="Check question" data-bind="${p}.checkpoint.q" value="${esc(cp.q)}" placeholder="Question">
+        ${cp.options.map((o, n) => `<div class="opt-row"><input type="radio" name="cp-${i}-${j}" aria-label="Mark option ${n + 1} correct" data-change="cb-cp-correct" data-i="${i}" data-j="${j}" data-n="${n}" ${cp.correct === n ? "checked" : ""}><input type="text" aria-label="Option ${n + 1}" data-bind="${p}.checkpoint.options.${n}" value="${esc(o)}" placeholder="Option ${n + 1}"><button type="button" class="btn ghost sm" data-act="cb-cp-opt-del" data-i="${i}" data-j="${j}" data-n="${n}" ${cp.options.length <= 2 ? "disabled" : ""} aria-label="Remove option">✕</button></div>`).join("")}
+        <div class="row between">${cp.options.length < 6 ? `<button type="button" class="btn ghost sm" data-act="cb-cp-opt-add" data-i="${i}" data-j="${j}">Add option</button>` : "<span></span>"}<button type="button" class="btn ghost sm danger" data-act="cb-cp-del" data-i="${i}" data-j="${j}">Remove question</button></div>`
+      : `<div class="row"><button type="button" class="btn sm" data-act="cb-cp-add" data-i="${i}" data-j="${j}">Add a check question</button><span class="hint muted" style="font-size:.8rem">Answered after watching; marked on the server.</span></div>`}</div>`;
 }
 function lessonLabel(l, d) {
   if (l.type === "document") { const m = d.lib.documents.find(x => x.code === l.code); return l.title || (m ? m.title : l.code || "Choose an SOP or policy"); }
@@ -207,7 +237,7 @@ function mCourse(d) {
       return `<li class="cb-lesson ${open ? "open" : ""}"><div class="cb-row"><span class="cb-icon t-${l.type}" aria-hidden="true">${LESSON_ICON[l.type]}</span><span class="ci-num tnum">${num}</span><button type="button" class="cb-title linkish" data-act="cb-les-open" data-id="${esc(l.id)}">${esc(lessonLabel(l, d))}</button><span class="chip plain">${esc(LESSON_TYPES[l.type])}</span>
         ${lock ? "" : `<span class="cb-tools"><button type="button" class="btn ghost sm" data-act="cb-les-move" data-i="${i}" data-j="${j}" data-d="-1" ${i === 0 && j === 0 ? "disabled" : ""} aria-label="Move lesson up">↑</button><button type="button" class="btn ghost sm" data-act="cb-les-move" data-i="${i}" data-j="${j}" data-d="1" ${i === dr.modules.length - 1 && j === m.lessons.length - 1 ? "disabled" : ""} aria-label="Move lesson down">↓</button><button type="button" class="btn ghost sm danger" data-act="cb-les-del" data-i="${i}" data-j="${j}" aria-label="Remove lesson">✕</button></span>`}</div>
         ${open ? `<div class="cb-editor stack" style="gap:12px">${lessonEditor(l, i, j, d)}</div>` : ""}</li>`; }).join("")}</ol>` : `<p class="muted" style="font-size:.9rem">No lessons in this ${esc(Mod.toLowerCase())} yet.</p>`}
-    ${lock ? "" : `<div class="row cb-add" style="gap:8px"><label class="sr-only" for="cat-${i}">Lesson type</label><select id="cat-${i}" data-bind="courseEdit.addType.${i}">${Object.entries(LESSON_TYPES).map(([k, v]) => `<option value="${k}" ${(e.addType[i] || "text") === k ? "selected" : ""}>${v}</option>`).join("")}</select><button type="button" class="btn sm" data-act="cb-les-add" data-i="${i}">Add lesson</button></div>`}
+    ${lock ? "" : `<div class="cb-insert"><span class="lbl">Add a lesson</span><div class="cb-insert-btns">${Object.entries(LESSON_TYPES).map(([k, v]) => `<button type="button" class="cb-ins" data-act="cb-les-add" data-i="${i}" data-type="${k}" title="${esc(LESSON_HINT[k])}"><span class="cb-icon t-${k}" aria-hidden="true">${LESSON_ICON[k]}</span>${esc(v)}</button>`).join("")}</div></div>`}
   </section>`).join("");
   const aud = `<label class="check"><input type="checkbox" data-bind="courseEdit.draft.audience.all" data-rerender="1" ${a.all ? "checked" : ""}><span><strong>All staff</strong></span></label>
     ${a.all ? "" : S.org.departments.map(dp => { const ps = S.org.positions.filter(p => p.dept === dp.id); if (!ps.length) return "";
@@ -224,7 +254,7 @@ function mCourse(d) {
     </fieldset></div>
     <aside class="side-panel">
       <section class="card pad stack" style="gap:12px"><h3>Who must complete it</h3><fieldset ${ro ? "disabled" : ""} style="border:0;padding:0;margin:0;min-width:0;display:contents">${aud}</fieldset><p class="muted tnum" style="font-size:.86rem">${P.isAuthor() ? "Each client it's shared with chooses who completes it. This sets the starting choice." : `${plural(people, "active staff member")} will get this.`}</p></section>
-      ${e.stats ? `<section class="card pad stack" style="gap:6px"><h3>Completed</h3><p class="tnum" style="font-size:1.4rem;margin:0">${e.stats.completed} <span class="muted" style="font-size:1rem">of ${e.stats.total}</span></p><p class="muted" style="font-size:.84rem">Each one has a certificate in their training record.</p></section>` : ""}
+      ${e.stats && !P.isAuthor() ? `<section class="card pad stack" style="gap:6px"><h3>Completed</h3><p class="tnum" style="font-size:1.4rem;margin:0">${e.stats.completed} <span class="muted" style="font-size:1rem">of ${e.stats.total}</span></p><p class="muted" style="font-size:.84rem">Each one has a certificate in their training record.</p></section>` : ""}
       ${ro ? "" : `<section class="card pad stack" style="gap:12px">
         <button type="submit" class="btn block">Save draft</button>
         ${pub ? `<span class="lbl">How big is this change?</span>
@@ -236,6 +266,21 @@ function mCourse(d) {
         <button type="button" class="btn sm danger" data-act="course-del">${e.label ? "Archive" : "Delete"}</button></section>`}
       ${e.versions.length ? `<section class="card pad stack" style="gap:8px"><h3>Published versions</h3>${e.versions.map(v => `<div class="tnum" style="font-size:.9rem">Version ${esc(v.label)} <span class="muted">· ${fmtDate(v.publishedAt)}</span></div>`).join("")}</section>` : ""}
     </aside></form>`;
+}
+
+/* ---------- field evidence waiting for review ---------- */
+function mReviews(d) {
+  const cur = S.params.filter || "pending";
+  const tab = (k, label) => `<a class="btn sm ${cur === k ? "primary" : ""}" href="#/m/reviews/${k}" aria-current="${cur === k ? "page" : "false"}">${label}</a>`;
+  return `<div class="page-head"><div class="t"><h1>Reviews</h1><p class="muted">Field evidence your staff submitted in courses. Approving it completes that lesson; returning it asks them to submit again.</p></div></div>
+    <div class="toolbar">${tab("pending", `Waiting${d.pending ? ` <span class="tnum" style="opacity:.8">${d.pending}</span>` : ""}`)}${tab("approved", "Approved")}${tab("rejected", "Returned")}${tab("all", "All")}</div>
+    ${d.items.length ? `<div class="rv-list">${d.items.map(e => `<article class="card rv-card">
+      ${e.fileId ? `<a class="rv-photo" href="/api/files/${esc(e.fileId)}" target="_blank" rel="noopener"><img src="/api/files/${esc(e.fileId)}" alt="Photo submitted by ${esc(e.staffName)}"></a>` : `<div class="rv-photo none">No photo</div>`}
+      <div class="rv-body stack" style="gap:6px"><div class="row between" style="gap:8px"><strong>${esc(e.staffName)} <span class="muted mono" style="font-weight:400">${esc(e.staffNo)}</span></strong>${e.status === "pending" ? '<span class="chip warn">Waiting</span>' : e.status === "approved" ? '<span class="chip ok">Approved</span>' : '<span class="chip bad">Returned</span>'}</div>
+        <div class="muted" style="font-size:.86rem">${esc(e.courseTitle)} · ${esc(e.lessonTitle)} · ${P.fmtDT(e.submittedAt)}</div>
+        <p class="rv-text">${esc(e.text)}</p>${e.note ? `<p class="muted" style="font-size:.86rem">Note: ${esc(e.note)}</p>` : ""}
+        ${e.status === "pending" && canEdit() ? `<div class="row"><button type="button" class="btn primary sm" data-act="rv-approve" data-id="${esc(e.id)}">Approve</button><button type="button" class="btn sm" data-act="rv-reject" data-id="${esc(e.id)}" data-name="${esc(e.staffName)}">Return with a note</button></div>` : ""}</div></article>`).join("")}</div>`
+      : `<div class="card empty"><h3>Nothing here</h3><p>${S.params.filter && S.params.filter !== "pending" ? "No evidence in this list yet." : "No evidence is waiting for review."}</p></div>`}`;
 }
 
 /* ---------- editor ---------- */

@@ -199,8 +199,9 @@ async function route() {
   else if (a === "m" && isMgrish()) {
     params = { id: c || null };
     view = { overview: "m-overview", staff: c === "new" ? "m-staffnew" : c ? "m-person" : "m-staff", library: "m-library", doc: "m-edit",
-      reports: "m-reports", settings: "m-settings", audit: "m-audit", version: "m-version", course: "m-course" }[b] || "m-overview";
+      reports: "m-reports", settings: "m-settings", audit: "m-audit", version: "m-version", course: "m-course", reviews: "m-reviews" }[b] || "m-overview";
     if (b === "version") params = { code: c, vid: d };
+    if (b === "reviews") params = { filter: c || "pending" };
   }
   S.view = view; S.params = params;
   window.scrollTo(0, 0);
@@ -223,7 +224,8 @@ async function load() {
     else if (v === "s-record") data = await GET("/api/my/record");
     else if (v === "p-home") data = await GET(`/api/admin/preview/${encodeURIComponent(P.pos)}`);
     else if (v === "p-doc") { data = await GET(`/api/admin/documents/${encodeURIComponent(P.code)}/preview`); S.docv = newDocView({ doc: data.doc, state: previewState(data.doc), statement: `I, Preview Staff Member, confirm that I have read and understood ${data.doc.code} ${data.doc.title} (version ${data.doc.label}), and I agree to follow it in my work at ${S.org.orgName}.`, profileName: "Preview Staff Member", preview: true }, null); }
-    else if (v === "m-overview") data = await GET("/api/admin/overview");
+    else if (v === "m-overview") { const [o, ev] = await Promise.all([GET("/api/admin/overview"), GET("/api/admin/evidence?status=pending").catch(() => ({ pending: 0 }))]); data = { ...o, evidencePending: ev.pending }; }
+    else if (v === "m-reviews") data = await GET(`/api/admin/evidence?status=${encodeURIComponent(P.filter || "pending")}`);
     else if (v === "m-staff") data = await GET("/api/admin/staff");
     else if (v === "m-staffnew") { data = await GET("/api/admin/staff"); S.staffEdit = { id: null, name: "", staffNo: data.nextStaffNo, positionId: S.org.positions.some(p => p.id === "waitron") ? "waitron" : (S.org.positions[0] || {}).id, startDate: "", role: "staff", pin: randPin() }; }
     else if (v === "m-person") { data = await GET(`/api/admin/staff/${encodeURIComponent(P.id)}`); const p = data.person; S.staffEdit = { id: p.id, name: p.name, staffNo: p.staffNo, positionId: p.positionId, startDate: p.startDate || "", role: p.role }; S.pinReset = null; }
@@ -232,7 +234,11 @@ async function load() {
       const [docs, c] = await Promise.all([GET("/api/admin/documents"), P.id === "new" ? null : GET(`/api/admin/courses/${encodeURIComponent(P.id)}`)]);
       data = { lib: docs };
       if (!c) S.courseEdit = { id: null, title: "", description: "" };
-      else if (!S.courseEdit || S.courseEdit.id !== c.id || !S.courseEdit.dirty) S.courseEdit = { ...c, change: "minor", open: S.courseEdit && S.courseEdit.id === c.id ? S.courseEdit.open : null, addType: {}, dirty: false, uploading: null };
+      else if (!S.courseEdit || S.courseEdit.id !== c.id || !S.courseEdit.dirty) {
+        const mmss = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+        c.draft.modules.forEach(m => m.lessons.forEach(l => { if (l.type === "video") l.chapters = (l.chapters || []).map(ch => ({ ...ch, time: mmss(ch.at) })); }));
+        S.courseEdit = { ...c, change: "minor", open: S.courseEdit && S.courseEdit.id === c.id ? S.courseEdit.open : null, addType: {}, dirty: false, uploading: null };
+      }
     }
     else if (v === "m-edit") {
       const [lib, det] = await Promise.all([GET("/api/admin/documents"), P.id === "new" ? null : GET(`/api/admin/documents/${encodeURIComponent(P.id)}`)]);

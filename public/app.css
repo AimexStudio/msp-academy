@@ -599,3 +599,34 @@ details summary{cursor:pointer;font-weight:600;color:var(--lagoon)}
 
 /* Fields that can't be changed (a provided document's content, or a read-only role) look read-only. */
 :is(input,textarea,select):disabled{background:var(--sunk);color:var(--ink-2);border-style:dashed;cursor:not-allowed;opacity:1;-webkit-text-fill-color:var(--ink-2)}
+
+/* ================= Richer lessons (checklists, enforced video, sign-offs, field evidence) ================= */
+.cb-insert{border-top:1px dashed var(--line);padding-top:12px;display:flex;flex-direction:column;gap:8px}
+.cb-insert-btns{display:flex;flex-wrap:wrap;gap:6px}
+.cb-ins{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:6px 10px 6px 6px;font:600 .82rem/1.2 var(--f-body);cursor:pointer;transition:border-color .12s,background .12s}
+.cb-ins:hover{border-color:var(--lagoon);background:var(--lagoon-soft)}
+.cb-ins .cb-icon{width:24px;height:24px;font-size:.8rem}
+.cb-icon.t-checklist{background:#E3F1E8;color:#2E6B4A}.cb-icon.t-signoff{background:#EEE7F6;color:#5B3E8A}.cb-icon.t-evidence{background:#FDEBDD;color:#A3461C}.cb-icon.t-video{background:#E1ECF4;color:#285E86}.cb-icon.t-pdf{background:#F4E9E1;color:#7A4A2A}
+.cb-subcard{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--surface)}
+.cl-num{flex:none;min-width:1.4em;text-align:right;color:var(--muted);font-size:.84rem}
+.ch-time{flex:0 0 76px !important;max-width:76px}
+.lc-chapters{display:flex;flex-wrap:wrap;gap:6px}
+.lc-watch{display:flex;align-items:center;gap:12px}.lc-watch .progress{flex:1}
+.lc-step{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.lc-step.on{border-color:color-mix(in srgb,var(--ok, #2E7D4F) 50%,var(--line));background:color-mix(in srgb,var(--ok, #2E7D4F) 6%,var(--surface))}
+.lc-statement{margin:0;padding:14px 16px;border-left:4px solid var(--lagoon);background:var(--sunk);border-radius:0 10px 10px 0;font-size:1.02rem;line-height:1.55}
+.lc-ev-preview{display:block;max-width:260px;max-height:200px;border-radius:10px;margin-top:8px;border:1px solid var(--line);object-fit:cover}
+.rv-list{display:flex;flex-direction:column;gap:12px}
+.rv-card{display:grid;grid-template-columns:160px minmax(0,1fr);gap:16px;padding:14px}
+.rv-photo{display:block;width:160px;height:120px;border-radius:10px;overflow:hidden;background:var(--sunk);border:1px solid var(--line)}
+.rv-photo img{width:100%;height:100%;object-fit:cover;display:block}
+.rv-photo.none{display:grid;place-items:center;color:var(--muted);font-size:.84rem}
+.rv-text{margin:0;white-space:pre-wrap}
+.tab .badge{display:inline-block;min-width:1.4em;padding:0 6px;border-radius:99px;background:var(--gold);color:#fff;font-size:.74rem;text-align:center}
+@media (max-width:620px){.rv-card{grid-template-columns:1fr}.rv-photo{width:100%;height:180px}}
+/* Rows of [tick] [text] [✕] in every editor (quiz options, checklist steps, chapters, check questions). */
+.cb-editor .opt-row{display:flex;align-items:center;gap:8px;margin:0}
+.cb-editor .opt-row input[type=text]{flex:1;min-width:0}
+.cb-editor .opt-row input[type=radio]{flex:none;width:18px;height:18px;margin:0}
+.cb-editor .field .opt-row + .opt-row{margin-top:6px}
+.cb-subcard .opt-row + .opt-row{margin-top:2px}

@@ -122,6 +122,7 @@ const ACTIONS = {
     else return;
     S.courseEdit.dirty = true; render();
   },
+  "cb-vsrc": (t, ds) => { const l = cbLesson(ds); l.source = ds.v; if (ds.v === "youtube") { l.fileId = null; l.youtubeUrl = l.youtubeUrl || ""; l.durationText = l.durationText || ""; } S.courseEdit.dirty = true; render(); },
   "cb-step-add": (t, ds) => { cbLesson(ds).steps.push(""); S.courseEdit.dirty = true; render(); },
   "cb-step-del": (t, ds) => { cbLesson(ds).steps.splice(ds.k, 1); S.courseEdit.dirty = true; render(); },
   "cb-ch-add": (t, ds) => { cbLesson(ds).chapters.push({ time: "", label: "" }); S.courseEdit.dirty = true; render(); },
@@ -376,7 +377,8 @@ async function saveCourse(showToast) {
   const e = S.courseEdit;
   try {
     const toSec = t => { const m = String(t ?? "").trim().match(/^(?:(\d+):)?(\d{1,2}):(\d{2})$|^(\d+)$/); if (!m) return 0; return m[4] ? Number(m[4]) : (Number(m[1] || 0) * 3600 + Number(m[2]) * 60 + Number(m[3])); };
-    const draft = { ...e.draft, modules: e.draft.modules.map(m => ({ ...m, lessons: m.lessons.map(l => l.type === "video" ? { ...l, chapters: (l.chapters || []).map(c => ({ at: c.time !== undefined ? toSec(c.time) : c.at, label: c.label })) } : l) })) };
+    const draft = { ...e.draft, modules: e.draft.modules.map(m => ({ ...m, lessons: m.lessons.map(l => l.type === "video" ? { ...l, chapters: (l.chapters || []).map(c => ({ at: c.time !== undefined ? toSec(c.time) : c.at, label: c.label })),
+      ...(l.source === "youtube" ? { durationSec: l.durationText !== undefined ? toSec(l.durationText) : l.durationSec } : {}) } : l) })) };
     const r = await PUT(`/api/admin/courses/${encodeURIComponent(e.id)}`, { draft });
     e.dirty = false; e.problems = r.problems; e.draftDirty = r.draftDirty;
     if (showToast) { toast("Saved."); await load(); }
@@ -398,3 +400,16 @@ document.addEventListener("DOMContentLoaded", async function boot() {
 });
 window.addEventListener("hashchange", () => { if (S.platformMode) return; if (S.me && location.hash === "#/m/doc/new" && (!S.newDoc || !S.newDoc.code)) { GET("/api/admin/next-code?kind=sop").then(r => { S.newDoc = { kind: "sop", code: r.code }; render(); }).catch(() => {}); } });
 })();
+
+/* ---------- YouTube in the builder ---------- */
+// The preview reports the video's length: fill it in if the author hasn't.
+window.PelYTDuration = (lessonId, sec) => {
+  const e = window.Pel.S.courseEdit; if (!e || !e.draft) return;
+  for (const m of e.draft.modules) for (const l of m.lessons) if (l.id === lessonId && !l.durationText) {
+    l.durationText = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`; e.dirty = true;
+    const box = document.querySelector(`.yt-preview[data-lesson="${lessonId}"]`), inp = box && box.parentElement.querySelector('input[data-bind$=".durationText"]');
+    if (inp) inp.value = l.durationText;
+  }
+};
+// A pasted link shows its preview once the field is left.
+document.addEventListener("focusout", ev => { if (ev.target.dataset && ev.target.dataset.rerenderBlur) window.Pel.render(); });

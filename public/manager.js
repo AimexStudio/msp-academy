@@ -170,9 +170,18 @@ function lessonEditor(l, i, j, d) {
   const e = S.courseEdit, p = `courseEdit.draft.modules.${i}.lessons.${j}`;
   const title = `<div class="field"><label for="le-t-${i}-${j}">Lesson title</label><input id="le-t-${i}-${j}" type="text" data-bind="${p}.title" data-live="1" value="${esc(l.title)}"></div>`;
   if (l.type === "text") return `${title}<div class="field"><label for="le-b-${i}-${j}">Text</label><textarea id="le-b-${i}-${j}" rows="10" data-bind="${p}.body">${esc(l.body || "")}</textarea><span class="hint">## for a heading, - for a bullet, 1. for a numbered step, **bold**.</span></div>`;
+  if (l.type === "video" && l.source === "youtube") {
+    const id = ytIdOf(l.youtubeUrl);
+    return `${title}${sourcePicker(l, i, j)}
+      <div class="field"><label for="le-yt-${i}-${j}">YouTube link</label><input id="le-yt-${i}-${j}" type="url" data-bind="${p}.youtubeUrl" data-rerender-blur="1" value="${esc(l.youtubeUrl || "")}" placeholder="https://www.youtube.com/watch?v=…">
+        <span class="hint">${l.youtubeUrl && !id ? '<span class="err-inline">That doesn\'t look like a YouTube video link.</span>' : "Learners watch it here, inside the platform: they can't click through to YouTube."}</span></div>
+      ${id ? `<div class="yt-preview" data-yt="${esc(id)}" data-lesson="${esc(l.id)}"></div>` : ""}
+      <div class="field" style="max-width:220px"><label for="le-yd-${i}-${j}">Length</label><input id="le-yd-${i}-${j}" class="mono" type="text" data-bind="${p}.durationText" value="${esc(l.durationText || "")}" placeholder="m:ss"><span class="hint">Fills in by itself from the preview.</span></div>
+      ${videoSettings(l, i, j, p)}`;
+  }
   if (l.type === "video" || l.type === "pdf") {
     const f = l.fileId && e.files[l.fileId], up = e.uploading && e.uploading.key === `${i}-${j}`;
-    return `${title}<div class="field"><span class="lbl">${l.type === "video" ? "Video (MP4)" : "PDF"}</span>
+    return `${title}${l.type === "video" ? sourcePicker(l, i, j) : ""}<div class="field"><span class="lbl">${l.type === "video" ? "Video (MP4)" : "PDF"}</span>
       ${f ? `<div class="attach"><span class="chip plain ${l.type === "video" ? "info" : "khaki"}">${l.type === "video" ? "Video" : "PDF"}</span><span style="flex:1;min-width:0;overflow-wrap:anywhere">${esc(f.name)}${f.duration ? " · " + esc(P.fmtDur(f.duration)) : ""}${f.size ? " · " + esc(P.fmtSize(f.size)) : ""}</span><a class="btn sm" href="/api/files/${esc(l.fileId)}" target="_blank" rel="noopener">Open</a></div>` : ""}
       ${up ? `<div class="upload-row"><span>Uploading ${esc(e.uploading.name)}…</span><progress max="1" value="${e.uploading.pct || 0}"></progress></div>`
         : `<input type="file" accept="${l.type === "video" ? "video/mp4,.mp4,.m4v,.mov" : "application/pdf,.pdf"}" data-change="cb-upload" data-i="${i}" data-j="${j}"><span class="hint">${f ? "Choose a file to replace it." : l.type === "video" ? "MP4 (H.264), under 30 MB." : "Up to 25 MB."}</span>`}</div>
@@ -198,6 +207,11 @@ function lessonEditor(l, i, j, d) {
     <div class="row between"><span class="hint muted" style="font-size:.8rem">Tick the correct answer.</span>${q.options.length < 6 ? `<button type="button" class="btn ghost sm" data-act="cb-opt-add" data-i="${i}" data-j="${j}" data-k="${k}">Add option</button>` : ""}</div></div>`).join("");
   return `${title}<div class="field" style="max-width:160px"><label for="le-pm-${i}-${j}">Pass mark</label><select id="le-pm-${i}-${j}" data-bind="${p}.passMark" data-num="1">${[60, 70, 80, 90, 100].map(n => `<option value="${n}" ${Number(l.passMark) === n ? "selected" : ""}>${n}%</option>`).join("")}</select></div>
     ${qs}<div class="row"><button type="button" class="btn sm" data-act="cb-q-add" data-i="${i}" data-j="${j}">Add question</button></div>`;
+}
+const ytIdOf = u => { const s = String(u || "").trim(); let m = s.match(/(?:youtube(?:-nocookie)?\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/|v\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/); return m ? m[1] : /^[A-Za-z0-9_-]{11}$/.test(s) ? s : null; };
+function sourcePicker(l, i, j) {
+  const yt = l.source === "youtube";
+  return `<div class="seg" role="radiogroup" aria-label="Where the video comes from"><button type="button" class="seg-b ${yt ? "" : "on"}" data-act="cb-vsrc" data-i="${i}" data-j="${j}" data-v="upload" aria-pressed="${!yt}">Upload a video</button><button type="button" class="seg-b ${yt ? "on" : ""}" data-act="cb-vsrc" data-i="${i}" data-j="${j}" data-v="youtube" aria-pressed="${yt}">YouTube link</button></div>`;
 }
 function videoSettings(l, i, j, p) {
   const cp = l.checkpoint;

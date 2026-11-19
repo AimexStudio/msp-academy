@@ -90,7 +90,7 @@ Client managers: **SOP library → Courses → New course** (MSP Academy's libra
 | Lesson | What the learner does | Settings |
 |---|---|---|
 | Text | Reads it | Headings, bullets, numbered steps, **bold** |
-| Video | Watches an uploaded MP4 | **Must watch at least** 75–100% (or optional), **no skipping ahead**, **pause when the person switches tab or app**, **chapters** (time + name), and an optional **check question** after the video. The server counts only the parts really played, never faster than real time. If the video won't play on someone's device they can say so and continue; it's recorded |
+| Video | Watches an uploaded MP4, or a **YouTube video** played inside the platform | **Must watch at least** 75–100% (or optional), **no skipping ahead**, **pause when the person switches tab or app**, **chapters** (time + name), and an optional **check question** after the video. The server counts only the parts really played, never faster than real time. If the video won't play on someone's device they can say so and continue; it's recorded. **YouTube:** paste any YouTube link; the length fills in from the preview. Learners watch it inside MSP Academy with its own controls: a shield covers the YouTube player, so they can't click through to YouTube, drag the timeline ahead, or open suggested videos at the end |
 | PDF | Opens and reads it | Upload the PDF |
 | Checklist | Ticks every step to confirm they follow it | A summary and the steps |
 | Quiz | Answers multiple-choice questions | Pass mark; marked on the server, answers never sent to the device; unlimited tries |
@@ -157,8 +157,10 @@ Do this once, **before** deploying this version. The move only adds information 
 - Browsers never touch the database or storage directly (security rules deny all access).
 - `npm test` proves it: a sweep over **every** route, signed in as another client (manager, staff and a support visit), checks nothing leaks and nothing changes; a new route that isn't added to the sweep fails the tests. A scan checks every record and reference stays inside its client. Other test files cover the platform, sharing, the course builder, and the Pelagos move (run on data produced by the original single-client code).
 
+**YouTube and privacy**: YouTube videos play in YouTube's privacy-enhanced mode (youtube-nocookie.com), but the learner's device still connects to Google to play them. Uploaded videos stay entirely on the platform. Mention this in your privacy notice to clients if you use YouTube lessons.
+
 **POPIA**: each client is the responsible party for its staff's information and MSP Academy is its operator (sections 20 and 21), so a written operator agreement with each client is advisable. Confirm with your adviser.
 
 ## Not yet in this version
 
-Self-service Word/PDF import, AI question drafting per client, staff import, email or WhatsApp reminders, drag-and-drop in the builder, a learner preview of courses, course results in reports, YouTube or Vimeo videos (uploads only, so watching can be checked), billing, SSO, expiring certifications and due dates.
+Self-service Word/PDF import, AI question drafting per client, staff import, email or WhatsApp reminders, drag-and-drop in the builder, a learner preview of courses, course results in reports, Vimeo videos, billing, SSO, expiring certifications and due dates.

@@ -115,3 +115,39 @@ test('Field evidence: submitted with a photo, reviewed by a manager; the certifi
   const audit = (await m.get('/api/admin/audit')).body.entries.map(e => e.action);
   assert.ok(audit.includes('evidence.reject') && audit.includes('evidence.approve'));
 });
+
+test('YouTube videos: any usual link works, others are refused; watching is checked against the video’s length', async () => {
+  const yt = (url, extra = {}) => ({ title: 'YouTube course', audience: { all: true, positions: [] }, modules: [{ id: 'm', title: 'Watch', lessons: [
+    { id: 'l-yt', type: 'video', title: 'Service basics', source: 'youtube', youtubeUrl: url, durationSec: 300, minWatchPct: 90, ...extra }] }] });
+  const c = (await m.post('/api/admin/courses', { draft: yt('https://evil.example.com/watch?v=dQw4w9WgXcQ') })).body.id;
+  let d = (await m.get(`/api/admin/courses/${c}`)).body;
+  assert.equal(d.draft.modules[0].lessons[0].youtubeId, null);
+  assert.match(d.problems.join(' '), /paste a YouTube link/);
+  for (const url of ['https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=42', 'https://youtu.be/dQw4w9WgXcQ', 'https://youtube.com/shorts/dQw4w9WgXcQ', 'https://m.youtube.com/watch?v=dQw4w9WgXcQ']) {
+    await m.put(`/api/admin/courses/${c}`, { draft: yt(url) });
+    assert.equal((await m.get(`/api/admin/courses/${c}`)).body.draft.modules[0].lessons[0].youtubeId, 'dQw4w9WgXcQ', url);
+  }
+  await m.put(`/api/admin/courses/${c}`, { draft: yt('https://youtu.be/dQw4w9WgXcQ', { durationSec: 0 }) });
+  assert.match((await m.get(`/api/admin/courses/${c}`)).body.problems.join(' '), /enter the video's length/);
+  await m.put(`/api/admin/courses/${c}`, { draft: yt('https://youtu.be/dQw4w9WgXcQ') });
+  assert.equal((await m.post(`/api/admin/courses/${c}/publish`, {})).status, 200);
+  const url = `/api/my/courses/${c}/lessons/l-yt`, v = `${c}@1.0`;
+  const lesson = (await s.get(`/api/my/courses/${c}`)).body.course.modules[0].lessons[0];
+  assert.equal(lesson.youtubeId, 'dQw4w9WgXcQ'); assert.equal(lesson.fileId, null);
+  assert.match((await s.post(`${url}/done`, { versionId: v })).body.error, /Watch at least 90%/);
+  const r = await s.post(`${url}/video`, { versionId: v, segments: [[0, 300]] });
+  assert.equal(r.body.duration, 300, 'the length the author set is what counts');
+  assert.ok(r.body.watched < 30, 'reporting the whole video at once is capped by the time that has passed');
+  await env.db.collection('courseProgress').doc(`${env.harbour.staffId}__${c}__1`).set({ video: { 'l-yt': { watched: 280 } } }, { merge: true });
+  assert.equal((await s.post(`${url}/done`, { versionId: v })).status, 200, '280 of 300 seconds is over 90%');
+});
+
+test('The pages allow YouTube’s player and nothing else from outside', async () => {
+  const res = await env.app.inject({ method: 'GET', url: '/' });
+  const csp = res.headers['content-security-policy'];
+  assert.match(csp, /frame-src https:\/\/www\.youtube-nocookie\.com https:\/\/www\.youtube\.com/);
+  assert.match(csp, /script-src 'self' https:\/\/www\.youtube\.com https:\/\/s\.ytimg\.com/);
+  assert.match(csp, /connect-src 'self'/); assert.match(csp, /frame-ancestors 'none'/);
+  const hosting = JSON.parse(fs.readFileSync(new URL('../firebase.json', import.meta.url), 'utf8')).hosting.headers[0].headers.find(h => h.key === 'Content-Security-Policy').value;
+  assert.match(hosting, /frame-src https:\/\/www\.youtube-nocookie\.com/, 'the live site has the same rule');
+});

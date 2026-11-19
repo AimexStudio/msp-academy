@@ -236,7 +236,7 @@ async function load() {
       if (!c) S.courseEdit = { id: null, title: "", description: "" };
       else if (!S.courseEdit || S.courseEdit.id !== c.id || !S.courseEdit.dirty) {
         const mmss = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-        c.draft.modules.forEach(m => m.lessons.forEach(l => { if (l.type === "video") l.chapters = (l.chapters || []).map(ch => ({ ...ch, time: mmss(ch.at) })); }));
+        c.draft.modules.forEach(m => m.lessons.forEach(l => { if (l.type === "video") { l.chapters = (l.chapters || []).map(ch => ({ ...ch, time: mmss(ch.at) })); l.durationText = l.durationSec ? mmss(l.durationSec) : ""; } }));
         S.courseEdit = { ...c, change: "minor", open: S.courseEdit && S.courseEdit.id === c.id ? S.courseEdit.open : null, addType: {}, dirty: false, uploading: null };
       }
     }
@@ -279,7 +279,9 @@ function render() {
   $app.innerHTML = html;
   afterRender();
 }
-function afterRender() { setupSig(); setupVideos(); refreshGates(); if (S.view === "login") { const el = document.getElementById(!S.brand ? "f-code" : S.login.no ? "f-pin" : "f-no"); if (el) el.focus({ preventScroll: true }); } }
+function afterRender() { setupSig(); setupVideos(); refreshGates(); if (S.view === "login") { const el = document.getElementById(!S.brand ? "f-code" : S.login.no ? "f-pin" : "f-no"); if (el) el.focus({ preventScroll: true }); }
+  if (window.PelYT) window.PelYT.mountPreviews();
+  if (window.PelLearn && window.PelLearn.afterRender) window.PelLearn.afterRender(); }
 // The support visit's countdown; when it runs out, the server has already closed access.
 setInterval(() => {
   if (!S.support || S.support.author) return;

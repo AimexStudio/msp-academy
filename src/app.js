@@ -31,10 +31,12 @@ export async function buildApp({ db, storage, logger = true, serveStatic = true 
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'"],
+        // YouTube's player script and its privacy-enhanced frame, for embedded course videos. Nothing else external.
+        scriptSrc: ["'self'", 'https://www.youtube.com', 'https://s.ytimg.com'],
+        frameSrc: ['https://www.youtube-nocookie.com', 'https://www.youtube.com'],
         styleSrc: ["'self'", "'unsafe-inline'"], // style attributes only; scripts stay strictly same-origin
         fontSrc: ["'self'"],
-        imgSrc: ["'self'", 'data:'],
+        imgSrc: ["'self'", 'data:', 'https://i.ytimg.com'],
         mediaSrc: ["'self'"],
         connectSrc: ["'self'"],
         frameAncestors: ["'none'"],

@@ -630,3 +630,25 @@ details summary{cursor:pointer;font-weight:600;color:var(--lagoon)}
 .cb-editor .opt-row input[type=radio]{flex:none;width:18px;height:18px;margin:0}
 .cb-editor .field .opt-row + .opt-row{margin-top:6px}
 .cb-subcard .opt-row + .opt-row{margin-top:2px}
+
+/* ================= YouTube videos, kept inside the platform ================= */
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;align-self:flex-start}
+.seg-b{border:0;background:var(--surface);color:var(--ink-2);padding:7px 14px;font:600 .84rem/1.2 var(--f-body);cursor:pointer}
+.seg-b.on{background:var(--primary);color:var(--on-primary)}
+.err-inline{color:var(--bad, #B3261E)}
+.yt-preview{position:relative;width:100%;max-width:520px;aspect-ratio:16/9;border-radius:10px;overflow:hidden;background:#000}
+.yt-preview iframe,.yt-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.yt-wrap{display:flex;flex-direction:column;border-radius:12px;overflow:hidden;background:#000}
+.yt-wrap:fullscreen{border-radius:0;justify-content:center}
+.yt-frame{position:relative;width:100%;aspect-ratio:16/9;background:#000}
+.yt-wrap:fullscreen .yt-frame{aspect-ratio:auto;flex:1}
+/* Covers the whole player: no clicking through to YouTube (title, logo, timeline, suggestions). */
+.yt-shield{position:absolute;inset:0;z-index:2;cursor:pointer;background:transparent}
+.yt-end,.yt-loading{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;background:rgba(0,0,0,.88);color:#fff;text-align:center;padding:16px}
+.yt-loading{background:#000;color:#ddd;font-size:.9rem}
+.yt-end[hidden]{display:none}
+.yt-bar{display:flex;align-items:center;gap:8px;padding:8px 10px;background:#15171A;color:#EEE}
+.yt-bar .spacer{flex:1}
+.yt-btn{border:0;background:rgba(255,255,255,.1);color:#fff;border-radius:8px;min-width:40px;height:36px;font-size:1rem;cursor:pointer}
+.yt-btn:hover{background:rgba(255,255,255,.2)}
+.yt-time{font-size:.86rem;color:#ccc}

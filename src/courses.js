@@ -31,6 +31,28 @@ export const lessonsOf = d => (d.modules || []).flatMap(m => m.lessons);
 export const codesOf = d => [...new Set(lessonsOf(d).filter(l => l.type === 'document' && l.code).map(l => l.code))];
 export const fileIdsOf = d => [...new Set(lessonsOf(d).filter(l => (l.type === 'video' || l.type === 'pdf') && l.fileId).map(l => l.fileId))];
 
+/** The 11-character YouTube video ID from any usual link (watch, youtu.be, shorts, embed, live), or null. */
+export function youtubeId(input) {
+  const s = String(input || '').trim();
+  if (/^[A-Za-z0-9_-]{11}$/.test(s)) return s;
+  let u; try { u = new URL(/^https?:\/\//i.test(s) ? s : `https://${s}`); } catch { return null; }
+  const host = u.hostname.replace(/^(www|m|music)\./, '');
+  let id = null;
+  if (host === 'youtu.be') id = u.pathname.split('/')[1];
+  else if (['youtube.com', 'youtube-nocookie.com'].includes(host)) {
+    if (u.pathname === '/watch') id = u.searchParams.get('v');
+    else { const m = u.pathname.match(/^\/(embed|shorts|live|v)\/([^/?#]+)/); if (m) id = m[2]; }
+  }
+  return id && /^[A-Za-z0-9_-]{11}$/.test(id) ? id : null;
+}
+/** How long a video lesson is, in seconds: the uploaded file's length, or the length entered for a YouTube video. */
+export async function videoDuration(db, lesson, t = null) {
+  if (lesson.source === 'youtube') return lesson.durationSec || 0;
+  const r = db.collection('files').doc(lesson.fileId);
+  const f = await (t ? t.get(r) : r.get());
+  return (f.exists && f.get('duration')) || 0;
+}
+
 const cleanQuestion = q => ({ q: str(q.q, 500), options: (Array.isArray(q.options) ? q.options : []).slice(0, 6).map(o => str(o, 300)),
   correct: Number.isInteger(q.correct) ? q.correct : -1 });
 const questionOk = q => q.q.trim() && q.options.filter(o => o.trim()).length >= 2 && q.correct >= 0 && q.correct < q.options.length && q.options[q.correct].trim();
@@ -48,7 +70,10 @@ export function cleanCourseDraft(input = {}, positionIds = []) {
       if (l.type === 'pdf') return { ...base, fileId: l.fileId ? str(l.fileId, 60) : null };
       if (l.type === 'video') {
         const cp = l.checkpoint && typeof l.checkpoint === 'object' ? cleanQuestion(l.checkpoint) : null;
-        return { ...base, fileId: l.fileId ? str(l.fileId, 60) : null,
+        const yt = l.source === 'youtube';
+        const ytId = yt ? youtubeId(l.youtubeUrl || l.youtubeId) : null;
+        return { ...base, source: yt ? 'youtube' : 'upload', fileId: !yt && l.fileId ? str(l.fileId, 60) : null,
+          youtubeUrl: yt ? str(l.youtubeUrl, 300).trim() : null, youtubeId: ytId, durationSec: yt ? clampInt(l.durationSec, 0, 36000, 0) : null,
           // How much must really be watched (0 = optional), no skipping ahead, pause when the tab is hidden.
           minWatchPct: l.minWatchPct === undefined ? 90 : [0, 75, 80, 85, 90, 100].includes(Number(l.minWatchPct)) ? Number(l.minWatchPct) : 90,
           noSkipAhead: l.noSkipAhead === undefined ? true : !!l.noSkipAhead, pauseWhenHidden: l.pauseWhenHidden === undefined ? true : !!l.pauseWhenHidden,
@@ -78,7 +103,10 @@ export function courseProblems(d) {
     const name = l.title || `Lesson ${i + 1}`;
     if (l.type !== 'document' && !l.title) p.push(`Lesson ${i + 1} needs a title.`);
     if (l.type === 'text' && !l.body.trim()) p.push(`${name} has no text yet.`);
-    if ((l.type === 'video' || l.type === 'pdf') && !l.fileId) p.push(`${name} needs its ${l.type === 'video' ? 'video' : 'PDF'} uploaded.`);
+    if (l.type === 'pdf' && !l.fileId) p.push(`${name} needs its PDF uploaded.`);
+    if (l.type === 'video' && l.source !== 'youtube' && !l.fileId) p.push(`${name} needs its video uploaded, or a YouTube link.`);
+    if (l.type === 'video' && l.source === 'youtube' && !l.youtubeId) p.push(`${name}: paste a YouTube link, e.g. https://www.youtube.com/watch?v=…`);
+    if (l.type === 'video' && l.source === 'youtube' && l.youtubeId && !l.durationSec) p.push(`${name}: enter the video's length (it fills in by itself once the video has loaded).`);
     if (l.type === 'document' && !l.code) p.push(`${name}: choose the SOP or policy.`);
     if (l.type === 'quiz') {
       if (!l.questions.length) p.push(`${name} has no questions.`);
@@ -97,7 +125,7 @@ export function courseProblems(d) {
 export async function checkCourseRefs(db, orgId, d, t = null) {
   const get = r => (t ? t.get(r) : r.get());
   for (const l of lessonsOf(d)) {
-    if ((l.type === 'video' || l.type === 'pdf') && l.fileId) {
+    if ((l.type === 'video' || l.type === 'pdf') && l.fileId && l.source !== 'youtube') {
       const f = await get(db.collection('files').doc(l.fileId));
       if (!f.exists || f.get('orgId') !== orgId || f.get('kind') !== (l.type === 'video' ? 'video' : 'pdf')) throw httpError(400, `${l.title || 'A lesson'}: the ${l.type === 'video' ? 'video' : 'PDF'} is missing. Upload it again.`);
     }

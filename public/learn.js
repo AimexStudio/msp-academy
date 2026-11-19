@@ -53,7 +53,15 @@ function vLesson(d) {
     S.lv = { lesson: l.id, versionId: c.versionId, noSkip: l.noSkipAhead !== false, pauseHidden: l.pauseWhenHidden !== false, need: l.minWatchPct || 0,
       maxPos: w, segStart: null, lastPos: 0, cp: S.lv && S.lv.lesson === l.id ? S.lv.cp : null, watched: w, duration: 0, failed: l.state.failed };
     const ready = done || l.state.failed || !S.lv.need;
-    body = `<div class="card pad stack" style="gap:12px"><video id="lc-video" controls playsinline preload="metadata" controlslist="nodownload noplaybackrate" disablepictureinpicture src="/api/files/${esc(l.fileId)}" style="width:100%;border-radius:10px;background:#000"></video>
+    S.lv.youtube = l.source === "youtube" ? { id: l.youtubeId, duration: l.durationSec || 0 } : null;
+    const playerHtml = S.lv.youtube
+      ? `<div class="yt-wrap" id="yt-wrap"><div class="yt-frame"><div id="yt-player"></div><div class="yt-shield" data-act="yt-toggle" aria-hidden="true"></div>
+          <div class="yt-end" id="yt-end" hidden><strong>Video finished</strong><button type="button" class="btn sm" data-act="yt-replay">Watch again</button></div>
+          <div class="yt-loading" id="yt-loading">Loading the video…</div></div>
+          <div class="yt-bar"><button type="button" class="yt-btn" data-act="yt-toggle" id="yt-play" aria-label="Play">▶</button><span class="tnum yt-time" id="yt-time">0:00 / ${mmss(l.durationSec || 0)}</span><span class="spacer"></span>
+            <button type="button" class="yt-btn" data-act="yt-mute" id="yt-mute" aria-label="Mute">🔊</button><button type="button" class="yt-btn" data-act="yt-fs" aria-label="Full screen">⛶</button></div></div>`
+      : `<video id="lc-video" controls playsinline preload="metadata" controlslist="nodownload noplaybackrate" disablepictureinpicture src="/api/files/${esc(l.fileId)}" style="width:100%;border-radius:10px;background:#000"></video>`;
+    body = `<div class="card pad stack" style="gap:12px">${playerHtml}
       ${l.chapters && l.chapters.length ? `<div class="lc-chapters">${l.chapters.map(ch => `<button type="button" class="btn sm" data-act="lc-seek" data-at="${ch.at}" ${!done && S.lv.noSkip && ch.at > w + 1 ? "disabled" : ""}>${mmss(ch.at)} · ${esc(ch.label)}</button>`).join("")}</div>` : ""}
       ${done ? "" : `<div class="lc-watch"><div class="progress"><span id="lc-watch-bar" style="width:0%"></span></div><span class="muted tnum" id="lc-watch-text">${S.lv.need ? `Watch at least ${S.lv.need}%` : "Watching is optional"}${S.lv.noSkip ? " · skipping ahead is off" : ""}</span></div>
         <p class="muted" style="font-size:.84rem;margin:0">Can't play the video on this device? <button type="button" class="linkish" data-act="lc-vfail">Let your manager know and continue</button></p>`}</div>
@@ -147,7 +155,15 @@ P.addActions({
     try { const r = await P.POST(url(`/lessons/${encodeURIComponent(S.params.lesson)}/evidence`), { versionId: d.course.versionId, text: fe.text, photo: fe.photo }); S.lev = null; refreshWith(r); P.toast("Sent to your manager."); }
     catch (e) { fe.busy = false; P.render(); showErr(e); }
   },
-  "lc-seek": (t, ds) => { const v = document.getElementById("lc-video"); if (!v || !S.lv) return; const at = Number(ds.at); if (S.lv.noSkip && at > S.lv.maxPos + 1) return; v.currentTime = at; v.play().catch(() => {}); },
+  "lc-seek": (t, ds) => {
+    if (!S.lv) return; const at = Number(ds.at); if (S.lv.noSkip && at > S.lv.maxPos + 1) return;
+    if (yt.player) { yt.seek(at); yt.player.playVideo(); return; }
+    const v = document.getElementById("lc-video"); if (!v) return; v.currentTime = at; v.play().catch(() => {});
+  },
+  "yt-toggle": () => { if (!yt.player) return; const st = yt.player.getPlayerState(); if (st === 1 || st === 3) yt.player.pauseVideo(); else { document.getElementById("yt-end").hidden = true; yt.player.playVideo(); } },
+  "yt-mute": () => { if (!yt.player) return; const m = yt.player.isMuted(); m ? yt.player.unMute() : yt.player.mute(); const b = document.getElementById("yt-mute"); if (b) { b.textContent = m ? "🔊" : "🔇"; b.setAttribute("aria-label", m ? "Mute" : "Unmute"); } },
+  "yt-fs": () => { const w = document.getElementById("yt-wrap"); if (!w) return; if (document.fullscreenElement) document.exitFullscreen(); else if (w.requestFullscreen) w.requestFullscreen(); else if (w.webkitRequestFullscreen) w.webkitRequestFullscreen(); },
+  "yt-replay": () => { if (!yt.player) return; document.getElementById("yt-end").hidden = true; yt.seek(0); yt.player.playVideo(); },
   "lc-vfail": async () => { await reportVideo([], true); P.toast("Noted. You can continue."); const b = document.getElementById("lc-video-done"); if (b) b.disabled = !!(S.data[S.view] && currentLesson().checkpoint && S.lv.cp === null); const cp = document.getElementById("lc-cp"); if (cp) cp.hidden = false; },
   "lc-pdf-open": () => { S.lc = { ...(S.lc || {}), pdfOpened: S.params.lesson }; setTimeout(() => { const b = document.getElementById("lc-pdf-done"); if (b) b.disabled = false; }, 0); },
   "lc-doc": (t, ds) => { S.lcReturn = ds.back; },
@@ -208,6 +224,7 @@ function showWatch(r) {
   document.querySelectorAll('[data-act="lc-seek"]').forEach(btn => { if (!S.lv.noSkip || Number(btn.dataset.at) <= S.lv.maxPos + 1) btn.disabled = false; });
 }
 async function flushVideo() {
+  if (yt.player) return yt.flush();
   const v = document.getElementById("lc-video");
   if (!v || !S.lv || S.lv.segStart === null) return;
   const seg = [S.lv.segStart, v.currentTime]; S.lv.segStart = v.paused ? null : v.currentTime;
@@ -229,7 +246,65 @@ document.addEventListener("seeking", e => {
 }, true);
 document.addEventListener("loadedmetadata", e => { if (e.target.id === "lc-video" && S.lv) { S.lv.duration = e.target.duration; showWatch({ watched: S.lv.watched, duration: e.target.duration }); } }, true);
 document.addEventListener("error", e => { if (e.target.id === "lc-video") { const t = document.getElementById("lc-watch-text"); if (t) t.textContent = "The video didn't load. Use the link below to continue."; } }, true);
-document.addEventListener("visibilitychange", () => { const v = document.getElementById("lc-video"); if (document.hidden && v && S.lv && S.lv.pauseHidden && !v.paused) v.pause(); });
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden || !S.lv || !S.lv.pauseHidden) return;
+  if (yt.player) { if (yt.player.getPlayerState() === 1) yt.player.pauseVideo(); return; }
+  const v = document.getElementById("lc-video"); if (v && !v.paused) v.pause();
+});
 
-window.PelLearn = { coursesSection, vCourse, vLesson, vCert };
+/* ---------- a YouTube video lesson: the same rules, through YouTube's player ---------- */
+// The page polls the player twice a second: it records the parts really played, pulls the playhead back
+// if someone skips ahead, and reports to the server every 15 seconds and on pause or end.
+const yt = { player: null, lessonKey: null, poll: null, flushTimer: null,
+  seek(at) { this.player.seekTo(at, true); S.lv.lastPos = at; S.lv.segStart = this.player.getPlayerState() === 1 ? at : null; },
+  async flush() {
+    if (!this.player || !S.lv || S.lv.segStart === null) return;
+    const now = this.player.getCurrentTime(), seg = [S.lv.segStart, Math.min(now, S.lv.maxPos + 1)];
+    S.lv.segStart = this.player.getPlayerState() === 1 ? now : null;
+    if (seg[1] > seg[0] + 0.5) await reportVideo([seg]);
+  },
+  stop() { clearInterval(this.poll); clearInterval(this.flushTimer); this.poll = this.flushTimer = null; if (this.player) { try { this.player.destroy(); } catch {} } this.player = null; this.lessonKey = null; },
+};
+function updateYtBar() {
+  if (!yt.player || !S.lv) return;
+  const t = yt.player.getCurrentTime() || 0, d = S.lv.youtube.duration || yt.player.getDuration() || 0;
+  const el = document.getElementById("yt-time"); if (el) el.textContent = `${mmss(t)} / ${mmss(d)}`;
+  const b = document.getElementById("yt-play"), playing = yt.player.getPlayerState() === 1;
+  if (b) { b.textContent = playing ? "❚❚" : "▶"; b.setAttribute("aria-label", playing ? "Pause" : "Play"); }
+}
+async function mountYouTube() {
+  const host = document.getElementById("yt-player");
+  if (!host || !S.lv || !S.lv.youtube) { if (yt.player && !document.getElementById("yt-wrap")) yt.stop(); return; }
+  const key = `${S.lv.lesson}:${S.lv.youtube.id}`;
+  if (yt.player && yt.lessonKey === key && document.getElementById("yt-player") === yt.host) return;
+  yt.stop(); yt.lessonKey = key; yt.host = host;
+  try {
+    yt.player = await window.PelYT.player(host, S.lv.youtube.id, { events: {
+      onStateChange: e => {
+        const YTS = window.YT.PlayerState;
+        if (e.data === YTS.PLAYING) { S.lv.segStart = yt.player.getCurrentTime(); S.lv.lastPos = S.lv.segStart; clearInterval(yt.flushTimer); yt.flushTimer = setInterval(() => yt.flush(), 15000); }
+        if (e.data === YTS.PAUSED || e.data === YTS.ENDED) { clearInterval(yt.flushTimer); yt.flush(); }
+        if (e.data === YTS.ENDED) { const end = document.getElementById("yt-end"); if (end) end.hidden = false; }
+        updateYtBar();
+      } } });
+    const ld = document.getElementById("yt-loading"); if (ld) ld.remove();
+    if (!S.lv.youtube.duration) S.lv.youtube.duration = Math.round(yt.player.getDuration() || 0);
+    showWatch({ watched: S.lv.watched, duration: S.lv.youtube.duration });
+    yt.poll = setInterval(() => {
+      if (!yt.player || !document.getElementById("yt-wrap")) return yt.stop();
+      const t = yt.player.getCurrentTime() || 0;
+      if (yt.player.getPlayerState() === 1) {
+        if (S.lv.noSkip && t > S.lv.maxPos + 2) yt.seek(S.lv.maxPos);
+        else if (t >= S.lv.lastPos && t - S.lv.lastPos < 3) S.lv.maxPos = Math.max(S.lv.maxPos, t);
+        S.lv.lastPos = t;
+      }
+      updateYtBar();
+    }, 500);
+  } catch (e) {
+    const ld = document.getElementById("yt-loading"); if (ld) ld.textContent = "The video couldn't be loaded. Use the link below to continue.";
+  }
+}
+function afterRender() { mountYouTube(); }
+
+window.PelLearn = { coursesSection, vCourse, vLesson, vCert, afterRender };
 })();

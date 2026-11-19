@@ -4,7 +4,7 @@ import { httpError, sha256 } from '../documents.js';
 import { verLabel, acceptSegments, namesMatch } from '../rules.js';
 import { storagePrefix } from '../tenancy.js';
 import { loadOrg } from '../course.js';
-import { coursesFor, currentCourseVersion, courseState, progressRef, issueCertificateIfDone, lessonForLearner, markQuiz, lessonsOf } from '../courses.js';
+import { coursesFor, currentCourseVersion, courseState, progressRef, issueCertificateIfDone, lessonForLearner, markQuiz, lessonsOf, videoDuration } from '../courses.js';
 
 export default async function (app) {
   const { db } = app;
@@ -69,8 +69,7 @@ export default async function (app) {
       const extra = {};
       if (lesson.type === 'video') {
         const p = await t.get(ref), w = ((p.exists ? p.get('video') : null) || {})[lesson.id] || {};
-        const f = await t.get(db.collection('files').doc(lesson.fileId));
-        const duration = (f.exists && f.get('duration')) || 0;
+        const duration = await videoDuration(db, lesson, t);
         const need = (lesson.minWatchPct || 0) / 100;
         if (need > 0 && !w.failed && !(duration > 0 && (w.watched || 0) >= duration * need - 0.5))
           throw httpError(400, `Watch at least ${lesson.minWatchPct}% of the video first. Skipped parts don't count.`);
@@ -109,8 +108,7 @@ export default async function (app) {
     return db.runTransaction(async t => {
       const { v, lesson } = await openLesson(t, s, req.params.id, req.params.lessonId, req.body.versionId);
       if (lesson.type !== 'video') throw httpError(400, 'This lesson has no video.');
-      const f = await t.get(db.collection('files').doc(lesson.fileId));
-      const duration = (f.exists && f.get('duration')) || 0;
+      const duration = await videoDuration(db, lesson, t);
       const ref = progressRef(db, s.id, v.courseId, v.major);
       const p = await t.get(ref), row = ((p.exists ? p.get('video') : null) || {})[lesson.id] || {};
       const started = row.startedAt || now();

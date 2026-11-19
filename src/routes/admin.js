@@ -11,7 +11,7 @@ import { verifyChain } from '../evidence.js';
 import { mp4Duration } from '../mp4.js';
 import { config } from '../config.js';
 import { storagePrefix, invalidate } from '../tenancy.js';
-import { draftOf, lessonsOf, codesOf, fileIdsOf, cleanCourseDraft, courseProblems, checkCourseRefs, getCourseFor, publishCourse } from '../courses.js';
+import { draftOf, lessonsOf, codesOf, fileIdsOf, cleanCourseDraft, courseProblems, checkCourseRefs, getCourseFor, publishCourse, issueCertificateIfDone } from '../courses.js';
 
 // 'support' is a platform admin visiting this client: sees what an auditor sees, changes nothing.
 const VIEW = ['manager', 'hod', 'auditor', 'support'];
@@ -563,6 +563,48 @@ export default async function (app) {
     }
     await cur.ref.delete();
     await audit(db, orgId, actor(req).id, 'course.delete', 'course', cur.id, { title: cur.get('title') }, req.ip);
+    return { ok: true };
+  });
+
+  /* ---------- field evidence: what staff submitted for a course lesson, waiting for a manager ---------- */
+  app.get('/api/admin/evidence', async (req, reply) => {
+    if (!requireRole(req, reply, VIEW)) return;
+    const orgId = req.orgId, org = await loadOrg(db, orgId);
+    const want = ['pending', 'approved', 'rejected', 'all'].includes(req.query.status) ? req.query.status : 'pending';
+    const [q, staff] = await Promise.all([db.collection('courseEvidence').where('orgId', '==', orgId).get(), loadStaff(db, orgId, {})]);
+    const byId = new Map(staff.map(x => [x.id, x]));
+    const dept = scopeDept(req, org);
+    const items = q.docs.map(d => ({ id: d.id, ...d.data() }))
+      .filter(e => want === 'all' || e.status === want)
+      .filter(e => { const p = byId.get(e.staffId); return p && (!dept || org.deptOf(p.positionId) === dept); })
+      .sort((a, b) => (a.submittedAt < b.submittedAt ? 1 : -1)).slice(0, 200)
+      .map(e => { const p = byId.get(e.staffId); return { id: e.id, status: e.status, text: e.text, fileId: e.fileId, note: e.note, submittedAt: e.submittedAt, reviewedAt: e.reviewedAt,
+        courseId: e.courseId, courseTitle: e.courseTitle, lessonTitle: e.lessonTitle, staffId: e.staffId, staffName: p.name, staffNo: p.staffNo, positionName: org.posName(p.positionId) }; });
+    return { items, pending: q.docs.filter(d => d.get('status') === 'pending').length };
+  });
+  app.post('/api/admin/evidence/:id/review', { schema: { body: { type: 'object', required: ['decision'], properties: {
+    decision: { type: 'string', enum: ['approve', 'reject'] }, note: { type: ['string', 'null'], maxLength: 1000 } } } } }, async (req, reply) => {
+    if (!requireRole(req, reply, EDIT)) return;
+    const orgId = req.orgId, note = String(req.body.note || '').trim();
+    if (req.body.decision === 'reject' && note.length < 3) throw httpError(400, 'Say what needs to change, so they can submit again.');
+    const ev = await db.runTransaction(async t => {
+      const ref = db.collection('courseEvidence').doc(String(req.params.id));
+      const e = await t.get(ref);
+      if (!e.exists || e.get('orgId') !== orgId) throw httpError(404, 'Not found.');
+      if (e.get('status') !== 'pending') throw httpError(400, 'This evidence has already been reviewed.');
+      const x = e.data();
+      t.update(ref, { status: req.body.decision === 'approve' ? 'approved' : 'rejected', note: note || null, reviewedAt: now(), reviewedBy: actor(req).id });
+      if (req.body.decision === 'approve') t.set(db.collection('courseProgress').doc(`${x.staffId}__${x.courseId}__${x.major}`),
+        { orgId, staffId: x.staffId, courseId: x.courseId, major: x.major, lessons: { [x.lessonId]: now() } }, { merge: true });
+      t.create(db.collection('auditLog').doc(), auditRecord(orgId, actor(req).id, req.body.decision === 'approve' ? 'evidence.approve' : 'evidence.reject', 'staff', x.staffId,
+        { course: x.courseTitle, lesson: x.lessonTitle, note: note || null }, req.ip));
+      return x;
+    });
+    if (req.body.decision === 'approve') {
+      const st = await db.collection('staff').doc(ev.staffId).get();
+      // The last step may have been this one: issue the certificate if everything is now done.
+      try { await issueCertificateIfDone(db, { id: st.id, orgId, positionId: st.get('positionId') }, ev.courseId, { ip: null, userAgent: null }); } catch {}
+    }
     return { ok: true };
   });
 

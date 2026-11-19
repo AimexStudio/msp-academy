@@ -25,7 +25,7 @@ function assertNoPelagos(res, label) {
 }
 
 /** Everything that belongs to one client, so we can check nothing changed. */
-const CLIENT_COLLECTIONS = ['courses', 'courseProgress', 'courseCompletions', 'staff', 'staffNumbers', 'documents', 'files', 'progress', 'quizAttempts', 'signoffs', 'declarations', 'positionHistory', 'auditLog', 'loginEvents'];
+const CLIENT_COLLECTIONS = ['courses', 'courseProgress', 'courseCompletions', 'courseEvidence', 'staff', 'staffNumbers', 'documents', 'files', 'progress', 'quizAttempts', 'signoffs', 'declarations', 'positionHistory', 'auditLog', 'loginEvents'];
 async function snapshot(orgId) {
   const out = {};
   for (const c of CLIENT_COLLECTIONS) {
@@ -96,6 +96,10 @@ const ROUTES = () => ({
   'POST /api/my/courses/:id/lessons/:lessonId/quiz': { url: `/api/my/courses/${P().courseId}/lessons/${P().quizId}/quiz`, body: { versionId: `${P().courseId}@1.0`, answers: [0] } },
   'POST /api/my/courses/:id/certificate': { url: `/api/my/courses/${P().courseId}/certificate` },
   'GET /api/my/courses/:id/certificate': { url: `/api/my/courses/${P().courseId}/certificate` },
+  'POST /api/my/courses/:id/lessons/:lessonId/video': { url: `/api/my/courses/${P().courseId}/lessons/${P().lessonId}/video`, body: { versionId: `${P().courseId}@1.0`, segments: [[0, 5]] } },
+  'POST /api/my/courses/:id/lessons/:lessonId/evidence': { url: `/api/my/courses/${P().courseId}/lessons/${P().lessonId}/evidence`, body: { versionId: `${P().courseId}@1.0`, text: 'Hijack' } },
+  'GET /api/admin/evidence': { own: true },
+  'POST /api/admin/evidence/:id/review': { url: `/api/admin/evidence/${P().evidenceId}/review`, body: { decision: 'approve' } },
   // Public, signed-in-anywhere and platform routes have their own tests.
   'GET /api/branding': { other: true }, 'GET /api/branding/logo/:fileId': { url: `/api/branding/logo/${P().pdfFileId}` },
   'POST /api/auth/login': { other: true }, 'POST /api/auth/logout': { other: true }, 'POST /api/auth/keepalive': { other: true }, 'GET /api/me': { own: true },
@@ -209,9 +213,11 @@ test('Every record carries its client, and everything it points to belongs to th
       if (l.fileId) assert.equal(orgOf('files', l.fileId), x.orgId, `${path} has a lesson using a file of another client`);
       if (l.code) assert.ok(byId[`documents/${x.orgId}__${l.code}`], `${path} has a lesson pointing at another client's document`);
     }
-    if (c === 'courseProgress' || c === 'courseCompletions') assert.equal(orgOf('courses', x.courseId), x.orgId, `${path} is about another client's course`);
+    if (c === 'courseEvidence' && x.fileId) assert.equal(orgOf('files', x.fileId), x.orgId, `${path} uses a photo of another client`);
+    if (c === 'courseProgress' || c === 'courseCompletions' || c === 'courseEvidence') assert.equal(orgOf('courses', x.courseId), x.orgId, `${path} is about another client's course`);
     if (c === 'courses') for (const code of x.codes || []) assert.ok(byId[`documents/${x.orgId}__${code}`], `${path} holds ${code}, which isn't a document of its own client`);
     if (c === 'staffNumbers') assert.ok(id.startsWith(`${x.orgId}_`), `${path} is not keyed by its client`);
+    if (c === 'files' && x.kind === 'evidence') assert.equal(orgOf('staff', x.staffId), x.orgId, `${path} is a photo from a person of another client`);
     if (c === 'files') assert.ok(x.storageKey.startsWith(`orgs/${x.orgId}/`), `${path} is stored outside its client’s folder: ${x.storageKey}`);
     if (c === 'declarations') assert.ok(x.signatureKey.startsWith(`orgs/${x.orgId}/signatures/`), `${path} signature is outside its client’s folder`);
   }

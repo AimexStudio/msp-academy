@@ -5,7 +5,9 @@
 //   courseProgress/{staff__course__major}  which lessons a person has finished in that version
 //   courseCompletions/{id}       the certificate: evidence, in the person's tamper-evident chain
 //
-// Lesson types: text, video, pdf, quiz, document (an SOP or policy, read and signed in its own flow).
+// Lesson types: text, video (with watch rules, chapters and an optional check question), pdf, checklist
+// (tick every step), quiz, signoff (agree to a statement and type your name), evidence (submit proof for a
+// manager to approve), and document (an SOP or policy, read and signed in its own flow).
 // Lessons unlock in order. Finishing every lesson issues a certificate. A new version (major change)
 // asks people to take the course again; a minor change keeps their progress.
 import crypto from 'node:crypto';
@@ -13,7 +15,7 @@ import { httpError, now, sha256, canonical, docRef, auditRecord } from './docume
 import { appliesTo, verLabel, markQuiz } from './rules.js';
 import { appendEvidence } from './evidence.js';
 
-export const LESSON_TYPES = { text: 'Text', video: 'Video', pdf: 'PDF', quiz: 'Quiz', document: 'SOP or policy' };
+export const LESSON_TYPES = { text: 'Text', video: 'Video', pdf: 'PDF', checklist: 'Checklist', quiz: 'Quiz', signoff: 'Policy sign-off', evidence: 'Field evidence', document: 'SOP or policy' };
 export const newId = (p = 'l') => `${p}-${crypto.randomBytes(5).toString('hex')}`;
 const ID_RE = /^[a-z0-9][a-z0-9-]{0,40}$/;
 const str = (v, max) => String(v ?? '').replace(/\u0000/g, '').slice(0, max);
@@ -29,6 +31,10 @@ export const lessonsOf = d => (d.modules || []).flatMap(m => m.lessons);
 export const codesOf = d => [...new Set(lessonsOf(d).filter(l => l.type === 'document' && l.code).map(l => l.code))];
 export const fileIdsOf = d => [...new Set(lessonsOf(d).filter(l => (l.type === 'video' || l.type === 'pdf') && l.fileId).map(l => l.fileId))];
 
+const cleanQuestion = q => ({ q: str(q.q, 500), options: (Array.isArray(q.options) ? q.options : []).slice(0, 6).map(o => str(o, 300)),
+  correct: Number.isInteger(q.correct) ? q.correct : -1 });
+const questionOk = q => q.q.trim() && q.options.filter(o => o.trim()).length >= 2 && q.correct >= 0 && q.correct < q.options.length && q.options[q.correct].trim();
+
 /** Keep only known fields with sane values; give every module and lesson a stable, unique id. */
 export function cleanCourseDraft(input = {}, positionIds = []) {
   const valid = new Set(positionIds), seen = new Set();
@@ -39,12 +45,21 @@ export function cleanCourseDraft(input = {}, positionIds = []) {
     lessons: (Array.isArray(m.lessons) ? m.lessons : []).slice(0, 100).filter(l => LESSON_TYPES[l.type]).map(l => {
       const base = { id: uid(l.id, 'l'), type: l.type, title: str(l.title, 200).trim() };
       if (l.type === 'text') return { ...base, body: str(l.body, 200000) };
-      if (l.type === 'video' || l.type === 'pdf') return { ...base, fileId: l.fileId ? str(l.fileId, 60) : null };
+      if (l.type === 'pdf') return { ...base, fileId: l.fileId ? str(l.fileId, 60) : null };
+      if (l.type === 'video') {
+        const cp = l.checkpoint && typeof l.checkpoint === 'object' ? cleanQuestion(l.checkpoint) : null;
+        return { ...base, fileId: l.fileId ? str(l.fileId, 60) : null,
+          // How much must really be watched (0 = optional), no skipping ahead, pause when the tab is hidden.
+          minWatchPct: l.minWatchPct === undefined ? 90 : [0, 75, 80, 85, 90, 100].includes(Number(l.minWatchPct)) ? Number(l.minWatchPct) : 90,
+          noSkipAhead: l.noSkipAhead === undefined ? true : !!l.noSkipAhead, pauseWhenHidden: l.pauseWhenHidden === undefined ? true : !!l.pauseWhenHidden,
+          chapters: (Array.isArray(l.chapters) ? l.chapters : []).slice(0, 30).map(c => ({ at: clampInt(c.at, 0, 36000, 0), label: str(c.label, 80).trim() })).filter(c => c.label).sort((a, b) => a.at - b.at),
+          checkpoint: cp };
+      }
+      if (l.type === 'checklist') return { ...base, summary: str(l.summary, 500).trim(), steps: (Array.isArray(l.steps) ? l.steps : []).slice(0, 30).map(x => str(x, 300)) };
+      if (l.type === 'signoff') return { ...base, code: str(l.code, 40).trim(), statement: str(l.statement, 3000) };
+      if (l.type === 'evidence') return { ...base, prompt: str(l.prompt, 1000), placeholder: str(l.placeholder, 200), photo: ['none', 'optional', 'required'].includes(l.photo) ? l.photo : 'optional' };
       if (l.type === 'document') return { ...base, code: l.code ? str(l.code, 40).trim().toUpperCase() : null };
-      return { ...base, passMark: clampInt(l.passMark, 50, 100, 80),
-        questions: (Array.isArray(l.questions) ? l.questions : []).slice(0, 50).map(q => ({
-          q: str(q.q, 500), options: (Array.isArray(q.options) ? q.options : []).slice(0, 6).map(o => str(o, 300)),
-          correct: Number.isInteger(q.correct) ? q.correct : -1 })) };
+      return { ...base, passMark: clampInt(l.passMark, 50, 100, 80), questions: (Array.isArray(l.questions) ? l.questions : []).slice(0, 50).map(cleanQuestion) };
     }),
   }));
   return { title: str(input.title, 120).trim(), description: str(input.description, 1000).trim(),
@@ -67,11 +82,13 @@ export function courseProblems(d) {
     if (l.type === 'document' && !l.code) p.push(`${name}: choose the SOP or policy.`);
     if (l.type === 'quiz') {
       if (!l.questions.length) p.push(`${name} has no questions.`);
-      l.questions.forEach((q, qi) => {
-        if (!q.q.trim() || q.options.filter(o => o.trim()).length < 2 || q.correct < 0 || q.correct >= q.options.length || !q.options[q.correct].trim())
-          p.push(`${name}, question ${qi + 1}: write the question, at least two answers, and tick the correct one.`);
-      });
+      l.questions.forEach((q, qi) => { if (!questionOk(q)) p.push(`${name}, question ${qi + 1}: write the question, at least two answers, and tick the correct one.`); });
     }
+    if (l.type === 'video' && l.checkpoint && !questionOk(l.checkpoint)) p.push(`${name}: finish the check question (the question, at least two answers, and the correct one ticked), or remove it.`);
+    if (l.type === 'checklist' && !l.steps.some(x => x.trim())) p.push(`${name} needs at least one step.`);
+    if (l.type === 'checklist' && l.steps.some(x => !x.trim())) p.push(`${name} has an empty step. Fill it in or remove it.`);
+    if (l.type === 'signoff' && !l.statement.trim()) p.push(`${name} needs the statement people agree to.`);
+    if (l.type === 'evidence' && !l.prompt.trim()) p.push(`${name} needs instructions: what must people submit?`);
   });
   return p;
 }
@@ -165,12 +182,19 @@ export async function courseState(db, staff, v, t = null) {
   const comps = (await (t ? t.get(cq) : cq.get())).docs.map(d => ({ id: d.id, ...d.data() }));
   const completion = comps.filter(c => c.major === v.major).sort((a, b) => (a.at < b.at ? 1 : -1))[0] || null;
   const earlier = comps.filter(c => c.major < v.major).length > 0;
+  // Field evidence: the latest submission per lesson, for this version.
+  const eq = db.collection('courseEvidence').where('orgId', '==', staff.orgId).where('staffId', '==', staff.id).where('courseId', '==', v.courseId);
+  const evid = new Map();
+  for (const e of (await (t ? t.get(eq) : eq.get())).docs.map(d => ({ id: d.id, ...d.data() })).filter(e => e.major === v.major).sort((a, b) => (a.submittedAt < b.submittedAt ? -1 : 1))) evid.set(e.lessonId, e);
   const out = []; let open = true;
   for (const m of v.modules) for (const l of m.lessons) {
     let done = !!(prog.lessons || {})[l.id], extra = {};
     if (l.type === 'document') { extra = await documentDone(db, staff, l.code, t); done = extra.done; }
+    if (l.type === 'video') { const w = (prog.video || {})[l.id] || {}; extra = { watched: Math.round(w.watched || 0), failed: !!w.failed, checkpointTries: w.checkpointTries || 0 }; }
+    if (l.type === 'evidence') { const e = evid.get(l.id); extra = { evidence: e ? { id: e.id, status: e.status, note: e.note || null, text: e.text, fileId: e.fileId || null, submittedAt: e.submittedAt, reviewedAt: e.reviewedAt || null } : null }; }
     const status = done ? 'done' : open ? 'open' : 'locked';
-    if (!done) open = false;
+    // Waiting for a manager's review doesn't hold people up: the next lesson opens, but the certificate waits.
+    if (!done && !(l.type === 'evidence' && extra.evidence && extra.evidence.status === 'pending')) open = false;
     out.push({ id: l.id, moduleId: m.id, status, ...(l.type === 'quiz' ? { attempts: ((prog.quiz || {})[l.id] || {}).attempts || 0, lastScore: ((prog.quiz || {})[l.id] || {}).lastScore ?? null } : {}), ...extra });
   }
   const doneCount = out.filter(x => x.status === 'done').length;
@@ -187,14 +211,22 @@ export async function issueCertificateIfDone(db, staff, courseId, ctx = {}) {
     const ref = db.collection('courseCompletions').doc();
     const rec = appendEvidence(t, db, staffSnap, 'courseCompletions', ref, { orgId: staff.orgId, courseId: v.courseId, versionId: v.versionId, major: v.major, minor: v.minor,
       title: v.title, contentHash: v.contentHash, staffNo: staffSnap.get('staffNo'), name: staffSnap.get('name'), positionId: staffSnap.get('positionId'),
-      lessons: st.total, ...ctx, at: now() });
+      lessons: st.total, acknowledgements: await acknowledgementsOf(db, staff, v, t), ...ctx, at: now() });
     return { id: ref.id, ...rec };
   });
 }
 
-/** A lesson as the learner sees it: never the quiz answers. */
+/** The policy sign-offs given in this course version, recorded in the certificate (and so in the evidence chain). */
+async function acknowledgementsOf(db, staff, v, t) {
+  const p = await t.get(progressRef(db, staff.id, v.courseId, v.major));
+  const so = (p.exists ? p.get('signoffs') : null) || {};
+  return lessonsOf(v).filter(l => l.type === 'signoff' && so[l.id]).map(l => ({ lessonId: l.id, title: l.title, code: l.code || null, statementHash: so[l.id].statementHash, typedName: so[l.id].name, at: so[l.id].at }));
+}
+
+/** A lesson as the learner sees it: never the quiz or check-question answers. */
 export function lessonForLearner(l) {
-  if (l.type !== 'quiz') return l;
-  return { ...l, questions: l.questions.map(q => ({ q: q.q, options: q.options })) };
+  if (l.type === 'quiz') return { ...l, questions: l.questions.map(q => ({ q: q.q, options: q.options })) };
+  if (l.type === 'video' && l.checkpoint) return { ...l, checkpoint: { q: l.checkpoint.q, options: l.checkpoint.options } };
+  return l;
 }
 export { markQuiz };

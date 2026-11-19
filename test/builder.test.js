@@ -57,7 +57,14 @@ test('Lessons go in order; a failed quiz doesn’t count; finishing issues the c
   const base = `/api/my/courses/${courseId}/lessons`;
   assert.equal((await s.post(`${base}/l-video/done`, { versionId: vid() })).status, 400);
   assert.equal((await s.post(`${base}/l-intro/done`, { versionId: 'old@1.0' })).status, 409);
-  for (const l of ['l-intro', 'l-video', 'l-pdf']) assert.equal((await s.post(`${base}/${l}/done`, { versionId: vid() })).status, 200, l);
+  assert.equal((await s.post(`${base}/l-intro/done`, { versionId: vid() })).status, 200);
+  // The video must really be watched (90% by default); reporting progress is capped by real time.
+  const r0 = await s.post(`${base}/l-video/done`, { versionId: vid() });
+  assert.equal(r0.status, 400); assert.match(r0.body.error, /Watch at least 90%/);
+  const rep = await s.post(`${base}/l-video/video`, { versionId: vid(), segments: [[0, 300]] });
+  assert.ok(rep.body.watched < 30, 'a whole video reported at once is not believed: it is capped by the time that has passed');
+  await env.db.collection('courseProgress').doc(`${env.harbour.staffId}__${courseId}__1`).set({ video: { 'l-video': { watched: 99999 } } }, { merge: true }); // as if watched in full
+  for (const l of ['l-video', 'l-pdf']) assert.equal((await s.post(`${base}/${l}/done`, { versionId: vid() })).status, 200, l);
   assert.equal((await s.post(`${base}/l-quiz/done`, { versionId: vid() })).status, 400);
   const fail = await s.post(`${base}/l-quiz/quiz`, { versionId: vid(), answers: [1, 0] });
   assert.equal(fail.body.result.passed, false); assert.deepEqual(fail.body.result.wrong, [0]);

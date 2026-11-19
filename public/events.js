@@ -144,10 +144,13 @@ const ACTIONS = {
   "cb-opt-del": (t, ds) => { const q = cbLesson(ds).questions[ds.k], n = Number(ds.n); q.options.splice(n, 1); if (q.correct === n) q.correct = -1; else if (q.correct > n) q.correct--; S.courseEdit.dirty = true; render(); },
   "cb-publish": async () => {
     const e = S.courseEdit;
-    if (!(await saveCourse(false))) return;
+    e.publishError = null;
+    if (!(await saveCourse(false))) { render(); return; }
+    // Say clearly why it can't be published yet (the list comes from the save just made).
+    if (e.problems && e.problems.length) { e.publishError = { message: "This course can't be published yet.", items: e.problems }; render(); toast("Not published yet: see the list at the top."); window.scrollTo(0, 0); return; }
     S.busy = true; render();
-    try { const r = await POST(`/api/admin/courses/${encodeURIComponent(e.id)}/publish`, { change: e.change }); toast(`Published version ${r.result.label}.`); S.courseEdit.dirty = false; await load(); }
-    catch (err) { const el = document.getElementById("course-err"); if (el) el.textContent = err.message; else fail(err); }
+    try { const r = await POST(`/api/admin/courses/${encodeURIComponent(e.id)}/publish`, { change: e.change }); toast(`Published version ${r.result.label}. Staff can see it now.`); S.courseEdit.dirty = false; S.courseEdit.publishError = null; await load(); }
+    catch (err) { S.courseEdit.publishError = { message: err.message, items: [] }; toast("Not published: see the message at the top."); window.scrollTo(0, 0); }
     S.busy = false; render();
   },
   reload: () => load(),
@@ -380,10 +383,10 @@ async function saveCourse(showToast) {
     const draft = { ...e.draft, modules: e.draft.modules.map(m => ({ ...m, lessons: m.lessons.map(l => l.type === "video" ? { ...l, chapters: (l.chapters || []).map(c => ({ at: c.time !== undefined ? toSec(c.time) : c.at, label: c.label })),
       ...(l.source === "youtube" ? { durationSec: l.durationText !== undefined ? toSec(l.durationText) : l.durationSec } : {}) } : l) })) };
     const r = await PUT(`/api/admin/courses/${encodeURIComponent(e.id)}`, { draft });
-    e.dirty = false; e.problems = r.problems; e.draftDirty = r.draftDirty;
+    e.dirty = false; e.problems = r.problems; e.draftDirty = r.draftDirty; e.saveError = null;
     if (showToast) { toast("Saved."); await load(); }
     return true;
-  } catch (err) { const el = document.getElementById("course-err"); if (el) el.textContent = err.message; else fail(err); return false; }
+  } catch (err) { e.saveError = err.message; render(); toast("Not saved: see the message at the top."); window.scrollTo(0, 0); return false; }
 }
 
 /* ---------- start ---------- */

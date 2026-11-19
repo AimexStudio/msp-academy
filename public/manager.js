@@ -259,6 +259,8 @@ function mCourse(d) {
   const status = e.status === "archived" ? "Archived · hidden from staff" : pub ? `Published · version ${esc(cur)}${e.draftDirty ? " · unpublished changes" : ""}` : "Draft · staff can't see it yet";
   return `<div class="page-head"><div class="t"><a class="back" href="#/m/library">← SOP library</a><h1>${esc(dr.title || "Untitled")}</h1><span class="muted">${status}</span></div></div>
     ${sh ? `<div class="notice info" style="margin-bottom:16px"><strong>Provided by ${esc(e.shared.provider)}.</strong> The lessons can't be changed here. Choose who at ${esc(S.org.orgName)} must complete it, then publish.</div>` : ""}
+    ${e.saveError ? `<div class="notice bad" role="alert" style="margin-bottom:16px"><strong>Not saved.</strong> ${esc(e.saveError)}</div>` : ""}
+    ${e.publishError ? `<div class="notice bad cb-problems" role="alert" style="margin-bottom:16px"><strong>${esc(e.publishError.message)}</strong>${e.publishError.items.length ? `<ul>${e.publishError.items.map(x => `<li>${esc(x)}</li>`).join("")}</ul><span>Fix these, then press <strong>Publish</strong> again.</span>` : ""}</div>` : ""}
     ${e.dirty ? `<div class="notice" style="margin-bottom:16px">You have unsaved changes.</div>` : ""}
     <form data-form="course" class="editor"><div class="stack" style="gap:16px;min-width:0"><fieldset ${lock ? "disabled" : ""} style="border:0;padding:0;margin:0;min-width:0;display:contents">
       <section class="card pad stack" style="gap:14px"><div class="field"><label for="c-title">Title</label><input id="c-title" type="text" data-bind="courseEdit.draft.title" value="${esc(dr.title)}"></div>
@@ -275,7 +277,7 @@ function mCourse(d) {
           <label class="check"><input type="radio" name="cchg" data-change="cb-chg" data-v="minor" ${e.change === "minor" ? "checked" : ""}><span>Minor change (v${esc(nMinor)})<br><span class="muted" style="font-size:.84rem">Progress and certificates stay valid.</span></span></label>
           <label class="check"><input type="radio" name="cchg" data-change="cb-chg" data-v="major" ${e.change === "major" ? "checked" : ""}><span>New version (v${esc(nMajor)})<br><span class="muted" style="font-size:.84rem">Everyone takes it again.</span></span></label>` : ""}
         <button type="button" class="btn primary block" data-act="cb-publish" ${S.busy ? "disabled" : ""}>${pub ? `Publish version ${esc(e.change === "major" ? nMajor : nMinor)}` : "Publish to staff"}</button>
-        ${e.problems.length && !e.dirty ? `<p class="hint muted" style="font-size:.84rem">Before publishing: ${esc(e.problems[0])}${e.problems.length > 1 ? ` (and ${e.problems.length - 1} more)` : ""}</p>` : ""}
+        ${e.problems.length && !e.dirty ? `<div class="cb-todo"><span class="lbl">Still to do before publishing</span><ul>${e.problems.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>` : !e.dirty && e.status !== "published" ? `<p class="hint muted" style="font-size:.84rem">Ready to publish.</p>` : ""}
         <p class="err" id="course-err" role="alert"></p>
         <button type="button" class="btn sm danger" data-act="course-del">${e.label ? "Archive" : "Delete"}</button></section>`}
       ${e.versions.length ? `<section class="card pad stack" style="gap:8px"><h3>Published versions</h3>${e.versions.map(v => `<div class="tnum" style="font-size:.9rem">Version ${esc(v.label)} <span class="muted">· ${fmtDate(v.publishedAt)}</span></div>`).join("")}</section>` : ""}

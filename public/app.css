@@ -652,3 +652,11 @@ details summary{cursor:pointer;font-weight:600;color:var(--lagoon)}
 .yt-btn{border:0;background:rgba(255,255,255,.1);color:#fff;border-radius:8px;min-width:40px;height:36px;font-size:1rem;cursor:pointer}
 .yt-btn:hover{background:rgba(255,255,255,.2)}
 .yt-time{font-size:.86rem;color:#ccc}
+
+/* Why a course can't be published yet */
+.cb-problems ul,.cb-todo ul{margin:8px 0;padding-left:20px}
+.cb-problems li,.cb-todo li{margin:3px 0}
+.cb-todo{border:1px solid color-mix(in srgb,var(--bad, #B3261E) 35%,var(--line));background:color-mix(in srgb,var(--bad, #B3261E) 5%,var(--surface));border-radius:10px;padding:10px 12px;font-size:.86rem}
+.cb-todo .lbl{color:var(--bad, #B3261E)}
+.cb-problems{background:color-mix(in srgb,#B3261E 8%,var(--surface));border:1px solid color-mix(in srgb,#B3261E 40%,var(--line));color:var(--ink)}
+.cb-problems strong:first-child{color:#8C1D18}

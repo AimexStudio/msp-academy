@@ -6,3 +6,5 @@ content/files
 content/documents
 .env
 *.log
+.env.local
+.vercel

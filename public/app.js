@@ -352,7 +352,9 @@ function vLogin() {
       </form>
       <p class="muted" style="font-size:.86rem">Forgot your PIN? Ask your manager to reset it.${S.brandByHost ? "" : ` Not at ${esc(b.name)}? <button type="button" class="linkish" data-act="change-client">Change client</button>`}</p>
       <p class="powered">Powered by <img src="/brand/msp-academy.svg" alt="MSP Academy"></p>`;
-  return `<main class="login">${side}<section class="login-main gutter"><div class="login-card">${body}</div></section></main>`;
+  // The way in for the MSP Academy team. Not on a client's own web address: platform sign-in only works on the shared one.
+  const admin = S.brandByHost ? "" : `<a class="admin-link" href="/platform" aria-label="MSP Academy admin sign-in"><svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path fill="currentColor" d="M8 1a3.5 3.5 0 0 0-3.5 3.5V6H4a1.5 1.5 0 0 0-1.5 1.5v6A1.5 1.5 0 0 0 4 15h8a1.5 1.5 0 0 0 1.5-1.5v-6A1.5 1.5 0 0 0 12 6h-.5V4.5A3.5 3.5 0 0 0 8 1Zm-2 3.5a2 2 0 1 1 4 0V6H6V4.5Z"/></svg><span>Admin</span></a>`;
+  return `<main class="login">${admin}${side}<section class="login-main gutter"><div class="login-card">${body}</div></section></main>`;
 }
 async function doLogin() {
   const f = S.login;

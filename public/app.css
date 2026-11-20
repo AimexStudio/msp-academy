@@ -666,3 +666,11 @@ details summary{cursor:pointer;font-weight:600;color:var(--lagoon)}
 .course-admin{padding:18px;display:flex;flex-direction:column;gap:10px;color:inherit;text-decoration:none;border-top:4px solid var(--lagoon);transition:transform .12s,border-color .12s}
 .course-admin:hover{transform:translateY(-1px);border-color:var(--lagoon)}
 .course-admin h3{margin:0}.course-admin p{margin:0;font-size:.92rem}
+
+/* The small Admin button on every sign-in page, for the MSP Academy team. */
+.admin-link{position:fixed;top:calc(env(safe-area-inset-top, 0px) + 14px);right:calc(env(safe-area-inset-right, 0px) + 14px);z-index:30;display:inline-flex;align-items:center;gap:6px;
+  padding:6px 11px;border-radius:999px;background:rgba(255,255,255,.88);color:#3A3D42;border:1px solid rgba(31,33,36,.14);box-shadow:0 1px 4px rgba(0,0,0,.08);
+  font:600 .76rem/1 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;letter-spacing:.02em;text-transform:none;text-decoration:none;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);opacity:.82;transition:opacity .15s,box-shadow .15s}
+.admin-link:hover,.admin-link:focus-visible{opacity:1;box-shadow:0 2px 10px rgba(0,0,0,.14)}
+.admin-link:focus-visible{outline:2px solid #DD6E3E;outline-offset:2px}
+@media print{.admin-link{display:none}}

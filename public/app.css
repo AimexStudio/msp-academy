@@ -674,3 +674,13 @@ details summary{cursor:pointer;font-weight:600;color:var(--lagoon)}
 .admin-link:hover,.admin-link:focus-visible{opacity:1;box-shadow:0 2px 10px rgba(0,0,0,.14)}
 .admin-link:focus-visible{outline:2px solid #DD6E3E;outline-offset:2px}
 @media print{.admin-link{display:none}}
+
+/* Platform: the way to each client's sign-in page */
+.pf-client-wrap{display:flex;flex-direction:column;gap:6px}
+.pf-client-wrap .pf-client{flex:1}
+.pc-open{align-self:flex-start;font-size:.8rem;font-weight:600;color:var(--lagoon);text-decoration:none;padding:2px 4px}
+.pc-open:hover{text-decoration:underline}
+.pf-bar .who{gap:10px}
+.pf-bar .who a.bar-btn{text-decoration:none}
+@media (max-width:760px){.pf-bar .who a.bar-btn{display:none}}
+.pc-stats span{white-space:nowrap}

@@ -81,12 +81,12 @@ function shell(inner) {
   const on = v => (pf.view === v || (v === "clients" && ["client", "new"].includes(pf.view)) || (v === "library" && pf.view === "share" && pf.params.orgId === LIB)) ? "on" : "";
   return `<header class="topbar gutter pf-bar"><div class="topbar-in"><a class="brand" href="#/clients" aria-label="MSP Academy platform home"><img class="pf-logo" src="/brand/msp-academy.svg" alt="MSP Academy"><span class="sub">Platform</span></a>
       <nav class="pf-nav"><a class="${on("clients")}" href="#/clients">Clients</a><a class="${on("groups")}" href="#/groups">Groups</a><a class="${on("library")}" href="#/library">Library</a><a class="${on("log")}" href="#/log">Log</a></nav><div class="spacer"></div>
-      <div class="who"><div class="nm">${esc(pf.me.admin.name)}</div><button type="button" class="bar-btn" data-act="logout">Sign out</button></div></div></header>
+      <div class="who"><a class="bar-btn" href="/" target="_blank" rel="noopener" title="Opens in a new tab. Signing in there as a staff member signs you out of the platform in this browser.">Client sign-in ↗</a><div class="nm">${esc(pf.me.admin.name)}</div><button type="button" class="bar-btn" data-act="logout">Sign out</button></div></div></header>
     <main class="wrap gutter pf-main">${inner}</main>`;
 }
 function vLogin() {
   const f = pf.login, local = location.hostname === "localhost" || location.hostname === "127.0.0.1";
-  return `<main class="pf-login gutter"><form class="card pad stack" data-form="pf-login" autocomplete="off" novalidate style="gap:14px">
+  return `<main class="pf-login gutter"><a class="admin-link" href="/" aria-label="Client staff sign-in"><svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path fill="currentColor" d="M10.5 3.5 6 8l4.5 4.5-1.4 1.4L3.2 8l5.9-5.9 1.4 1.4Z"/></svg><span>Client sign-in</span></a><form class="card pad stack" data-form="pf-login" autocomplete="off" novalidate style="gap:14px">
     <img class="academy-logo" src="/brand/msp-academy.svg" alt="MSP Academy">
     <div class="stack" style="gap:4px"><h1>Platform sign-in</h1><p class="muted">For the MSP Academy team. Client staff sign in on the main page.</p></div>
     <div class="field"><label for="pf-email">Email</label><input id="pf-email" type="email" autocomplete="username" data-bind="pf.login.email" value="${esc(f.email)}"></div>
@@ -97,21 +97,24 @@ function vLogin() {
 }
 
 /* ---------- clients ---------- */
+const SIGNIN_NOTE = "Opens in a new tab. Signing in there as a staff member signs you out of the platform in this browser: use a private window, or Visit as support to look around.";
+const signInUrl = c => c.domains && c.domains.length ? `https://${c.domains[0]}/` : `/?code=${encodeURIComponent(c.loginCode)}`;
 function clientCard(c) {
   const col = c.colors || {};
   return `<a class="pf-client" href="#/clients/${encodeURIComponent(c.orgId)}">
     <div class="pc-band" style="background:${esc(col.primary || "#26292D")}">${c.logoUrl ? `<img src="${esc(c.logoUrl)}" alt="">` : `<span style="color:${esc(col.background || "#fff")}">${esc(c.wordmark || c.name)}</span>`}<span class="pc-dots"><i style="background:${esc(col.accent || "#888")}"></i><i style="background:${esc(col.highlight || "#aaa")}"></i></span></div>
     <div class="pc-body"><div class="row between" style="gap:8px;flex-wrap:nowrap"><strong class="pc-name">${esc(c.name)}</strong>${statusChip(c.status)}</div>
       <div class="pc-meta"><span class="mono">${esc(c.loginCode || "—")}</span><span>No. ${c.clientNo ?? "—"}</span></div>
-      <div class="pc-stats"><span>${plural(c.staff, "staff member")}</span><span>${plural(c.published, "document")}</span><span>${plural(c.courses, "course")}</span></div>
-      <div class="pc-foot muted">${c.domains.length ? esc(c.domains[0]) : "Shared sign-in page"} · last sign-in ${fmtDate(c.lastSignInAt)}</div></div></a>`;
+      <div class="pc-stats"><span><b class="tnum">${c.staff}</b> staff</span><span>${plural(c.published, "document")}</span><span>${plural(c.courses, "course")}</span></div>
+      <div class="pc-foot muted">${c.domains.length ? esc(c.domains[0]) : "Shared sign-in page"} · last sign-in ${fmtDate(c.lastSignInAt)}</div></div></a>
+    ${c.loginCode ? `<a class="pc-open" href="${signInUrl(c)}" target="_blank" rel="noopener" title="${esc(SIGNIN_NOTE)}">Open sign-in page ↗</a>` : ""}`;
 }
 function vClients() {
   const { clients: list, groups } = pf.data;
   const sections = [...groups.map(g => ({ name: g.name, items: list.filter(c => c.groupId === g.id) })), { name: "No group", items: list.filter(c => !c.groupId) }].filter(x => x.items.length);
   const staff = list.reduce((n, c) => n + c.staff, 0);
   return `<div class="page-head"><div class="t"><h1>Clients</h1><p class="muted">${plural(list.length, "client")} · ${plural(groups.length, "group")} · ${plural(staff, "active staff member")} · ${list.filter(c => c.status === "suspended").length} suspended</p></div><div class="row"><a class="btn primary" href="#/clients/new">Add a client</a></div></div>
-    <div class="stack" style="gap:26px">${sections.map(sec => `<section class="stack" style="gap:10px"><h2 class="pf-group-h">${esc(sec.name)} <span class="muted tnum">${sec.items.length}</span></h2><div class="pf-clients">${sec.items.map(clientCard).join("")}</div></section>`).join("") || `<div class="card empty"><p>No clients yet.</p></div>`}</div>`;
+    <div class="stack" style="gap:26px">${sections.map(sec => `<section class="stack" style="gap:10px"><h2 class="pf-group-h">${esc(sec.name)} <span class="muted tnum">${sec.items.length}</span></h2><div class="pf-clients">${sec.items.map(c => `<div class="pf-client-wrap">${clientCard(c)}</div>`).join("")}</div></section>`).join("") || `<div class="card empty"><p>No clients yet.</p></div>`}</div>`;
 }
 const groupSelect = (bind, sel) => `<select id="${bind.replace(/\./g, "-")}" data-bind="${bind}"><option value="">No group</option>${(pf.groups || []).map(g => `<option value="${esc(g.id)}" ${sel === g.id ? "selected" : ""}>${esc(g.name)}</option>`).join("")}</select>`;
 function vNew() {
@@ -155,7 +158,7 @@ function vClient() {
   pf.groups = d.groups;
   return `<div class="page-head"><div class="t"><p class="muted"><a href="#/clients">Clients</a> / client ${c.clientNo ?? "—"}</p><h1>${esc(c.name)}</h1>
       <p>${statusChip(c.status)}${c.statusReason ? ` <span class="muted">${esc(c.statusReason)}</span>` : ""}</p></div>
-    <div class="row"><button type="button" class="btn" data-act="pf-support">Visit as support</button>
+    <div class="row">${c.loginCode && !c.library ? `<a class="btn" href="${signInUrl(c)}" target="_blank" rel="noopener" title="${esc(SIGNIN_NOTE)}">Open sign-in page ↗</a>` : ""}<button type="button" class="btn" data-act="pf-support">Visit as support</button>
       ${c.status === "suspended" ? `<button type="button" class="btn primary" data-act="pf-status" data-s="active">Reactivate</button>` : `<button type="button" class="btn danger" data-act="pf-status" data-s="suspended">Suspend</button>`}</div></div>
   <div class="stack" style="gap:18px">
   <form data-form="pf-details" class="card pad stack" style="gap:14px"><h2>Details</h2>

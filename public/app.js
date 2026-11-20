@@ -122,6 +122,12 @@ async function loadBranding() {
     if (r.client) { S.brand = r.client; S.brandByHost = true; applyBrand(S.brand); return; }
   } catch {}
   S.brandByHost = false;
+  // A link like /?code=HARBOUR (from the platform) opens that client's sign-in without remembering it on this device.
+  const linked = new URLSearchParams(location.search).get("code");
+  if (linked) {
+    history.replaceState(null, "", location.pathname + location.hash);
+    try { S.brand = (await GET(`/api/branding?code=${encodeURIComponent(linked)}`)).client; applyBrand(S.brand); return; } catch {}
+  }
   const code = storedCode();
   if (code) {
     try { S.brand = (await GET(`/api/branding?code=${encodeURIComponent(code)}`)).client; }

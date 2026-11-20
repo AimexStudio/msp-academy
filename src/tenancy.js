@@ -77,7 +77,7 @@ export const DEFAULT_BRANDING = {
   wordmark: '', subtitle: '', tagline: '', pitch: 'Your SOPs, manuals and policies', pitchAccent: 'in one place', cornerText: '',
   colors: { primary: '#26292D', accent: '#A3461C', highlight: '#DD6E3E', background: '#F2F0ED' },
   headingFont: 'figtree', bodyFont: 'figtree', headingCaps: false, loginArt: 'none', logoFileId: null,
-  announcement: '', terms: { course: 'Course', courses: 'Courses', module: 'Module', modules: 'Modules' },
+  announcement: '', terms: { course: 'Course', courses: 'Courses', module: 'Module', modules: 'Modules', document: 'Document', documents: 'Documents' },
 };
 
 const str = (v, max) => String(v ?? '').replace(/[\u0000-\u001f]/g, '').trim().slice(0, max);
@@ -98,7 +98,7 @@ export function cleanBranding(input = {}, base = DEFAULT_BRANDING) {
     loginArt: ['arches', 'none'].includes(input.loginArt) ? input.loginArt : (base.loginArt || 'none'),
     logoFileId: input.logoFileId === undefined ? (base.logoFileId || null) : (input.logoFileId || null),
     announcement: str(input.announcement ?? base.announcement, 240),
-    terms: { course: term('course'), courses: term('courses'), module: term('module'), modules: term('modules') },
+    terms: { course: term('course'), courses: term('courses'), module: term('module'), modules: term('modules'), document: term('document'), documents: term('documents') },
   };
 }
 
@@ -130,8 +130,8 @@ export function storageKeyAllowed(org, key) {
 /** A new client's starting set-up. The client's manager changes all of it in Settings. */
 export function starterConfig(name) {
   return {
-    courseTitle: `${name} SOPs and Policies`,
-    declarationText: `I, {name} ({position}), confirm that I have received, read and understood the following Standard Operating Procedures (SOPs), manuals, policies and staff memos, and that I will follow the standards and policies they set out. Where I did not understand something, I asked my manager to explain it.`,
+    courseTitle: `${name} Training`,
+    declarationText: `I, {name} ({position}), confirm that I have read and understood the following documents, and that I will follow the standards and procedures they set out. Where I did not understand something, I asked my manager to explain it.`,
     departments: [{ id: 'mgmt', name: 'Management' }, { id: 'general', name: 'General' }],
     positions: [{ id: 'manager', name: 'Manager', dept: 'mgmt' }, { id: 'staff', name: 'Staff member', dept: 'general' }],
   };

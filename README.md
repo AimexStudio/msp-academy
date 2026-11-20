@@ -80,12 +80,12 @@ Everything below is at `/platform`, for the MSP Academy team.
 - **Suspend / reactivate**: with a reason. Suspended clients can't sign in; nothing is deleted.
 - **Visit as support**: read-only, time-limited, with a reason. A striped banner shows on every screen, and the client sees the visit and every page opened in their audit log.
 - **Groups**: e.g. HR, Hospitality. Share a course with a whole group at once.
-- **Library**: **Open the course builder** to build MSP Academy courses (a gold banner shows you're in the library). Publish them, then **Share…** with clients.
+- **Library**: **Open the course builder** to build MSP Academy courses (it opens on **Courses**) (a gold banner shows you're in the library). Publish them, then **Share…** with clients.
 - **Sharing**: each client gets its own copy (its own files, its own records), shown as "Provided by MSP Academy", never naming where it came from. Their manager can choose who completes it but not change it. Nothing updates by itself: share again to send a newer version.
 
 ## Building courses
 
-Client managers: **SOP library → Courses → New course** (MSP Academy's library uses the same builder). Add **modules**, then use the **Add a lesson** buttons under each module:
+Client managers: **Courses → New course** (MSP Academy's library uses the same builder). Read-and-sign documents (SOPs, policies, manuals, memos) live under **Documents**; each client can use its own word for both, e.g. "Qualifications" or "SOP library" (Platform → client → Branding → Wording). Add **modules**, then use the **Add a lesson** buttons under each module:
 
 | Lesson | What the learner does | Settings |
 |---|---|---|

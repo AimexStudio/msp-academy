@@ -212,13 +212,13 @@ function vLibrary() {
   return `<div class="page-head"><div class="t"><h1>MSP Academy library</h1><p class="muted">Courses built by the MSP Academy team, to share with any client. Clients see them as provided by MSP Academy.</p></div>
     <button type="button" class="btn primary" data-act="pf-lib-open">Open the course builder</button></div>
     <section class="card pad stack" style="gap:12px">${d.courses.length ? d.courses.map(x => courseRow(d.orgId, x)).join("")
-      : `<p class="muted">No courses yet. Open the course builder, then choose <strong>SOP library → New course</strong>. When a course is published, share it from here.</p>`}</section>`;
+      : `<p class="muted">No courses yet. Open the course builder, then choose <strong>Courses → New course</strong>. When a course is published, share it from here.</p>`}</section>`;
 }
 function vCourses(d) {
   const c = d.client, own = d.courses.filter(x => !x.receivedCopy);
   return `<section class="card pad stack" style="gap:12px"><h2>Courses</h2>
     <p class="muted" style="font-size:.9rem">Courses ${esc(c.name)}'s managers built. Share one to give other clients their own copy. Sharing only happens when you share: later versions don't follow by themselves.</p>
-    ${own.length ? own.map(x => courseRow(c.orgId, x)).join("") : `<p class="muted">No courses yet. The client's managers create them under SOP library → Courses.</p>`}
+    ${own.length ? own.map(x => courseRow(c.orgId, x)).join("") : `<p class="muted">No courses yet. The client's managers create them under Courses.</p>`}
     ${d.received.length ? `<details><summary>Courses shared to ${esc(c.name)} (${d.received.length})</summary><div class="list" style="margin-top:8px">${d.received.map(r => `<div class="li"><div class="main"><div class="title">${esc(r.courseTitle)} <span class="muted">from ${esc(r.fromName)}</span></div><div class="sub">${fmtDT(r.at)}${r.by ? " · " + esc(r.by) : ""} · ${r.published ? "published straight away" : "as drafts"}</div></div></div>`).join("")}</div></details>` : ""}
   </section>`;
 }
@@ -277,7 +277,7 @@ function vBranding(c) {
         <div class="grid2">${text("pitch", "Sign-in page: message", "Your standards", 80)}${text("pitchAccent", "…ending in the highlight colour", "on every shift", 40)}</div>
         <label class="check"><input type="checkbox" data-change="pf-arches" ${b.loginArt === "arches" ? "checked" : ""}><span>Arches along the bottom of the sign-in panel</span></label>
         <div class="field"><label for="b-ann">Announcement on staff home screens (optional)</label><input id="b-ann" type="text" maxlength="240" data-bind="pf.edit.b.announcement" value="${esc(b.announcement)}" placeholder="e.g. Fire drill on Friday at 10:00"></div>
-        <fieldset class="pf-terms"><legend>Wording this client uses</legend><div class="grid2">${tm("course", "One course", "Course")}${tm("courses", "Several", "Courses")}${tm("module", "One module", "Module")}${tm("modules", "Several", "Modules")}</div></fieldset>
+        <fieldset class="pf-terms"><legend>Wording this client uses</legend><div class="grid2">${tm("course", "One course", "Course")}${tm("courses", "Several courses", "Courses")}${tm("module", "One module", "Module")}${tm("modules", "Several modules", "Modules")}${tm("document", "One read-and-sign document", "Document")}${tm("documents", "Several (also the menu name)", "Documents")}</div></fieldset>
       </div>
       <div class="stack" style="gap:8px"><span class="lbl">Preview</span><div id="pf-preview">${preview(c)}</div><div id="pf-contrast">${contrastNotes()}</div></div>
     </div>
@@ -338,7 +338,7 @@ P.addActions({
     pf.me = null; pf.view = "login"; render();
   },
   "pf-new-pin": () => { pf.edit.manager.pin = sixDigits(); render(); },
-  "pf-lib-open": async () => { try { await POST("/api/platform/library/open"); location.href = "/#/m/library"; } catch (e) { fail(e); } },
+  "pf-lib-open": async () => { try { await POST("/api/platform/library/open"); location.href = "/#/m/courses"; } catch (e) { fail(e); } },
   "pf-share-group": (t, ds) => {
     const ids = pf.data.list.clients.filter(c => c.orgId !== pf.data.detail.client.orgId && (c.groupId || "") === ds.g).map(c => c.orgId);
     const all = ids.every(id => pf.share.targets.includes(id));

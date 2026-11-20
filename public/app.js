@@ -142,7 +142,7 @@ async function chooseClient() {
 }
 function changeClient() { S.brand = null; S.login = { no: "", pin: "", err: "", code: "", remember: true }; storeCode(""); applyBrand(null); render(); }
 const shortName = () => (S.brand && S.brand.wordmark) ? S.brand.wordmark.charAt(0) + S.brand.wordmark.slice(1).toLowerCase() : (S.org ? S.org.orgName : "");
-const term = k => (S.brand && S.brand.terms && S.brand.terms[k]) || { course: "Course", courses: "Courses", module: "Module", modules: "Modules" }[k];
+const term = k => (S.brand && S.brand.terms && S.brand.terms[k]) || { course: "Course", courses: "Courses", module: "Module", modules: "Modules", document: "Document", documents: "Documents" }[k];
 
 /* ---------- API ---------- */
 class ApiError extends Error { constructor(msg, status, body) { super(msg); this.status = status; this.body = body || {}; } }
@@ -199,7 +199,7 @@ async function route() {
   else if (a === "m" && isMgrish()) {
     params = { id: c || null };
     view = { overview: "m-overview", staff: c === "new" ? "m-staffnew" : c ? "m-person" : "m-staff", library: "m-library", doc: "m-edit",
-      reports: "m-reports", settings: "m-settings", audit: "m-audit", version: "m-version", course: "m-course", reviews: "m-reviews" }[b] || "m-overview";
+      reports: "m-reports", settings: "m-settings", audit: "m-audit", version: "m-version", course: "m-course", reviews: "m-reviews", courses: "m-courses" }[b] || "m-overview";
     if (b === "version") params = { code: c, vid: d };
     if (b === "reviews") params = { filter: c || "pending" };
   }
@@ -229,7 +229,8 @@ async function load() {
     else if (v === "m-staff") data = await GET("/api/admin/staff");
     else if (v === "m-staffnew") { data = await GET("/api/admin/staff"); S.staffEdit = { id: null, name: "", staffNo: data.nextStaffNo, positionId: S.org.positions.some(p => p.id === "waitron") ? "waitron" : (S.org.positions[0] || {}).id, startDate: "", role: "staff", pin: randPin() }; }
     else if (v === "m-person") { data = await GET(`/api/admin/staff/${encodeURIComponent(P.id)}`); const p = data.person; S.staffEdit = { id: p.id, name: p.name, staffNo: p.staffNo, positionId: p.positionId, startDate: p.startDate || "", role: p.role }; S.pinReset = null; }
-    else if (v === "m-library") { const [docs, cs] = await Promise.all([GET("/api/admin/documents"), GET("/api/admin/courses")]); data = { ...docs, courses: cs.courses }; }
+    else if (v === "m-library") data = await GET("/api/admin/documents");
+    else if (v === "m-courses") data = await GET("/api/admin/courses");
     else if (v === "m-course") {
       const [docs, c] = await Promise.all([GET("/api/admin/documents"), P.id === "new" ? null : GET(`/api/admin/courses/${encodeURIComponent(P.id)}`)]);
       data = { lib: docs };
@@ -461,7 +462,7 @@ function vHome(c) {
     ${S.brand && S.brand.announcement ? `<div class="announcement" role="note"><span class="a-dot" aria-hidden="true"></span><span>${esc(S.brand.announcement)}</span></div>` : ""}
     ${window.PelLearn ? window.PelLearn.coursesSection(c.courses) : ""}
     ${alerts.length ? `<section class="stack" style="gap:10px"><div class="section-title"><h2>Action required</h2><span class="muted" style="font-size:.88rem">New or updated since you last signed</span></div><div class="alerts">${alerts.map(m => `<div class="alert"><div class="a-main"><div class="a-title">${m.status === "updated" ? "Updated" : "New"} ${esc(KINDS[m.kind] || "document")}: ${esc(m.title)}</div><div class="a-sub">${esc(m.code)} · version ${esc(m.label)} · issued ${esc(m.issueDate || fmtDate(m.publishedAt))}</div></div><a class="btn sm primary" href="${link(m)}">${m.status === "updated" ? "Read & sign" : "Start"}</a></div>`).join("")}</div></section>` : ""}
-    <section><div class="section-title"><h2>${c.courses && c.courses.length ? "Your SOPs and policies" : "Your course"}</h2><span class="muted tnum" style="font-size:.88rem">${c.done} of ${c.total} signed · ${esc(c.positionName)}</span></div>
+    <section><div class="section-title"><h2>${c.courses && c.courses.length ? esc(term("documents")) : "Your course"}</h2><span class="muted tnum" style="font-size:.88rem">${c.done} of ${c.total} signed · ${esc(c.positionName)}</span></div>
       ${c.total ? `<div class="stack" style="gap:18px">${courseList(c.items, link)}</div>` : `<div class="card empty"><h3>No training assigned yet</h3><p>Your manager publishes SOPs and policies for each position.</p></div>`}</section>
     ${decl}
   </main>`;

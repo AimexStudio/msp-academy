@@ -89,7 +89,7 @@ const ACTIONS = {
   "change-client": () => P.changeClient(),
   "support-end": async () => { const author = S.support && S.support.author, org = S.me && S.brand ? S.brand.orgId : ""; await POST("/api/platform/support/end"); location.href = author ? "/platform#/library" : `/platform#/clients/${encodeURIComponent(org)}`; },
   "course-del": () => confirmBox(S.courseEdit.label ? "Archive this course?" : "Delete this course?", S.courseEdit.label ? "Staff no longer see it. Certificates already earned are kept." : "The draft is deleted. SOPs and policies in it stay in your library.", S.courseEdit.label ? "Archive" : "Delete", async () => {
-    await api("DELETE", `/api/admin/courses/${encodeURIComponent(S.courseEdit.id)}`); toast(S.courseEdit.label ? "Archived." : "Deleted."); S.courseEdit = null; location.hash = "#/m/library";
+    await api("DELETE", `/api/admin/courses/${encodeURIComponent(S.courseEdit.id)}`); toast(S.courseEdit.label ? "Archived." : "Deleted."); S.courseEdit = null; location.hash = "#/m/courses";
   }, true),
   "cb-mod-add": () => { const e = S.courseEdit; e.draft.modules.push({ title: `${P.term("module")} ${e.draft.modules.length + 1}`, lessons: [] }); e.dirty = true; render(); },
   "cb-mod-del": (t, ds) => {

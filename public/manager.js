@@ -11,11 +11,12 @@ function vMgr(inner) {
   const on = keys => keys.includes(v) ? "on" : "";
   const nav = (href, label, keys, extra = "") => `<a class="nav ${on(keys)}" href="${href}" ${on(keys) ? 'aria-current="page"' : ""}><span>${label}</span>${extra}</a>`;
   const body = inner || ({ "m-overview": mOverview, "m-staff": mStaff, "m-staffnew": mStaffNew, "m-person": mPerson, "m-library": mLibrary,
-    "m-edit": mEdit, "m-version": mVersion, "m-course": mCourse, "m-reviews": mReviews, "m-reports": mReports, "m-settings": mSettings, "m-audit": mAudit }[v] || (() => ""))(S.data[v]);
+    "m-edit": mEdit, "m-version": mVersion, "m-course": mCourse, "m-courses": mCourses, "m-reviews": mReviews, "m-reports": mReports, "m-settings": mSettings, "m-audit": mAudit }[v] || (() => ""))(S.data[v]);
   return `<div class="gutter"><div class="mgr"><nav class="rail" aria-label="Manager"><span class="eyebrow">${esc(P.isAuthor() ? "MSP Academy author" : P.isSupport() ? P.SUPPORT_LABEL : ROLE_LABEL[P.role()])}</span>
     ${nav("#/m/overview", "Overview", ["m-overview"])}
+    ${canDocs() ? nav("#/m/courses", P.term("courses"), ["m-courses", "m-course"]) : ""}
+    ${canDocs() ? nav("#/m/library", P.term("documents"), ["m-library", "m-edit", "m-version"], drafts ? `<span class="count tnum">${drafts} draft${drafts > 1 ? "s" : ""}</span>` : "") : ""}
     ${nav("#/m/staff", "Staff", ["m-staff", "m-person", "m-staffnew"])}
-    ${canDocs() ? nav("#/m/library", "SOP library", ["m-library", "m-edit", "m-version", "m-course"], drafts ? `<span class="count tnum">${drafts} draft${drafts > 1 ? "s" : ""}</span>` : "") : ""}
     ${nav("#/m/reports", "Reports", ["m-reports"])}
     ${canDocs() ? nav("#/m/settings", "Settings", ["m-settings"]) : ""}
     ${nav("#/m/reviews", "Reviews", ["m-reviews"])}
@@ -31,7 +32,7 @@ const copyBox = () => `<div class="pad stack" style="gap:8px"><span class="muted
 function mOverview(d) {
   const attention = d.attention.slice(0, 8);
   return `<div class="page-head"><div class="t"><span class="eyebrow">${esc(d.orgName)}${d.scopeDept ? " · " + esc(d.scopeDept) : ""}</span><h1>Training overview</h1></div>
-    <div class="row"><a class="btn" href="#/m/reports">Reports</a>${canEdit() ? `<a class="btn primary" href="#/m/doc/new">New SOP or policy</a>` : ""}</div></div>
+    <div class="row"><a class="btn" href="#/m/reports">Reports</a>${canEdit() ? `<a class="btn" href="#/m/doc/new">New ${esc(P.term("document").toLowerCase())}</a><a class="btn primary" href="#/m/course/new">New ${esc(P.term("course").toLowerCase())}</a>` : ""}</div></div>
     <div class="stack" style="gap:18px">
     ${d.evidencePending ? `<div class="banner"><div class="main"><strong>${plural(d.evidencePending, "evidence submission")} waiting for review</strong><div class="muted" style="font-size:.9rem">Staff submitted proof in a course. Approve it to complete that lesson.</div></div><a class="btn" href="#/m/reviews">Review</a></div>` : ""}
     ${d.drafts && canEdit() ? `<div class="banner"><div class="main"><strong>${plural(d.drafts, "draft document")} waiting for review</strong><div class="muted" style="font-size:.9rem">Staff only see documents once you publish them. Check the wording, then publish each one.</div></div><a class="btn" href="#/m/library">Review drafts</a></div>` : ""}
@@ -130,9 +131,8 @@ function mLibrary(d) {
   const cnt = k => d.documents.filter(m => k === "all" ? m.status !== "archived" : m.status === k).length;
   const tab = (k, label) => `<button type="button" class="btn sm ${f === k ? "primary" : ""}" data-act="lib-filter" data-k="${k}" aria-pressed="${f === k}">${label} <span class="tnum" style="opacity:.75">${cnt(k)}</span></button>`;
   const ready = d.documents.filter(m => m.ready).length, held = d.documents.filter(m => m.status === "draft" && m.hold).length;
-  return `<div class="page-head"><div class="t"><span class="eyebrow">Document control</span><h1>SOP library</h1><p class="muted">SOPs, manuals, policies and staff memos. Each one is assigned to positions and signed by staff.</p></div>${canEdit() ? `<div class="row"><a class="btn" href="#/m/doc/new">New document</a></div>` : ""}</div>
+  return `<div class="page-head"><div class="t"><span class="eyebrow">Read and sign</span><h1>${esc(P.term("documents"))}</h1><p class="muted">SOPs, manuals, policies and memos that staff read, answer questions on and sign. Assign them to positions on their own, or use them as lessons in a ${esc(P.term("course").toLowerCase())}.</p></div>${canEdit() ? `<div class="row"><a class="btn" href="#/m/doc/new">New document</a></div>` : ""}</div>
     ${ready && canEdit() ? `<div class="banner" style="margin-bottom:14px"><div class="main"><strong>${plural(ready, "draft")} ready to publish</strong><div class="muted" style="font-size:.9rem">Check the questions and correct answers, then publish. Staff see a document only once it is published.${held ? ` ${plural(held, "document")} on hold will stay as draft${held === 1 ? "" : "s"}.` : ""}</div></div><button type="button" class="btn primary" data-act="publish-all" ${S.busy ? "disabled" : ""}>Publish ${ready === 1 ? "it" : "all " + ready}</button></div>` : ""}
-    ${coursesCard(d.courses || [])}
     <div class="toolbar">${tab("all", "All")}${tab("published", "Published")}${tab("draft", "Drafts")}${tab("archived", "Archived")}</div>
     ${list.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Document</th><th>Type</th><th>Assigned to</th><th>Status</th><th>Signed</th></tr></thead><tbody>
       ${list.map(m => `<tr class="click" data-href="#/m/doc/${encodeURIComponent(m.code)}"><td><a class="nm" href="#/m/doc/${encodeURIComponent(m.code)}" style="color:inherit;text-decoration:none">${esc(m.title)}</a><div class="mono muted">${esc(m.code)} · v${esc(m.label)} · ${plural(m.questionCount, "question")}${m.videoCount ? ` · ▶ ${plural(m.videoCount, "video")}` : ""}</div></td><td>${esc(KINDS[m.kind])}</td><td style="max-width:260px">${esc(audienceText(m.audience))}</td>
@@ -151,20 +151,26 @@ function courseChip(c) {
   if (c.status === "published") return `<span class="chip ok">Published v${esc(c.label)}</span>${c.draftDirty ? ' <span class="chip plain tag-dirty">Unpublished changes</span>' : ""}`;
   return '<span class="chip warn">Draft</span>';
 }
-function coursesCard(list) {
-  const T = P.term;
-  return `<section class="card pad stack" style="gap:12px;margin-bottom:18px"><div class="row between"><div><h2>${esc(T("courses"))}</h2><p class="muted" style="font-size:.9rem">Build ${esc(T("courses").toLowerCase())} from ${esc(T("modules").toLowerCase())} and lessons: text, video, PDF, quizzes, and your SOPs and policies. Finishing one gives the person a certificate.</p></div>${canEdit() ? `<a class="btn sm primary" href="#/m/course/new">New ${esc(T("course").toLowerCase())}</a>` : ""}</div>
-    ${list.length ? `<div class="list">${list.map(c => `<a class="li click" href="#/m/course/${encodeURIComponent(c.id)}" style="color:inherit;text-decoration:none"><div class="main"><div class="title">${esc(c.title)}</div><div class="sub">${plural(c.moduleCount, T("module").toLowerCase())} · ${plural(c.lessonCount, "lesson")}${c.stats ? ` · ${c.stats.completed} of ${c.stats.total} completed` : ""}</div></div><div class="chips">${courseChip(c)}${c.shared ? `<span class="chip plain info">${esc(c.shared.provider)}</span>` : ""}</div></a>`).join("")}</div>`
-      : `<p class="muted">No ${esc(T("courses").toLowerCase())} yet.</p>`}</section>`;
+function mCourses(d) {
+  const T = P.term, list = d.courses || [];
+  const live = list.filter(c => c.status === "published").length, drafts = list.filter(c => c.status === "draft").length;
+  return `<div class="page-head"><div class="t"><span class="eyebrow">Training</span><h1>${esc(T("courses"))}</h1><p class="muted">Build ${esc(T("courses").toLowerCase())} from ${esc(T("modules").toLowerCase())} and lessons: text, video, PDFs, checklists, quizzes, policy sign-offs, field evidence and your ${esc(T("documents").toLowerCase())}. Finishing one gives the person a certificate.</p></div>
+    ${canEdit() ? `<div class="row"><a class="btn primary" href="#/m/course/new">New ${esc(T("course").toLowerCase())}</a></div>` : ""}</div>
+    <p class="muted" style="margin:-6px 0 14px">${live} published · ${drafts} draft${drafts === 1 ? "" : "s"}${list.some(c => c.shared) ? ` · ${list.filter(c => c.shared).length} provided by MSP Academy` : ""}</p>
+    ${list.length ? `<div class="course-admin-grid">${list.map(c => `<a class="card course-admin" href="#/m/course/${encodeURIComponent(c.id)}"><div class="row between" style="gap:8px;align-items:flex-start"><h3>${esc(c.title)}</h3><div class="chips">${courseChip(c)}</div></div>
+        ${c.description ? `<p class="muted">${esc(c.description)}</p>` : ""}
+        <div class="muted" style="font-size:.84rem">${plural(c.moduleCount, T("module").toLowerCase())} · ${plural(c.lessonCount, "lesson")}${c.shared ? ` · ${esc(c.shared.provider)}` : ""}</div>
+        ${c.stats ? `<div class="row" style="gap:10px;flex-wrap:nowrap"><div class="progress" style="flex:1"><span style="width:${c.stats.total ? Math.round(c.stats.completed / c.stats.total * 100) : 0}%"></span></div><span class="tnum muted" style="font-size:.84rem">${c.stats.completed}/${c.stats.total} completed</span></div>` : ""}</a>`).join("")}</div>`
+      : `<div class="card empty"><h3>No ${esc(T("courses").toLowerCase())} yet</h3><p>Start one, or ask MSP Academy to share one with you.</p>${canEdit() ? `<a class="btn primary" href="#/m/course/new">New ${esc(T("course").toLowerCase())}</a>` : ""}</div>`}`;
 }
 function mCourseNew() {
   const e = S.courseEdit, T = P.term;
-  return `<div class="page-head"><div class="t"><a class="back" href="#/m/library">← SOP library</a><h1>New ${esc(T("course").toLowerCase())}</h1><p class="muted">Give it a title. You'll add ${esc(T("modules").toLowerCase())} and lessons next.</p></div></div>
+  return `<div class="page-head"><div class="t"><a class="back" href="#/m/courses">← ${esc(P.term("courses"))}</a><h1>New ${esc(T("course").toLowerCase())}</h1><p class="muted">Give it a title. You'll add ${esc(T("modules").toLowerCase())} and lessons next.</p></div></div>
     <form data-form="course-new" class="card pad stack" style="gap:14px;max-width:640px">
       <div class="field"><label for="cn-title">Title</label><input id="cn-title" type="text" data-bind="courseEdit.title" value="${esc(e.title)}" placeholder="e.g. Guest Service Basics"></div>
       <div class="field"><label for="cn-desc">Description (optional)</label><textarea id="cn-desc" rows="2" data-bind="courseEdit.description">${esc(e.description)}</textarea></div>
       <p class="err" id="course-err" role="alert"></p>
-      <div class="row"><button type="submit" class="btn primary">Create ${esc(T("course").toLowerCase())}</button><a class="btn" href="#/m/library">Cancel</a></div></form>`;
+      <div class="row"><button type="submit" class="btn primary">Create ${esc(T("course").toLowerCase())}</button><a class="btn" href="#/m/courses">Cancel</a></div></form>`;
 }
 function lessonEditor(l, i, j, d) {
   const e = S.courseEdit, p = `courseEdit.draft.modules.${i}.lessons.${j}`;
@@ -257,7 +263,7 @@ function mCourse(d) {
     ${a.all ? "" : S.org.departments.map(dp => { const ps = S.org.positions.filter(p => p.dept === dp.id); if (!ps.length) return "";
       return `<div class="aud-dept"><div class="dh"><span>${esc(dp.name)}</span></div>${ps.map(p => `<label class="check"><input type="checkbox" data-change="cb-aud-pos" data-p="${esc(p.id)}" ${a.positions.includes(p.id) ? "checked" : ""}><span>${esc(p.name)}</span></label>`).join("")}</div>`; }).join("")}`;
   const status = e.status === "archived" ? "Archived · hidden from staff" : pub ? `Published · version ${esc(cur)}${e.draftDirty ? " · unpublished changes" : ""}` : "Draft · staff can't see it yet";
-  return `<div class="page-head"><div class="t"><a class="back" href="#/m/library">← SOP library</a><h1>${esc(dr.title || "Untitled")}</h1><span class="muted">${status}</span></div></div>
+  return `<div class="page-head"><div class="t"><a class="back" href="#/m/courses">← ${esc(P.term("courses"))}</a><h1>${esc(dr.title || "Untitled")}</h1><span class="muted">${status}</span></div></div>
     ${sh ? `<div class="notice info" style="margin-bottom:16px"><strong>Provided by ${esc(e.shared.provider)}.</strong> The lessons can't be changed here. Choose who at ${esc(S.org.orgName)} must complete it, then publish.</div>` : ""}
     ${e.saveError ? `<div class="notice bad" role="alert" style="margin-bottom:16px"><strong>Not saved.</strong> ${esc(e.saveError)}</div>` : ""}
     ${e.publishError ? `<div class="notice bad cb-problems" role="alert" style="margin-bottom:16px"><strong>${esc(e.publishError.message)}</strong>${e.publishError.items.length ? `<ul>${e.publishError.items.map(x => `<li>${esc(x)}</li>`).join("")}</ul><span>Fix these, then press <strong>Publish</strong> again.</span>` : ""}</div>` : ""}
@@ -322,7 +328,7 @@ function mEdit(d) {
   const file = id => e.files[id] || {};
   const up = e.uploading;
   const status = pub ? `Published · version ${esc(cur.label)} · published ${fmtDate(cur.publishedAt)}` : arch ? `Archived · hidden from staff${cur ? ` · last version ${esc(cur.label)}` : ""}` : `Draft · version ${esc(startLabel)} when published · staff can't see it yet`;
-  return `<div class="page-head"><div class="t"><a class="back" href="#/m/library">← SOP library</a><h1>${esc(dr.title || "Untitled")}</h1><span class="muted">${status}</span></div></div>
+  return `<div class="page-head"><div class="t"><a class="back" href="#/m/library">← ${esc(P.term("documents"))}</a><h1>${esc(dr.title || "Untitled")}</h1><span class="muted">${status}</span></div></div>
     ${e.hold && e.status === "draft" ? `<div class="banner" style="margin-bottom:16px"><div class="main"><strong>On hold</strong><div class="muted" style="font-size:.9rem">${esc(e.hold)}. It is left out of "Publish all". Publishing it here removes the hold.</div></div>${ro ? "" : `<button type="button" class="btn sm" data-act="ed-release-hold">Remove hold</button>`}</div>` : ""}
     ${e.draftDirty && !e.localDirty ? `<div class="banner" style="margin-bottom:16px"><div class="main"><strong>Saved changes not yet published</strong><div class="muted" style="font-size:.9rem">Staff still see version ${esc(cur.label)}. Publish the changes, or discard them.</div></div>${ro ? "" : `<button type="button" class="btn sm" data-act="ed-discard">Discard changes</button>`}</div>` : ""}
     ${sh ? `<div class="notice info" style="margin-bottom:16px"><strong>Provided by ${esc(e.shared.provider)}.</strong> The content can't be changed here. Choose who at ${esc(S.org.orgName)} must complete it, and its place in the course, then publish.</div>` : ""}
@@ -376,7 +382,7 @@ function mEdit(d) {
 }
 function mNewDoc() {
   const n = S.newDoc || (S.newDoc = { kind: "sop", code: "" });
-  return `<div class="page-head"><div class="t"><a class="back" href="#/m/library">← SOP library</a><h1>New document</h1><span class="muted">It starts as a draft. Staff see it once you publish it.</span></div></div>
+  return `<div class="page-head"><div class="t"><a class="back" href="#/m/library">← ${esc(P.term("documents"))}</a><h1>New document</h1><span class="muted">It starts as a draft. Staff see it once you publish it.</span></div></div>
     <form data-form="newdoc" class="card pad stack" style="gap:16px;max-width:560px">
       <div class="field"><label for="nd-kind">Type</label><select id="nd-kind" data-change="nd-kind">${Object.entries(KINDS).map(([k, l]) => `<option value="${k}" ${n.kind === k ? "selected" : ""}>${l}</option>`).join("")}</select></div>
       <div class="field"><label for="nd-code">Document code</label><input id="nd-code" type="text" data-bind="newDoc.code" value="${esc(n.code)}" placeholder="${esc((S.brand && S.brand.docPrefix) || "DOC")}-SOP-013"><span class="hint">The next free number from the Document Register is filled in.</span></div>

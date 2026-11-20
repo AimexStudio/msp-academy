@@ -154,7 +154,7 @@ export async function publishCourse(db, { orgId, courseId, change, actorId = nul
     await checkCourseRefs(db, orgId, d, t);
     for (const code of codesOf(d)) {
       const ds = await t.get(docRef(db, orgId, code));
-      if (ds.get('status') !== 'published') throw httpError(400, `Publish ${code} in the SOP library first: it's part of this course.`);
+      if (ds.get('status') !== 'published') throw httpError(400, `Publish ${code} first (under Documents): it's part of this course.`);
     }
     if (cur && !c.draftDirty && c.status === 'published') throw httpError(400, 'There are no changes to publish.');
     let major, minor;

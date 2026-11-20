@@ -76,3 +76,16 @@ test('The review setup refuses the live Pelagos project', () => {
   assert.equal(r.status, 1);
   assert.match(r.stderr + r.stdout, /live project "pelagos-portal".*separate project/s);
 });
+
+test('Without its key, the review site says exactly what is missing', async () => {
+  const { createVercelHandler, getVercelApp } = await import('../src/vercel.js');
+  const old = [process.env.FIREBASE_SERVICE_ACCOUNT_B64, process.env.FIREBASE_SERVICE_ACCOUNT];
+  delete process.env.FIREBASE_SERVICE_ACCOUNT_B64; delete process.env.FIREBASE_SERVICE_ACCOUNT;
+  const srv = http.createServer(createVercelHandler(getVercelApp));
+  await new Promise(r => srv.listen(0, '127.0.0.1', r));
+  const r = await fetch(`http://127.0.0.1:${srv.address().port}/api/index?__p=healthz`);
+  srv.close();
+  assert.equal(r.status, 500);
+  assert.match((await r.json()).error, /FIREBASE_SERVICE_ACCOUNT_B64 is missing/);
+  if (old[0]) process.env.FIREBASE_SERVICE_ACCOUNT_B64 = old[0]; if (old[1]) process.env.FIREBASE_SERVICE_ACCOUNT = old[1];
+});

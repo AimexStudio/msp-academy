@@ -3,6 +3,7 @@
 import { buildApp } from './app.js';
 import { initFirebase } from './firebase.js';
 import { createBucketStorage } from './storage.js';
+import { serviceAccountFromEnv } from './config.js';
 
 /** The original address of the request: vercel.json passes it as __p when routing to api/index. */
 export function originalUrl(raw) {
@@ -37,15 +38,20 @@ export function createVercelHandler(getApp) {
       for (const [k, v] of Object.entries(r.headers)) if (!['content-length', 'transfer-encoding', 'connection'].includes(k)) res.setHeader(k, v);
       res.end(r.rawPayload);
     } catch (e) {
-      console.error(e);
+      console.error(e.setup || e);
       res.statusCode = 500; res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ error: 'Something went wrong on the server. Try again in a moment.' }));
+      // A missing key is a setup problem, not a secret: say so plainly, so it can be fixed.
+      res.end(JSON.stringify({ error: e.setup || 'Something went wrong on the server. Try again in a moment.' }));
     }
   };
 }
 
 let ready = null;
 export const getVercelApp = () => (ready ||= (async () => {
+  if (!serviceAccountFromEnv()) {
+    ready = null; // check again on the next request (after the setting is fixed and redeployed)
+    throw Object.assign(new Error('NO_KEY'), { setup: 'The review site is not connected to its database: the Vercel setting FIREBASE_SERVICE_ACCOUNT_B64 is missing or is not a valid service account key. Add it, then deploy again (README: "Review site on Vercel").' });
+  }
   const { db, bucket } = initFirebase();
   return buildApp({ db, storage: createBucketStorage(bucket), logger: false, serveStatic: false });
 })());

@@ -81,7 +81,7 @@ export default async function (app) {
       brand: { ...publicBranding(org.raw), loginCode: org.raw.loginCode || null },
       support: support ? { orgName: org.orgName, until: req.session.support.until, reason: req.session.support.reason } : author ? { orgName: org.orgName, until: req.session.support.until, author: true } : null,
       idleSeconds: req.session.idleSeconds,
-      features: { aiQuestions: !!config.anthropicApiKey },
+      features: { aiQuestions: !!config.anthropicApiKey, maxUploadMb: config.maxUploadMb, reviewSite: config.vercel },
     };
   });
 }

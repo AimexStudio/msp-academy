@@ -20,7 +20,10 @@
     "platform-admin": "node scripts/create-platform-admin.js",
     "platform-admin:local": "node scripts/firebase-run.js script create-platform-admin",
     "update": "bash scripts/update-from-zip.sh",
-    "predeploy": "npm test"
+    "predeploy": "npm test",
+    "review:setup": "node scripts/setup-review.js",
+    "review:admin": "node scripts/create-platform-admin.js --review",
+    "review:rules": "firebase deploy --only firestore,storage"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.5",

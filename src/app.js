@@ -56,7 +56,7 @@ export async function buildApp({ db, storage, logger = true, serveStatic = true 
     const code = err.statusCode || 500;
     if (code >= 500) req.log.error(err);
     const msg = code < 500 && (err.expose || err.validation || code === 413)
-      ? (code === 413 ? 'That file is too large.' : err.message)
+      ? (code === 413 ? (config.vercel ? `That file is too large for the review site (limit ${config.maxUploadMb} MB). For videos, use a YouTube link instead.` : `That file is too large. The limit is ${config.maxUploadMb} MB.`) : err.message)
       : code < 500 ? 'That request could not be processed.' : 'Something went wrong on the server. Try again, and tell your manager if it keeps happening.';
     reply.code(code).send({ error: msg, problems: err.problems });
   });

@@ -150,6 +150,86 @@ Do this once, **before** deploying this version. The move only adds information 
 
 ---
 
+## Review site on Vercel
+
+A public review and testing copy: Vercel runs the screens and server, and a **separate Firebase project** holds its data, so the live Pelagos records are never involved. It has Pelagos as client 1 (its real documents, made-up example staff), Harbour Demo, HR Demo, and the two library courses. Uploads are limited to 4 MB on this site (use YouTube links for videos).
+
+### 1. Create the review Firebase project (once, in your browser)
+
+1. https://console.firebase.google.com → **Add project** → name it `msp-academy-review` (Google Analytics off).
+2. **Upgrade to Blaze** (bottom left, needed for file storage). Set a budget alert, e.g. $5: a review site normally costs nothing.
+3. **Build → Firestore Database → Create database** → location **eur3 (Europe)** → **production mode**.
+4. **Build → Storage → Get started** → same location → production mode.
+5. **gear icon → Project settings → Service accounts → Generate new private key**. Move the file into `~/keys/` as before.
+
+### 2. Set it up from your Mac (in the project folder)
+
+Use the review key's real file name:
+
+```
+export GOOGLE_APPLICATION_CREDENTIALS=~/keys/msp-academy-review-firebase-adminsdk-xxxx.json
+```
+
+```
+npx firebase login
+```
+
+```
+npm run review:rules -- --project msp-academy-review
+```
+
+```
+npm run review:setup -- --email you@example.com --name "Your Name"
+```
+
+Type `REVIEW`, choose a password, and add the printed setup key to your authenticator app. (It refuses to run with the live Pelagos key.)
+
+### 3. Put it on Vercel
+
+1. Create an account at https://vercel.com (the free Hobby plan is for non-commercial use; a business review site should use Pro).
+2. In the project folder:
+
+   ```
+   npx vercel login
+   ```
+
+   ```
+   npx vercel link
+   ```
+
+   Answer: set up a new project, name `msp-academy-review`, and keep the suggested settings (they come from `vercel.json`).
+
+3. Give Vercel the review key. This copies it, encoded, to your clipboard:
+
+   ```
+   base64 -i ~/keys/msp-academy-review-firebase-adminsdk-xxxx.json | tr -d '\n' | pbcopy
+   ```
+
+   ```
+   npx vercel env add FIREBASE_SERVICE_ACCOUNT_B64 production
+   ```
+
+   Paste (Cmd+V) when it asks for the value, and press Enter.
+
+4. Deploy:
+
+   ```
+   npx vercel deploy --prod
+   ```
+
+It prints the address, e.g. `https://msp-academy-review.vercel.app`. Check `/api/healthz` shows `{"ok":true}`, then sign in.
+
+### Signing in on the review site
+
+| Who | How |
+|---|---|
+| You and other reviewers (platform) | `<address>/platform` with email, password and authenticator code |
+| Pelagos | Client code `PELAGOS`: PL001 (manager) or PL002, PIN 1234 |
+| Harbour Demo | Client code `HARBOUR`: HB001 PIN 123456 (manager), HB002 PIN 1234 |
+| HR Demo | Client code `HRDEMO`: HR001 PIN 123456 |
+
+Add another platform reviewer: `npm run review:admin -- --email them@example.com --name "Their Name"` (with the review key set). Update the site after changes: `npx vercel deploy --prod`. The example people are made up; don't enter real staff data on the review site.
+
 ## How clients are kept apart
 
 - The server takes the client from the signed-in session only; every query includes it, and every record an ID points to is checked to belong to the same client.

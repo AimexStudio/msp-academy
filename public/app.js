@@ -166,6 +166,13 @@ function fail(e) { if (e && e.status === 401 && S.me === null) return; toast(e &
 
 /** Upload a file with progress. Returns the stored file's metadata. */
 function upload(file, onProgress) {
+  const max = (S.features && S.features.maxUploadMb) || 30;
+  if (file.size > max * 1024 * 1024) return Promise.reject(new Error(S.features && S.features.reviewSite
+    ? `That file is ${Math.ceil(file.size / 1048576)} MB; the review site takes files up to ${max} MB. For videos, use a YouTube link instead.`
+    : `That file is ${Math.ceil(file.size / 1048576)} MB; the limit is ${max} MB. Compress it and try again.`));
+  return uploadRaw(file, onProgress);
+}
+function uploadRaw(file, onProgress) {
   return new Promise((resolve, reject) => {
     const fd = new FormData(); fd.append("file", file, file.name);
     const x = new XMLHttpRequest();

@@ -44,7 +44,7 @@ export const DEMO_HR = { orgId: 'hr-demo', loginCode: 'HRDEMO' };
 export const DEMO_ADMIN = { email: 'admin@example.com', password: 'platform-demo-only' };
 
 /** Harbour Demo (client code HARBOUR) with staff and one published SOP, plus a platform admin. */
-export async function seedDemoPlatform(db) {
+export async function seedDemoPlatform(db, { demoAdmin = true } = {}) {
   if ((await db.collection('orgs').doc(DEMO_CLIENT.orgId).get()).exists) return false;
   await createClient(db, null, { orgId: DEMO_CLIENT.orgId, name: 'Harbour Demo', loginCode: DEMO_CLIENT.loginCode, docPrefix: 'HBR', staffNoPrefix: 'HB',
     manager: { name: 'Demo Harbour Manager', staffNo: 'HB001', pin: '123456' },
@@ -61,7 +61,7 @@ export async function seedDemoPlatform(db) {
       questions: [{ q: 'How soon should a guest be greeted?', options: ['Within 30 seconds', 'Within 5 minutes', 'When they ask'], correct: 0 },
         { q: 'When do you offer help with luggage?', options: ['After showing the room', 'Before showing the room', 'Never'], correct: 1 }] } });
   await publishDocument(db, { orgId: DEMO_CLIENT.orgId, code: 'HBR-SOP-001', actorId: null });
-  if (!(await db.collection('platformAdminEmails').doc(DEMO_ADMIN.email).get()).exists) await createPlatformAdmin(db, { ...DEMO_ADMIN, name: 'Demo Platform Admin', requireTotp: false });
+  if (demoAdmin && !(await db.collection('platformAdminEmails').doc(DEMO_ADMIN.email).get()).exists) await createPlatformAdmin(db, { ...DEMO_ADMIN, name: 'Demo Platform Admin', requireTotp: false });
   return true;
 }
 

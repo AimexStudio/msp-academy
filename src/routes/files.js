@@ -4,6 +4,7 @@ import { requireAuth, isManagerish } from '../auth.js';
 import { appliesTo } from '../rules.js';
 import { loadPublishedDocs } from '../course.js';
 import { docRef } from '../documents.js';
+import { config } from '../config.js';
 import { getOrg, storageKeyAllowed } from '../tenancy.js';
 import { coursesFor, fileIdsOf } from '../courses.js';
 
@@ -55,9 +56,13 @@ export default async function (app) {
       let start = range[1] ? Number(range[1]) : Math.max(0, size - Number(range[2]));
       let end = range[1] && range[2] ? Number(range[2]) : size - 1;
       if (start >= size || end < start) { reply.header('Content-Range', `bytes */${size}`); return reply.code(416).send(); }
-      end = Math.min(end, size - 1, start + MAX_CHUNK - 1);
+      end = Math.min(end, size - 1, start + Math.min(MAX_CHUNK, config.maxResponseBytes) - 1);
       reply.code(206).header('Content-Range', `bytes ${start}-${end}/${size}`).header('Content-Length', end - start + 1);
       return reply.send(storage.read(f.storageKey, { start, end }));
+    }
+    if (size > config.maxResponseBytes) {
+      reply.removeHeader('Accept-Ranges'); reply.removeHeader('Content-Disposition');
+      return reply.code(413).type('application/json').send({ error: 'This file is too large to download on the review site. It plays in the lesson as normal.' });
     }
     reply.header('Content-Length', size);
     return reply.send(storage.read(f.storageKey));

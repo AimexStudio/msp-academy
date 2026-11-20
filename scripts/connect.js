@@ -30,6 +30,23 @@ export async function ask(question, { hidden = false } = {}) {
 }
 
 /** { db, bucket, live } */
+/**
+ * The review site's Firebase project (for Vercel): whatever project the key belongs to, except the live
+ * Pelagos project, so demo data can never be written into real staff records.
+ */
+export async function connectReview({ what, confirm = true }) {
+  const key = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  if (!key || !fs.existsSync(key)) stop('Set GOOGLE_APPLICATION_CREDENTIALS to the REVIEW project’s service account key first (README: "Review site on Vercel").');
+  let project; try { project = JSON.parse(fs.readFileSync(key, 'utf8')).project_id; } catch { stop('The service account key file could not be read.'); }
+  if (project === LIVE_PROJECT) stop(`That key is for the live project "${LIVE_PROJECT}". The review site needs its own, separate project. Nothing was changed.`);
+  process.env.GCLOUD_PROJECT = project; config.projectId = project;
+  if (confirm) {
+    const ok = await ask(`\nThis will ${what} in the REVIEW project "${project}".\nType REVIEW to continue: `);
+    if (ok.trim() !== 'REVIEW') stop('Nothing was changed.');
+  }
+  return { ...initFirebase({ allowLive: true }), project };
+}
+
 export async function connect({ what, confirm = true }) {
   if (process.env.FIRESTORE_EMULATOR_HOST) {
     const fb = initFirebase();

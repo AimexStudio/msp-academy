@@ -1,0 +1,8 @@
+node_modules
+emulator-data
+emulator-data-backup-*
+test
+content/files
+content/documents
+.env
+*.log

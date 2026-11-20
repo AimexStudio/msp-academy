@@ -213,7 +213,10 @@ export async function courseState(db, staff, v, t = null) {
   // Field evidence: the latest submission per lesson, for this version.
   const eq = db.collection('courseEvidence').where('orgId', '==', staff.orgId).where('staffId', '==', staff.id).where('courseId', '==', v.courseId);
   const evid = new Map();
-  for (const e of (await (t ? t.get(eq) : eq.get())).docs.map(d => ({ id: d.id, ...d.data() })).filter(e => e.major === v.major).sort((a, b) => (a.submittedAt < b.submittedAt ? -1 : 1))) evid.set(e.lessonId, e);
+  // Oldest first, so the latest submission per lesson wins. If two share a timestamp, a returned one is older.
+  const rank = e => (e.status === 'rejected' ? 0 : 1);
+  for (const e of (await (t ? t.get(eq) : eq.get())).docs.map(d => ({ id: d.id, ...d.data() })).filter(e => e.major === v.major)
+    .sort((a, b) => (a.submittedAt === b.submittedAt ? rank(a) - rank(b) : a.submittedAt < b.submittedAt ? -1 : 1))) evid.set(e.lessonId, e);
   const out = []; let open = true;
   for (const m of v.modules) for (const l of m.lessons) {
     let done = !!(prog.lessons || {})[l.id], extra = {};

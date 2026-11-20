@@ -9,7 +9,7 @@
     "emulators": "node scripts/firebase-run.js emulators",
     "dev": "node --watch src/server.js",
     "demo": "node scripts/demo.js",
-    "test": "node --test --test-concurrency=1 test/*.test.js",
+    "test": "node --test --test-concurrency=1 test/*.test.js && node --no-experimental-require-module --test --test-concurrency=1 test/vercel.test.js",
     "test:emulator": "node scripts/firebase-run.js test",
     "verify": "node scripts/verify-evidence.js --local",
     "deploy": "firebase deploy --project pelagos-portal",
@@ -38,7 +38,7 @@
   "type": "module",
   "private": true,
   "engines": {
-    "node": "22"
+    "node": "22.x"
   },
   "devDependencies": {
     "firebase-tools": "^14.27.0"

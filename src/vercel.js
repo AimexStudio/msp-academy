@@ -17,32 +17,25 @@ export function originalUrl(raw) {
   return u.pathname + u.search;
 }
 
-function readBody(req) {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    req.on('data', c => chunks.push(c)); req.on('end', () => resolve(Buffer.concat(chunks))); req.on('error', reject);
-  });
-}
-
-/** A Node (req, res) handler around the app. getApp returns the Fastify app (built once per instance). */
+/**
+ * A Node (req, res) handler around the app. getApp returns the Fastify app (built once per instance).
+ * The request is passed straight to the app's own web server, which reads the body and streams the
+ * response itself (no in-memory copy, no test helper: Vercel's runtime can't load that helper's
+ * dependencies the way it asks for them).
+ */
 export function createVercelHandler(getApp) {
   return async (req, res) => {
-    try {
-      const app = await getApp();
-      const body = ['GET', 'HEAD'].includes(req.method) ? null : await readBody(req);
-      const headers = { ...req.headers };
-      delete headers['content-length'];
-      const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket?.remoteAddress;
-      const r = await app.inject({ method: req.method, url: originalUrl(req.url), headers, payload: body && body.length ? body : undefined, remoteAddress: ip });
-      res.statusCode = r.statusCode;
-      for (const [k, v] of Object.entries(r.headers)) if (!['content-length', 'transfer-encoding', 'connection'].includes(k)) res.setHeader(k, v);
-      res.end(r.rawPayload);
-    } catch (e) {
+    let app;
+    try { app = await getApp(); await app.ready(); }
+    catch (e) {
       console.error(e.setup || e);
       res.statusCode = 500; res.setHeader('Content-Type', 'application/json');
       // A missing key is a setup problem, not a secret: say so plainly, so it can be fixed.
       res.end(JSON.stringify({ error: e.setup || 'Something went wrong on the server. Try again in a moment.' }));
+      return;
     }
+    req.url = originalUrl(req.url);
+    app.server.emit('request', req, res);
   };
 }
 

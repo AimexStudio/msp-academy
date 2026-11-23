@@ -48,7 +48,7 @@ export function client(app, { clientCode = 'PELAGOS', host = 'localhost' } = {})
   return {
     call, get: url => call('GET', url), post: (url, body = {}) => call('POST', url, body), put: (url, body) => call('PUT', url, body), patch: (url, body) => call('PATCH', url, body),
     login: (staffNo, pin = '1234', code = clientCode) => call('POST', '/api/auth/login', { clientCode: code, staffNo, pin }),
-    platformLogin: (email, password, code) => call('POST', '/api/platform/login', { email, password, code }),
+    platformLogin: (email, password) => call('POST', '/api/platform/login', { email, password }),
     get cookie() { return cookie; }, set cookie(v) { cookie = v; },
   };
 }
@@ -84,7 +84,7 @@ export function signaturePng() {
 }
 
 /* ---------- two clients side by side, for the isolation, platform, sharing and builder tests ---------- */
-import { createClient, createPlatformAdmin, newTotpSecret } from '../src/platform.js';
+import { createClient, createPlatformAdmin } from '../src/platform.js';
 
 export const HARBOUR = 'harbour-hotel';
 
@@ -155,9 +155,8 @@ export async function setupTwoClients() {
       courseId: pcourse.body.id, lessonId: 'l-welcome', quizId: 'l-check', evidenceId: evRef.id } };
 }
 
-/** A platform admin for tests. With a secret the account needs authenticator codes; without, only off the live site. */
-export async function makePlatformAdmin(db, { email = 'ops@example.com', password = 'correct horse battery', totp = false } = {}) {
-  const secret = newTotpSecret();
-  const r = await createPlatformAdmin(db, { email, name: 'Olivia Ops', password, totpSecret: secret, requireTotp: totp });
-  return { ...r, email, password, secret };
+/** A platform admin for tests: signs in with email and password. */
+export async function makePlatformAdmin(db, { email = 'ops@example.com', password = 'correct horse battery' } = {}) {
+  const r = await createPlatformAdmin(db, { email, name: 'Olivia Ops', password });
+  return { ...r, email, password };
 }

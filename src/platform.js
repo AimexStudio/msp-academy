@@ -1,9 +1,9 @@
 // The platform operator's side: platform admin accounts, creating and managing clients, support access.
-// Platform admins are not staff of any client. They sign in with email, a password and a 6-digit code
-// from an authenticator app, and everything they do is written to platformAudit (and, where it
+// Platform admins are not staff of any client. They sign in with an email and a password (stored in
+// Firestore, hashed with argon2id), and everything they do is written to platformAudit (and, where it
 // concerns a client, to that client's own audit log as well).
 //
-//   platformAdmins/{id}     email, name, password hash, authenticator secret, active
+//   platformAdmins/{id}     email, name, password hash, active
 //   platformAdminEmails/{e} email -> admin id (keeps emails unique)
 //   platformAudit/{id}      every platform action
 //   supportGrants/{id}      each support visit: who, which client, why, from when until when
@@ -21,43 +21,6 @@ export const normEmail = s => String(s || '').trim().toLowerCase();
 export const validEmail = s => /^[^\s@]{1,64}@[^\s@]{1,190}\.[a-z]{2,}$/i.test(String(s || ''));
 export const validPassword = s => typeof s === 'string' && s.length >= 12 && s.length <= 200;
 
-/* ---------- authenticator codes (TOTP, RFC 6238: 30 seconds, 6 digits, SHA-1) ---------- */
-const B32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-export function base32Encode(buf) {
-  let bits = 0, value = 0, out = '';
-  for (const b of buf) { value = (value << 8) | b; bits += 8; while (bits >= 5) { out += B32[(value >>> (bits - 5)) & 31]; bits -= 5; } }
-  if (bits > 0) out += B32[(value << (5 - bits)) & 31];
-  return out;
-}
-export function base32Decode(s) {
-  const clean = String(s).toUpperCase().replace(/[\s=-]/g, '');
-  let bits = 0, value = 0; const out = [];
-  for (const ch of clean) { const i = B32.indexOf(ch); if (i < 0) throw new Error('bad base32'); value = (value << 5) | i; bits += 5; if (bits >= 8) { out.push((value >>> (bits - 8)) & 255); bits -= 8; } }
-  return Buffer.from(out);
-}
-export const newTotpSecret = () => base32Encode(crypto.randomBytes(20));
-export function totpAt(secret, step, digits = 6) {
-  const key = Buffer.isBuffer(secret) ? secret : base32Decode(secret);
-  const msg = Buffer.alloc(8); msg.writeBigUInt64BE(BigInt(step));
-  const h = crypto.createHmac('sha1', key).update(msg).digest();
-  const o = h[h.length - 1] & 15;
-  const n = (h.readUInt32BE(o) & 0x7fffffff) % 10 ** digits;
-  return String(n).padStart(digits, '0');
-}
-export const totpStep = (ms = Date.now()) => Math.floor(ms / 1000 / 30);
-/** The step a code matches (allowing one step either side for clock drift), or null. */
-export function matchTotp(secret, code, ms = Date.now()) {
-  if (!/^\d{6}$/.test(String(code || ''))) return null;
-  const s = totpStep(ms);
-  for (const d of [0, -1, 1]) {
-    const a = Buffer.from(totpAt(secret, s + d)), b = Buffer.from(String(code));
-    if (crypto.timingSafeEqual(a, b)) return s + d;
-  }
-  return null;
-}
-export const otpauthUri = (secret, email, issuer = 'MSP Academy') =>
-  `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(email)}?secret=${secret}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=6&period=30`;
-
 /* ---------- audit ---------- */
 export function platformAuditRecord(admin, action, details = {}, { orgId = null, ip = null } = {}) {
   return { adminId: admin ? admin.id : null, adminName: admin ? admin.name : null, action, orgId, details, ip, at: now() };
@@ -68,7 +31,7 @@ export const clientAuditFromPlatform = (orgId, admin, action, entity, entityId, 
   ({ ...auditRecord(orgId, null, action, entity, entityId, details, ip), actorName: admin ? `${admin.name} (platform)` : 'Platform' });
 
 /* ---------- admin accounts ---------- */
-export async function createPlatformAdmin(db, { email, name, password, totpSecret = newTotpSecret(), requireTotp = true }) {
+export async function createPlatformAdmin(db, { email, name, password }) {
   email = normEmail(email);
   if (!validEmail(email)) throw httpError(400, 'Enter a valid email address.');
   if (!String(name || '').trim()) throw httpError(400, 'Enter the name.');
@@ -78,25 +41,36 @@ export async function createPlatformAdmin(db, { email, name, password, totpSecre
   await db.runTransaction(async t => {
     const e = await t.get(db.collection('platformAdminEmails').doc(email));
     if (e.exists) throw httpError(400, `${email} is already a platform admin.`);
-    t.create(ref, { email, name: String(name).trim(), passwordHash, totpSecret: requireTotp ? totpSecret : null, lastTotpStep: 0,
-      active: true, createdAt: now(), lastLoginAt: null });
+    t.create(ref, { email, name: String(name).trim(), passwordHash, active: true, createdAt: now(), lastLoginAt: null });
     t.create(db.collection('platformAdminEmails').doc(email), { adminId: ref.id });
     t.create(db.collection('platformAudit').doc(), platformAuditRecord(null, 'platform_admin.create', { email, name }));
   });
-  return { id: ref.id, totpSecret: requireTotp ? totpSecret : null };
+  return { id: ref.id };
+}
+
+/** Give an existing platform admin a new password (and switch the account back on). Ends their sessions. */
+export async function setPlatformAdminPassword(db, { email, password }) {
+  email = normEmail(email);
+  if (!validPassword(password)) throw httpError(400, 'The password must be at least 12 characters.');
+  const map = await db.collection('platformAdminEmails').doc(email).get();
+  if (!map.exists) throw httpError(404, `${email} is not a platform admin.`);
+  const ref = db.collection('platformAdmins').doc(map.get('adminId'));
+  await ref.update({ passwordHash: await argon2.hash(password, ARGON), active: true, passwordSetAt: now() });
+  await platLoginRef(db, email).set({ fails: 0, lastFailAt: null });
+  const sessions = await db.collection('sessions').where('adminId', '==', ref.id).get();
+  for (const x of sessions.docs) if (!x.get('revokedAt')) await x.ref.update({ revokedAt: now() });
+  await db.collection('platformAudit').add(platformAuditRecord(null, 'platform_admin.password_set', { email }));
+  return { id: ref.id };
 }
 
 const platLoginRef = (db, email) => db.collection('loginState').doc(`platform_${sha(email).slice(0, 32)}`);
 const ipRef = (db, ip) => db.collection('ipState').doc(sha(ip || 'unknown').slice(0, 32));
 let dummy = null;
 
-/**
- * Sign in a platform admin. Same lockout ladder as staff. Live, an authenticator code is always
- * required; an admin without one can only sign in on the emulators (the local demo admin).
- */
-export async function platformLogin(db, { email, password, code, ip, userAgent, production }) {
+/** Sign in a platform admin with email and password. Same lockout ladder as staff, plus the per-device limit. */
+export async function platformLogin(db, { email, password, ip, userAgent }) {
   email = normEmail(email);
-  const fail = { ok: false, error: "That email, password and code don't match." };
+  const fail = { ok: false, error: "That email and password don't match." };
   if (!validEmail(email) || typeof password !== 'string' || !password) return fail;
   const map = await db.collection('platformAdminEmails').doc(email).get();
   const adminSnap = map.exists ? await db.collection('platformAdmins').doc(map.get('adminId')).get() : null;
@@ -105,26 +79,20 @@ export async function platformLogin(db, { email, password, code, ip, userAgent, 
   const state = ls.exists ? ls.data() : {};
   const event = (success, reason) => db.collection('platformLoginEvents').add({ email, adminId: adminSnap && adminSnap.exists ? adminSnap.id : null, success, reason, ip: ip || null, userAgent: userAgent || null, at: now() });
   const lock = lockFor(state, is.exists ? is.data() : null);
-  if (lock.locked) { await event(false, 'locked'); return { ok: false, locked: true, error: lock.permanent ? 'Sign-in is blocked for this account. Another platform admin must reset it.' : 'Too many attempts. Wait, then try again.' }; }
+  if (lock.locked) { await event(false, 'locked'); return { ok: false, locked: true, error: lock.permanent ? 'Sign-in is blocked for this account. Set a new password with npm run platform-admin.' : 'Too many attempts. Wait, then try again.' }; }
   dummy ||= await argon2.hash('not-a-real-password', ARGON);
   const pwOk = await argon2.verify(a ? a.passwordHash : dummy, password).catch(() => false);
-  let step = null;
-  if (a && pwOk) {
-    if (a.totpSecret) step = matchTotp(a.totpSecret, code);
-    else if (!production) step = 0; // local demo admin without an authenticator
-  }
-  const replay = step !== null && a.totpSecret && step <= (a.lastTotpStep || 0);
-  if (!a || !pwOk || step === null || replay || !a.active) {
+  if (!a || !pwOk || !a.active) {
     const fails = (state.fails || 0) + 1;
     await platLoginRef(db, email).set({ fails, lastFailAt: now() }, { merge: true });
     const ipd = is.exists ? is.data() : {};
     const fresh = !ipd.windowStart || (Date.now() - new Date(ipd.windowStart).getTime()) / 1000 > 900;
     await ipRef(db, ip).set({ fails: fresh ? 1 : (ipd.fails || 0) + 1, windowStart: fresh ? now() : ipd.windowStart }, { merge: true });
-    await event(false, !a || !pwOk ? 'bad_password' : replay ? 'code_reused' : !a.active ? 'inactive' : 'bad_code');
+    await event(false, !a || !pwOk ? 'bad_password' : 'inactive');
     return fail;
   }
   await platLoginRef(db, email).set({ fails: 0, lastFailAt: null, lastOkAt: now() });
-  await adminSnap.ref.update({ lastLoginAt: now(), ...(a.totpSecret ? { lastTotpStep: step } : {}) });
+  await adminSnap.ref.update({ lastLoginAt: now() });
   await event(true, null);
   const token = crypto.randomBytes(32).toString('base64url');
   await db.collection('sessions').doc(sha(token)).set({ kind: 'platform', adminId: adminSnap.id, orgId: null, staffId: null,

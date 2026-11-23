@@ -3,7 +3,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { setupTwoClients, client, makePlatformAdmin, uploadAs, ORG, HARBOUR, signaturePng } from './helpers.js';
-import { totpAt, totpStep, matchTotp, base32Encode, platformLogin } from '../src/platform.js';
+import { platformLogin, setPlatformAdminPassword } from '../src/platform.js';
 
 let env;
 before(async () => { env = await setupTwoClients(); });
@@ -15,25 +15,25 @@ async function signedInAdmin(email) {
   return { a, p };
 }
 
-test('Authenticator codes follow the standard (RFC 6238 test vector)', () => {
-  const secret = base32Encode(Buffer.from('12345678901234567890'));
-  assert.equal(totpAt(secret, Math.floor(59 / 30)), '287082');
-  assert.equal(totpAt(secret, Math.floor(1111111109 / 30)), '081804');
-  assert.equal(matchTotp(secret, '000000', 59000), null);
-  assert.equal(matchTotp(secret, '287082', 59000), 1);
-});
-
-test('Platform sign-in needs password and a fresh code; a code can’t be reused; live needs an authenticator', async () => {
-  const a = await makePlatformAdmin(env.db, { email: 'totp@example.com', totp: true });
+test('Platform sign-in is email and password; wrong passwords are refused and repeated ones pause sign-in', async () => {
+  const a = await makePlatformAdmin(env.db, { email: 'signin@example.com' });
   const p = client(env.app);
-  assert.equal((await p.platformLogin(a.email, a.password, '000000')).status, 401, 'wrong code');
-  assert.equal((await p.platformLogin(a.email, 'wrong password!!', totpAt(a.secret, totpStep()))).status, 401, 'wrong password');
-  const code = totpAt(a.secret, totpStep());
-  assert.equal((await p.platformLogin(a.email, a.password, code)).status, 200);
-  assert.equal((await client(env.app).platformLogin(a.email, a.password, code)).status, 401, 'the same code twice is refused');
-  const local = await makePlatformAdmin(env.db, { email: 'nototp@example.com' });
-  assert.equal((await platformLogin(env.db, { email: local.email, password: local.password, production: true })).ok, false);
-  assert.equal((await platformLogin(env.db, { email: local.email, password: local.password, production: false })).ok, true);
+  const bad = await p.platformLogin(a.email, 'wrong password!!');
+  assert.equal(bad.status, 401); assert.match(bad.body.error, /email and password don't match/);
+  assert.equal((await p.platformLogin('Signin@Example.com', a.password)).status, 200, 'email ignores capitals');
+  assert.equal((await p.get('/api/platform/me')).body.admin.email, a.email);
+  const q = client(env.app);
+  for (let i = 0; i < 5; i++) await q.platformLogin(a.email, 'still wrong!!!');
+  assert.equal((await q.platformLogin(a.email, a.password)).status, 429, 'paused after five wrong passwords');
+  // A new password (set from the terminal) works at once, ends old sessions and clears the pause.
+  await setPlatformAdminPassword(env.db, { email: a.email, password: 'a brand new password' });
+  assert.equal((await p.get('/api/platform/me')).status, 404, 'old sessions end (platform routes look non-existent when signed out)');
+  assert.equal((await client(env.app).platformLogin(a.email, a.password)).status, 401, 'old password no longer works');
+  assert.equal((await client(env.app).platformLogin(a.email, 'a brand new password')).status, 200);
+  // Accounts created with an authenticator before this change sign in with just their password.
+  const old = await makePlatformAdmin(env.db, { email: 'had-a-code@example.com' });
+  await env.db.collection('platformAdmins').doc(old.id).update({ totpSecret: 'JBSWY3DPEHPK3PXP', lastTotpStep: 0 });
+  assert.equal((await platformLogin(env.db, { email: old.email, password: old.password })).ok, true);
 });
 
 test('Client staff, even managers, can’t reach any platform route', async () => {
@@ -151,6 +151,6 @@ test('The platform audit log records every platform action', async () => {
   await p.post(`/api/platform/clients/${HARBOUR}/status`, { status: 'active' });
   await p.post(`/api/platform/clients/${HARBOUR}/domains`, { host: 'audit.example.co.za' });
   const actions = (await p.get('/api/platform/audit')).body.entries.map(e => e.action);
-  for (const a of ['client.create', 'client.update', 'client.suspend', 'client.reactivate', 'client.domain_add', 'client.logo_upload', 'support.start', 'support.end', 'staff.pin_reset_by_platform', 'platform_admin.create'])
+  for (const a of ['client.create', 'client.update', 'client.suspend', 'client.reactivate', 'client.domain_add', 'client.logo_upload', 'support.start', 'support.end', 'staff.pin_reset_by_platform', 'platform_admin.create', 'platform_admin.password_set'])
     assert.ok(actions.includes(a), a);
 });

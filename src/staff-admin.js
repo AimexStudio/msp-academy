@@ -61,7 +61,7 @@ export async function seedDemoPlatform(db, { demoAdmin = true } = {}) {
       questions: [{ q: 'How soon should a guest be greeted?', options: ['Within 30 seconds', 'Within 5 minutes', 'When they ask'], correct: 0 },
         { q: 'When do you offer help with luggage?', options: ['After showing the room', 'Before showing the room', 'Never'], correct: 1 }] } });
   await publishDocument(db, { orgId: DEMO_CLIENT.orgId, code: 'HBR-SOP-001', actorId: null });
-  if (demoAdmin && !(await db.collection('platformAdminEmails').doc(DEMO_ADMIN.email).get()).exists) await createPlatformAdmin(db, { ...DEMO_ADMIN, name: 'Demo Platform Admin', requireTotp: false });
+  if (demoAdmin && !(await db.collection('platformAdminEmails').doc(DEMO_ADMIN.email).get()).exists) await createPlatformAdmin(db, { ...DEMO_ADMIN, name: 'Demo Platform Admin' });
   return true;
 }
 

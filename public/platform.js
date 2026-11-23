@@ -6,7 +6,7 @@
 const P = window.Pel;
 const { S, esc, GET, POST, PUT, api, toast, fail, confirmBox, fmtDate, fmtDT, plural, clone } = P;
 const $app = document.getElementById("app");
-S.pf = { me: null, view: "boot", params: {}, data: null, loading: false, login: { email: "", password: "", code: "", err: "" }, edit: null, modal: {}, created: null, share: null };
+S.pf = { me: null, view: "boot", params: {}, data: null, loading: false, login: { email: "", password: "", err: "" }, edit: null, modal: {}, created: null, share: null };
 const pf = S.pf;
 const LIB = "msp-academy-library";
 const statusChip = s => s === "suspended" ? `<span class="chip bad">Suspended</span>` : `<span class="chip ok">Active</span>`;
@@ -87,13 +87,12 @@ function shell(inner) {
     <main class="wrap gutter pf-main">${inner}</main>`;
 }
 function vLogin() {
-  const f = pf.login, local = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+  const f = pf.login;
   return `<main class="pf-login gutter"><a class="admin-link" href="/" aria-label="Client staff sign-in"><svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path fill="currentColor" d="M10.5 3.5 6 8l4.5 4.5-1.4 1.4L3.2 8l5.9-5.9 1.4 1.4Z"/></svg><span>Client sign-in</span></a><form class="card pad stack" data-form="pf-login" autocomplete="off" novalidate style="gap:14px">
     <img class="academy-logo" src="/brand/msp-academy.svg" alt="MSP Academy">
     <div class="stack" style="gap:4px"><h1>Platform sign-in</h1><p class="muted">For the MSP Academy team. Client staff sign in on the main page.</p></div>
     <div class="field"><label for="pf-email">Email</label><input id="pf-email" type="email" autocomplete="username" data-bind="pf.login.email" value="${esc(f.email)}"></div>
     <div class="field"><label for="pf-pw">Password</label><input id="pf-pw" type="password" autocomplete="current-password" data-bind="pf.login.password" value=""></div>
-    <div class="field"><label for="pf-code">Code from your authenticator app</label><input id="pf-code" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" data-bind="pf.login.code" value="${esc(f.code)}"><span class="hint">6 digits. A code works once.${local ? " Not needed for the local demo admin." : ""}</span></div>
     <p class="err" role="alert">${esc(f.err)}</p>
     <button type="submit" class="btn primary block">Sign in</button></form></main>`;
 }
@@ -394,8 +393,8 @@ const showErr = (id, e) => { const el = document.getElementById(id); if (el) el.
 P.addForms({
   "pf-login": async () => {
     const f = pf.login;
-    try { await api("POST", "/api/platform/login", { email: f.email, password: f.password, code: f.code }, { noAuthRedirect: true }); pf.login = { email: "", password: "", code: "", err: "" }; await boot(); }
-    catch (e) { f.err = e.message; f.code = ""; render(); }
+    try { await api("POST", "/api/platform/login", { email: f.email, password: f.password }, { noAuthRedirect: true }); pf.login = { email: "", password: "", err: "" }; await boot(); }
+    catch (e) { f.err = e.message; f.password = ""; render(); }
   },
   "pf-new": async () => {
     const e = pf.edit;

@@ -16,7 +16,7 @@ import learnRoutes from './routes/learn.js';
 /** Build the web app. db is Firestore (or the in-memory stand-in); storage is Cloud Storage (or memory). */
 export async function buildApp({ db, storage, logger = true, serveStatic = true } = {}) {
   const app = Fastify({
-    logger: logger && { level: config.production ? 'info' : 'warn', redact: ['req.headers.cookie', 'req.body.pin', 'req.body.password', 'req.body.code'] },
+    logger: logger && { level: config.production ? 'info' : 'warn', redact: ['req.headers.cookie', 'req.body.pin', 'req.body.password'] },
     trustProxy: config.trustProxy,
     bodyLimit: 3 * 1024 * 1024, // JSON bodies; documents can be long. Files go through multipart.
   });

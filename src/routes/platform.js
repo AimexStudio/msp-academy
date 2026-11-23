@@ -24,9 +24,9 @@ export default async function (app) {
 
   /* ---------- sign-in ---------- */
   app.post('/api/platform/login', { schema: { body: { type: 'object', required: ['email', 'password'], properties: {
-    email: { type: 'string', maxLength: 254 }, password: { type: 'string', maxLength: 200 }, code: { type: 'string', maxLength: 10 } } } } }, async (req, reply) => {
+    email: { type: 'string', maxLength: 254 }, password: { type: 'string', maxLength: 200 } } } } }, async (req, reply) => {
     if (req.hostOrgId) return reply.code(404).send({ error: 'Platform sign-in only works on the shared address, not on a client’s own web address.' });
-    const r = await platformLogin(db, { ...req.body, ip: req.ip, userAgent: req.headers['user-agent'], production: config.production });
+    const r = await platformLogin(db, { email: req.body.email, password: req.body.password, ip: req.ip, userAgent: req.headers['user-agent'] });
     if (!r.ok) return reply.code(r.locked ? 429 : 401).send({ error: r.error });
     const old = req.cookies[COOKIE];
     if (old) await db.collection('sessions').doc(sha(old)).update({ revokedAt: now() }).catch(() => {});

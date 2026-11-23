@@ -48,7 +48,7 @@ Open **http://localhost:5050**. Press **Ctrl+C** in that terminal to stop (alway
 | | `HARBOUR` | HB001 | 123456 | Harbour Demo manager |
 | | `HARBOUR` | HB002 | 1234 | Harbour Demo staff |
 | | `HRDEMO` | HR001 | 123456 | HR Demo manager, with an "HR Essentials" course to share |
-| http://localhost:5050/platform | | | | `admin@example.com` / `platform-demo-only`, no code needed locally. The Library holds two sample courses to share, one showing checklists, policy sign-off and field evidence |
+| http://localhost:5050/platform | | | | `admin@example.com` / `platform-demo-only`. The Library holds two sample courses to share, one showing checklists, policy sign-off and field evidence |
 
 To switch client on one browser: sign out, then **Change client** under the sign-in button.
 
@@ -130,7 +130,7 @@ Do this once, **before** deploying this version. The move only adds information 
 
    Type `LIVE` when asked. It confirms "fingerprint unchanged".
 
-4. Deploy, then create your platform admin (it prints a setup key for your phone's authenticator app):
+4. Deploy, then create your platform admin (email and password; run the same command again later to set a new password):
 
    ```
    npx firebase login
@@ -182,7 +182,7 @@ npm run review:rules -- --project msp-academy-review
 npm run review:setup -- --email you@example.com --name "Your Name"
 ```
 
-Type `REVIEW`, choose a password, and add the printed setup key to your authenticator app. (It refuses to run with the live Pelagos key.)
+Type `REVIEW` and choose a password. (It refuses to run with the live Pelagos key.)
 
 ### 3. Put it on Vercel
 
@@ -223,12 +223,12 @@ It prints the address, e.g. `https://msp-academy-review.vercel.app`. Check `/api
 
 | Who | How |
 |---|---|
-| You and other reviewers (platform) | `<address>/platform` with email, password and authenticator code |
+| You and other reviewers (platform) | `<address>/platform` with email and password |
 | Pelagos | Client code `PELAGOS`: PL001 (manager) or PL002, PIN 1234 |
 | Harbour Demo | Client code `HARBOUR`: HB001 PIN 123456 (manager), HB002 PIN 1234 |
 | HR Demo | Client code `HRDEMO`: HR001 PIN 123456 |
 
-Add another platform reviewer: `npm run review:admin -- --email them@example.com --name "Their Name"` (with the review key set). Update the site after changes: `npx vercel deploy --prod`. The example people are made up; don't enter real staff data on the review site.
+Add another platform reviewer, or set a new password for one: `npm run review:admin -- --email them@example.com --name "Their Name"` (with the review key set). Update the site after changes: `npx vercel deploy --prod`. The example people are made up; don't enter real staff data on the review site.
 
 ## How clients are kept apart
 

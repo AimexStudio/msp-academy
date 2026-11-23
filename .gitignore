@@ -3,3 +3,10 @@ emulator-data/
 .env
 *.log
 .DS_Store
+emulator-data-backup-*/
+.env.local
+.env*.local
+.vercel/
+firebase-debug.log*
+# Service account keys must never be committed (keep them in ~/keys)
+*-firebase-adminsdk-*.json

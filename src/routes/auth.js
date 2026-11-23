@@ -25,7 +25,8 @@ export default async function (app) {
     if (!req.hostOrgId && !req.query.code) return { client: null, byHost: false };
     const r = await clientFor(req, req.query.code);
     if (r.error || !r.org) return reply.code(r.status || 404).send({ error: r.error || unknown });
-    return { client: { ...publicBranding(r.org), loginCode: r.byHost ? null : r.org.loginCode, active: isActive(r.org) }, byHost: !!r.byHost };
+    return { client: { ...publicBranding(r.org), loginCode: r.byHost ? null : r.org.loginCode, active: isActive(r.org) }, byHost: !!r.byHost,
+      platformUrl: r.byHost && config.platformUrl ? `${config.platformUrl}/platform` : null };
   });
 
   app.get('/api/branding/logo/:fileId', async (req, reply) => {

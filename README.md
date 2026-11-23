@@ -146,7 +146,7 @@ Do this once, **before** deploying this version. The move only adds information 
 
 5. Check: `npm run verify:live`. Pelagos staff keep using **pelagos-portal.web.app** without a code; the shared page and `/platform` are at **pelagos-portal.firebaseapp.com**. Delete the key file afterwards.
 
-**A client's own web address**: Firebase console → Hosting → **Add custom domain**, follow the DNS steps, then add the address on the client's page in the platform.
+**A client's own web address**: Firebase console → Hosting → **Add custom domain**, follow the DNS steps, then add the address on the client's page in the platform. The small Admin button on that client's sign-in page then points to the shared platform address (`pelagos-portal.firebaseapp.com/platform`, or your own platform domain if you set `PLATFORM_URL`).
 
 ---
 

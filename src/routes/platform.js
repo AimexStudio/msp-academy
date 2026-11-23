@@ -203,6 +203,7 @@ export default async function (app) {
     const part = await req.file();
     if (!part) throw httpError(400, 'Choose an image to upload.');
     let buf; try { buf = await part.toBuffer(); } catch { throw httpError(413, 'That file is too large.'); }
+    if (part.file.truncated) throw httpError(413, 'That file is too large.');
     if (buf.length > 512 * 1024) throw httpError(400, 'Keep the logo under 512 KB. Export it as a PNG about 600 pixels wide.');
     const mime = buf.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) ? 'image/png'
       : buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff ? 'image/jpeg'

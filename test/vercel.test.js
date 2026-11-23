@@ -57,6 +57,13 @@ test('Uploads over 4 MB are refused with a clear message suggesting YouTube', as
   const r = await call('/api/admin/files', { method: 'POST', headers: { cookie, 'x-pelagos': '1' }, body: fd });
   assert.equal(r.status, 413);
   assert.match((await r.json()).error, /review site.*YouTube/);
+  // The size-limit signal can race the upload: repeat, and make sure a cut-off file is never stored.
+  const before = (await env.db.collection('files').get()).size;
+  for (let i = 0; i < 15; i++) {
+    const f = new FormData(); f.append('file', new Blob([fs.readFileSync(`${CONTENT}files/PEL-SOP-001-video.mp4`)], { type: 'video/mp4' }), `big-${i}.mp4`);
+    assert.equal((await call('/api/admin/files', { method: 'POST', headers: { cookie, 'x-pelagos': '1' }, body: f })).status, 413, `try ${i + 1}`);
+  }
+  assert.equal((await env.db.collection('files').get()).size, before, 'no shortened file was stored');
 });
 
 test('vercel.json routes the API and the platform page, with the same security rules as Firebase Hosting', () => {

@@ -642,7 +642,10 @@ export default async function (app) {
     const isMp4 = ['video/mp4', 'video/quicktime'].includes(part.mimetype) || /\.(mp4|m4v|mov)$/i.test(name);
     if (!isPdf && !isMp4) { part.file.resume(); throw httpError(400, 'Upload a PDF document or an MP4 video.'); }
     let buf;
-    try { buf = await part.toBuffer(); } catch { throw httpError(413, config.vercel ? `That file is too large for the review site (limit ${config.maxUploadMb} MB). For videos, use a YouTube link instead.` : `That file is too large. The limit is ${config.maxUploadMb} MB; compress the video and try again.`); }
+    const tooLarge = () => httpError(413, config.vercel ? `That file is too large for the review site (limit ${config.maxUploadMb} MB). For videos, use a YouTube link instead.` : `That file is too large. The limit is ${config.maxUploadMb} MB; compress the video and try again.`);
+    try { buf = await part.toBuffer(); } catch { throw tooLarge(); }
+    // The size-limit error can arrive after the cut-off file was handed over: never store a shortened file.
+    if (part.file.truncated || buf.length >= config.maxUploadMb * 1024 * 1024) throw tooLarge();
     let duration = null;
     if (isPdf && buf.toString('latin1', 0, 5) !== '%PDF-') throw httpError(400, "That file isn't a valid PDF.");
     if (isMp4) {

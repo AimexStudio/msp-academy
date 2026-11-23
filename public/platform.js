@@ -16,6 +16,8 @@ const sixDigits = () => { const a = new Uint32Array(1); crypto.getRandomValues(a
 async function boot() {
   document.documentElement.setAttribute("data-area", "platform");
   P.applyBrand(null); document.title = "MSP Academy · Platform";
+  // On a client's own web address the platform can't sign in: go to the shared address instead.
+  try { const b = await GET("/api/branding"); if (b.byHost && b.platformUrl) { location.replace(b.platformUrl + location.hash); return; } } catch {}
   try { pf.me = await GET("/api/platform/me", { noAuthRedirect: true }); } catch { pf.me = null; }
   if (pf.me && pf.me.support) { pf.view = "visiting"; render(); return; }
   route();

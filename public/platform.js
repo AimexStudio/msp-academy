@@ -16,8 +16,6 @@ const sixDigits = () => { const a = new Uint32Array(1); crypto.getRandomValues(a
 async function boot() {
   document.documentElement.setAttribute("data-area", "platform");
   P.applyBrand(null); document.title = "MSP Academy · Platform";
-  // On a client's own web address the platform can't sign in: go to the shared address instead.
-  try { const b = await GET("/api/branding"); if (b.byHost && b.platformUrl) { location.replace(b.platformUrl + location.hash); return; } } catch {}
   try { pf.me = await GET("/api/platform/me", { noAuthRedirect: true }); } catch { pf.me = null; }
   if (pf.me && pf.me.support) { pf.view = "visiting"; render(); return; }
   route();
@@ -30,6 +28,7 @@ async function route() {
   else if (parts[0] === "log") { pf.view = "log"; pf.params = {}; }
   else if (parts[0] === "groups") { pf.view = "groups"; pf.params = {}; }
   else if (parts[0] === "library") { pf.view = "library"; pf.params = {}; }
+  else if (parts[0] === "team") { pf.view = "team"; pf.params = {}; }
   else if (parts[0] === "share" && parts[1] && parts[2]) { pf.view = "share"; pf.params = { orgId: parts[1], courseId: parts[2] }; }
   else { pf.view = "clients"; pf.params = {}; }
   window.scrollTo(0, 0);
@@ -51,6 +50,7 @@ async function load() {
     }
     else if (pf.view === "groups") { pf.data = await GET("/api/platform/groups"); pf.edit = { newName: "" }; }
     else if (pf.view === "library") pf.data = await GET("/api/platform/library");
+    else if (pf.view === "team") { pf.data = await GET("/api/platform/admins"); pf.edit = { name: "", email: "", password: "" }; }
     else if (pf.view === "log") pf.data = await GET("/api/platform/audit");
     else if (pf.view === "share") {
       const [detail, list] = await Promise.all([GET(`/api/platform/clients/${encodeURIComponent(pf.params.orgId)}`), GET("/api/platform/clients")]);
@@ -71,18 +71,18 @@ function render() { $app.innerHTML = view(); const f = document.getElementById("
 function view() {
   if (pf.view === "boot") return `<div class="boot gutter"><div><p>Opening the platform…</p></div></div>`;
   if (pf.view === "login") return vLogin();
-  if (pf.view === "visiting") return shell(`<section class="card pad stack" style="gap:12px;max-width:640px"><h1>${pf.me.support.mode === "author" ? "You're in the library" : "You're on a support visit"}</h1>
-    <p>${pf.me.support.mode === "author" ? "You're building courses in the MSP Academy library." : `You are visiting <strong>${esc(pf.me.support.orgId)}</strong> until ${fmtDT(pf.me.support.until)}.`} Leave it before working on the platform.</p>
+  if (pf.view === "visiting") return shell(`<section class="card pad stack" style="gap:12px;max-width:640px"><h1>${pf.me.support.mode === "author" ? "You're in the library" : pf.me.support.mode === "manage" ? "You're in a client's portal" : "You're on a support visit"}</h1>
+    <p>${pf.me.support.mode === "author" ? "You're building courses in the MSP Academy library." : `You're in <strong>${esc(pf.me.support.orgId)}</strong>'s portal.`} Go back to it, or leave it to work on the platform.</p>
     <div class="row"><a class="btn" href="/#/m/${pf.me.support.mode === "author" ? "library" : "overview"}">Go back to it</a><button type="button" class="btn primary" data-act="pf-support-end">Leave it</button></div></section>`);
   const inner = pf.loading ? `<div class="loading">Loading…</div>`
     : pf.data && pf.data.error ? `<div class="card empty"><h3>This page didn't load</h3><p>${esc(pf.data.error)}</p><a class="btn" href="#/clients">Back to clients</a></div>`
-    : ({ clients: vClients, client: vClient, new: vNew, log: vLog, groups: vGroups, share: vShare, library: vLibrary }[pf.view] || (() => ""))();
+    : ({ clients: vClients, client: vClient, new: vNew, log: vLog, groups: vGroups, share: vShare, library: vLibrary, team: vTeam }[pf.view] || (() => ""))();
   return shell(inner);
 }
 function shell(inner) {
   const on = v => (pf.view === v || (v === "clients" && ["client", "new"].includes(pf.view)) || (v === "library" && pf.view === "share" && pf.params.orgId === LIB)) ? "on" : "";
   return `<header class="topbar gutter pf-bar"><div class="topbar-in"><a class="brand" href="#/clients" aria-label="MSP Academy platform home"><img class="pf-logo" src="/brand/msp-academy.svg" alt="MSP Academy"><span class="sub">Platform</span></a>
-      <nav class="pf-nav"><a class="${on("clients")}" href="#/clients">Clients</a><a class="${on("groups")}" href="#/groups">Groups</a><a class="${on("library")}" href="#/library">Library</a><a class="${on("log")}" href="#/log">Log</a></nav><div class="spacer"></div>
+      <nav class="pf-nav"><a class="${on("clients")}" href="#/clients">Clients</a><a class="${on("groups")}" href="#/groups">Groups</a><a class="${on("library")}" href="#/library">Library</a><a class="${on("team")}" href="#/team">Team</a><a class="${on("log")}" href="#/log">Log</a></nav><div class="spacer"></div>
       <div class="who"><a class="bar-btn" href="/" target="_blank" rel="noopener" title="Opens in a new tab. Signing in there as a staff member signs you out of the platform in this browser.">Client sign-in ↗</a><div class="nm">${esc(pf.me.admin.name)}</div><button type="button" class="bar-btn" data-act="logout">Sign out</button></div></div></header>
     <main class="wrap gutter pf-main">${inner}</main>`;
 }
@@ -108,7 +108,7 @@ function clientCard(c) {
       <div class="pc-meta"><span class="mono">${esc(c.loginCode || "—")}</span><span>No. ${c.clientNo ?? "—"}</span></div>
       <div class="pc-stats"><span><b class="tnum">${c.staff}</b> staff</span><span>${plural(c.published, "document")}</span><span>${plural(c.courses, "course")}</span></div>
       <div class="pc-foot muted">${c.domains.length ? esc(c.domains[0]) : "Shared sign-in page"} · last sign-in ${fmtDate(c.lastSignInAt)}</div></div></a>
-    ${c.loginCode ? `<a class="pc-open" href="${signInUrl(c)}" target="_blank" rel="noopener" title="${esc(SIGNIN_NOTE)}">Open sign-in page ↗</a>` : ""}`;
+    <div class="pc-actions"><button type="button" class="btn sm primary" data-act="pf-open-portal" data-org="${esc(c.orgId)}">Open portal</button>${c.loginCode ? `<a class="pc-open" href="${signInUrl(c)}" target="_blank" rel="noopener" title="${esc(SIGNIN_NOTE)}">Sign-in page ↗</a>` : ""}</div>`;
 }
 function vClients() {
   const { clients: list, groups } = pf.data;
@@ -159,7 +159,7 @@ function vClient() {
   pf.groups = d.groups;
   return `<div class="page-head"><div class="t"><p class="muted"><a href="#/clients">Clients</a> / client ${c.clientNo ?? "—"}</p><h1>${esc(c.name)}</h1>
       <p>${statusChip(c.status)}${c.statusReason ? ` <span class="muted">${esc(c.statusReason)}</span>` : ""}</p></div>
-    <div class="row">${c.loginCode && !c.library ? `<a class="btn" href="${signInUrl(c)}" target="_blank" rel="noopener" title="${esc(SIGNIN_NOTE)}">Open sign-in page ↗</a>` : ""}<button type="button" class="btn" data-act="pf-support">Visit as support</button>
+    <div class="row"><button type="button" class="btn primary" data-act="pf-open-portal" data-org="${esc(c.orgId)}">Open portal</button>${c.loginCode && !c.library ? `<a class="btn" href="${signInUrl(c)}" target="_blank" rel="noopener" title="${esc(SIGNIN_NOTE)}">Sign-in page ↗</a>` : ""}<button type="button" class="btn" data-act="pf-support">Read-only visit</button>
       ${c.status === "suspended" ? `<button type="button" class="btn primary" data-act="pf-status" data-s="active">Reactivate</button>` : `<button type="button" class="btn danger" data-act="pf-status" data-s="suspended">Suspend</button>`}</div></div>
   <div class="stack" style="gap:18px">
   <form data-form="pf-details" class="card pad stack" style="gap:14px"><h2>Details</h2>
@@ -316,6 +316,21 @@ document.addEventListener("input", e => {
   if (pv) pv.innerHTML = preview(pf.data.client); if (cn) cn.innerHTML = contrastNotes();
 });
 
+function vTeam() {
+  const d = pf.data, e = pf.edit;
+  return `<div class="page-head"><div class="t"><h1>Team</h1><p class="muted">The MSP Academy team: everyone who can sign in to the platform, open client portals and build library courses.</p></div></div>
+    <div class="stack" style="gap:16px;max-width:860px">
+    <section class="card pad stack" style="gap:10px">${d.admins.map(a => `<div class="li" style="gap:12px"><div class="main"><div class="title">${esc(a.name)}${a.id === d.me ? ' <span class="chip plain">You</span>' : ""}${a.active ? "" : ' <span class="chip bad">Switched off</span>'}</div>
+        <div class="sub">${esc(a.email)} · last sign-in ${fmtDate(a.lastLoginAt)}</div></div>
+        <div class="row" style="gap:6px"><button type="button" class="btn sm" data-act="pf-admin-pw" data-id="${esc(a.id)}" data-name="${esc(a.name)}">New password</button>
+        ${a.id === d.me ? "" : `<button type="button" class="btn sm ${a.active ? "danger" : ""}" data-act="pf-admin-active" data-id="${esc(a.id)}" data-name="${esc(a.name)}" data-on="${a.active ? "0" : "1"}">${a.active ? "Switch off" : "Switch on"}</button>`}</div></div>`).join("")}</section>
+    <form data-form="pf-admin-add" class="card pad stack" style="gap:12px"><h2>Add someone to the team</h2>
+      <div class="grid2"><div class="field"><label for="t-name">Name</label><input id="t-name" type="text" data-bind="pf.edit.name" value="${esc(e.name)}"></div>
+        <div class="field"><label for="t-email">Email</label><input id="t-email" type="email" data-bind="pf.edit.email" value="${esc(e.email)}"></div></div>
+      <div class="field" style="max-width:420px"><label for="t-pw">Password</label><input id="t-pw" type="text" autocomplete="off" data-bind="pf.edit.password" value="${esc(e.password)}"><span class="hint">At least 12 characters. Give it to them in person or by phone; they can't change it themselves yet, so ask for a new one here.</span></div>
+      <p class="err" id="t-err" role="alert"></p>
+      <div class="row"><button type="submit" class="btn primary">Add to the team</button></div></form></div>`;
+}
 function vLog() {
   const list = pf.data.entries;
   return `<div class="page-head"><div class="t"><h1>Platform log</h1><p class="muted">Everything done on the platform, newest first.</p></div></div>
@@ -342,6 +357,17 @@ P.addActions({
     pf.me = null; pf.view = "login"; render();
   },
   "pf-new-pin": () => { pf.edit.manager.pin = sixDigits(); render(); },
+  // Straight into a client's portal, as a manager. Everything done there is recorded in their audit log.
+  "pf-open-portal": async (t, ds) => { try { await POST("/api/platform/support", { orgId: ds.org, mode: "manage" }); location.href = "/#/m/overview"; } catch (e) { fail(e); } },
+  "pf-admin-pw": (t, ds) => {
+    pf.modal = { pw: "" };
+    confirmBox(`New password for ${ds.name}`, "They'll be signed out and need this password to sign in again.", "Set password", async () => {
+      try { await POST(`/api/platform/admins/${encodeURIComponent(ds.id)}/password`, { password: pf.modal.pw }); toast("Password set."); load(); } catch (e) { fail(e); }
+    }, false, `<div class="field" style="margin:14px 0"><label for="m-pw">New password (at least 12 characters)</label><input id="m-pw" type="text" autocomplete="off" data-bind="pf.modal.pw"></div>`);
+  },
+  "pf-admin-active": (t, ds) => confirmBox(ds.on === "1" ? `Switch ${ds.name} back on?` : `Switch ${ds.name} off?`, ds.on === "1" ? "They can sign in again." : "They're signed out straight away and can't sign in until switched back on.", ds.on === "1" ? "Switch on" : "Switch off", async () => {
+    await POST(`/api/platform/admins/${encodeURIComponent(ds.id)}/active`, { active: ds.on === "1" }); toast("Done."); load();
+  }, ds.on !== "1"),
   "pf-lib-open": async () => { try { await POST("/api/platform/library/open"); location.href = "/#/m/courses"; } catch (e) { fail(e); } },
   "pf-share-group": (t, ds) => {
     const ids = pf.data.list.clients.filter(c => c.orgId !== pf.data.detail.client.orgId && (c.groupId || "") === ds.g).map(c => c.orgId);
@@ -406,6 +432,11 @@ P.addForms({
   "pf-details": async () => { const e = pf.edit; await PUT(orgUrl(), { name: e.name, loginCode: e.loginCode, docPrefix: e.docPrefix, staffNoPrefix: e.staffNoPrefix, groupId: e.groupId || null }); toast("Details saved."); load(); },
   "pf-branding": async () => { await PUT(orgUrl(), { branding: pf.edit.b }); toast("Branding saved. Staff see it the next time a page loads."); load(); },
   "pf-domain": async () => { const r = await POST(orgUrl("/domains"), { host: pf.edit.domain }); toast(`${r.host} added.`); load(); },
+  "pf-admin-add": async () => {
+    const e = pf.edit;
+    try { await POST("/api/platform/admins", { name: e.name, email: e.email, password: e.password }); toast(`${e.name} added. They sign in at /platform with this email and password.`); load(); }
+    catch (err) { showErr("t-err", err); }
+  },
   "pf-group-new": async () => { const r = await POST("/api/platform/groups", { name: pf.edit.newName }); toast(`${r.name} added.`); load(); },
   "pf-rescue": async () => {
     const r = pf.edit.rescue;

@@ -77,10 +77,10 @@ export default async function (app) {
     const support = req.session.kind === 'support', author = req.session.kind === 'author';
     return {
       staff: { id: s.id, name: s.name, staffNo: s.staffNo, positionId: s.positionId, role: s.role,
-        positionName: support ? 'Platform support' : author ? 'MSP Academy author' : org.posName(s.positionId), deptId: org.deptOf(s.positionId), deptName: org.deptName(org.deptOf(s.positionId)) },
+        positionName: support ? (req.session.support.mode === 'manage' ? 'MSP Academy admin' : 'Platform support') : author ? 'MSP Academy author' : org.posName(s.positionId), deptId: org.deptOf(s.positionId), deptName: org.deptName(org.deptOf(s.positionId)) },
       org: { orgName: org.orgName, courseTitle: org.courseTitle, departments: org.departments, positions: org.positions },
       brand: { ...publicBranding(org.raw), loginCode: org.raw.loginCode || null },
-      support: support ? { orgName: org.orgName, until: req.session.support.until, reason: req.session.support.reason } : author ? { orgName: org.orgName, until: req.session.support.until, author: true } : null,
+      support: support ? { orgName: org.orgName, until: req.session.support.until, reason: req.session.support.reason, mode: req.session.support.mode || 'view' } : author ? { orgName: org.orgName, until: req.session.support.until, author: true } : null,
       idleSeconds: req.session.idleSeconds,
       features: { aiQuestions: !!config.anthropicApiKey, maxUploadMb: config.maxUploadMb, reviewSite: config.vercel },
     };

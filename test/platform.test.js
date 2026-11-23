@@ -40,7 +40,7 @@ test('Client staff, even managers, can’t reach any platform route', async () =
   const m = client(env.app); await m.login('PL001');
   for (const r of env.app.routeList.filter(r => r.url.startsWith('/api/platform/') && r.url !== '/api/platform/login')) {
     const url = r.url.replace(':orgId', ORG).replace(':host', 'x.example.com').replace(':id', 'anything');
-    const res = await m.call(r.method, url, r.method === 'GET' || r.method === 'DELETE' ? undefined : { orgId: ORG, reason: 'trying to get in here', status: 'suspended', name: 'X', loginCode: 'XX1', docPrefix: 'XX', manager: { name: 'A B', staffNo: 'A1', pin: '123456' }, host: 'x.example.com', staffNo: 'PL001', pin: '111111', sourceOrgId: ORG, courseId: 'x', targetOrgIds: [HARBOUR] });
+    const res = await m.call(r.method, url, r.method === 'GET' || r.method === 'DELETE' ? undefined : { orgId: ORG, reason: 'trying to get in here', status: 'suspended', name: 'X', loginCode: 'XX1', docPrefix: 'XX', manager: { name: 'A B', staffNo: 'A1', pin: '123456' }, host: 'x.example.com', staffNo: 'PL001', pin: '111111', sourceOrgId: ORG, courseId: 'x', targetOrgIds: [HARBOUR], email: 'x@y.co', password: 'twelve chars long', active: true });
     assert.equal(res.status, 404, `${r.method} ${r.url} must not exist for client staff`);
   }
   assert.equal((await client(env.app).get('/api/platform/clients')).status, 404, 'nor for anyone signed out');
@@ -153,4 +153,43 @@ test('The platform audit log records every platform action', async () => {
   const actions = (await p.get('/api/platform/audit')).body.entries.map(e => e.action);
   for (const a of ['client.create', 'client.update', 'client.suspend', 'client.reactivate', 'client.domain_add', 'client.logo_upload', 'support.start', 'support.end', 'staff.pin_reset_by_platform', 'platform_admin.create', 'platform_admin.password_set'])
     assert.ok(actions.includes(a), a);
+});
+
+test('Open portal: an MSP Academy admin works in a client’s portal as a manager, recorded in the client’s log', async () => {
+  const { a, p } = await signedInAdmin('portal@example.com');
+  assert.equal((await p.post('/api/platform/support', { orgId: HARBOUR, mode: 'manage' })).status, 200, 'no reason needed');
+  const me = (await p.get('/api/me')).body;
+  assert.equal(me.staff.role, 'manager'); assert.equal(me.support.mode, 'manage'); assert.equal(me.staff.positionName, 'MSP Academy admin');
+  const add = await p.post('/api/admin/staff', { name: 'Added By Msp', staffNo: 'HB900', positionId: 'staff', pin: '2468' });
+  assert.equal(add.status, 200, 'can make changes');
+  assert.equal((await p.get('/api/my/course')).status, 403, 'still can’t take part in training');
+  assert.equal((await p.get(`/api/admin/staff/${env.pelagos.staffId}`)).status, 404, 'and nothing of another client');
+  // (Read as the client's own manager sees it: Harbour's manager PIN was reset by an earlier test, so sign in afresh.)
+  const hm = client(env.app, { clientCode: 'HARBOUR' }); assert.equal((await hm.login('PL050', '112233')).status, 200);
+  const log = (await hm.get('/api/admin/audit')).body.entries;
+  assert.ok(log.some(e => e.action === 'portal.open'));
+  assert.equal(log.find(e => e.action === 'staff.create' && e.details && e.details.staffNo === 'HB900').actor, 'MSP Academy', 'changes show as made by MSP Academy');
+  assert.equal((await p.post('/api/platform/support/end')).status, 200);
+  assert.equal((await p.get('/api/admin/overview')).status, 401, 'back on the platform');
+  assert.ok((await hm.get('/api/admin/audit')).body.entries.some(e => e.action === 'portal.close'));
+  void a;
+});
+
+test('The Team page: add MSP Academy admins, give a new password, switch one off (never yourself)', async () => {
+  const { p } = await signedInAdmin('lead@example.com');
+  assert.equal((await p.post('/api/platform/admins', { email: 'new@example.com', name: 'New Person', password: 'short' })).status, 400);
+  const r = await p.post('/api/platform/admins', { email: 'New@Example.com', name: 'New Person', password: 'a long enough password' });
+  assert.equal(r.status, 200);
+  const n = client(env.app);
+  assert.equal((await n.platformLogin('new@example.com', 'a long enough password')).status, 200);
+  assert.equal((await p.post(`/api/platform/admins/${r.body.id}/password`, { password: 'another long password' })).status, 200);
+  assert.equal((await n.get('/api/platform/me')).status, 404, 'a new password ends their sessions');
+  assert.equal((await client(env.app).platformLogin('new@example.com', 'another long password')).status, 200);
+  assert.equal((await p.post(`/api/platform/admins/${r.body.id}/active`, { active: false })).status, 200);
+  assert.equal((await client(env.app).platformLogin('new@example.com', 'another long password')).status, 401, 'switched off');
+  const team = (await p.get('/api/platform/admins')).body;
+  assert.equal((await p.post(`/api/platform/admins/${team.me}/active`, { active: false })).status, 400, 'never yourself');
+  assert.ok(team.admins.every(x => !('passwordHash' in x)), 'no password hashes leave the server');
+  const log = (await p.get('/api/platform/audit')).body.entries.map(e => e.action);
+  for (const x of ['platform_admin.add', 'platform_admin.password_set', 'platform_admin.deactivate']) assert.ok(log.includes(x), x);
 });

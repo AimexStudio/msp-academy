@@ -4,7 +4,7 @@
 import { requirePlatform, COOKIE, cookieOptions, now, sha, hashPin, validPin, normStaffNo, staffNoRef, revokeAllFor, clearLockout } from '../auth.js';
 import { httpError } from '../documents.js';
 import { config } from '../config.js';
-import { platformLogin, createClient, platformAuditRecord, clientAuditFromPlatform, SUPPORT_MAX_MINUTES } from '../platform.js';
+import { platformLogin, createClient, platformAuditRecord, clientAuditFromPlatform, SUPPORT_MAX_MINUTES, createPlatformAdmin, setPlatformAdminPassword, normEmail } from '../platform.js';
 import { shareCourse, coursesWithShares } from '../sharing.js';
 import { CLIENT_CODE_RE, DOC_PREFIX_RE, STAFF_PREFIX_RE, HOST_RE, FONTS, normCode, normHost, codeRef, domainRef, orgRef,
   cleanBranding, publicBranding, invalidate, storagePrefix, LIBRARY_ORG_ID, ensureLibrary } from '../tenancy.js';
@@ -25,7 +25,6 @@ export default async function (app) {
   /* ---------- sign-in ---------- */
   app.post('/api/platform/login', { schema: { body: { type: 'object', required: ['email', 'password'], properties: {
     email: { type: 'string', maxLength: 254 }, password: { type: 'string', maxLength: 200 } } } } }, async (req, reply) => {
-    if (req.hostOrgId) return reply.code(404).send({ error: 'Platform sign-in only works on the shared address, not on a client’s own web address.' });
     const r = await platformLogin(db, { email: req.body.email, password: req.body.password, ip: req.ip, userAgent: req.headers['user-agent'] });
     if (!r.ok) return reply.code(r.locked ? 429 : 401).send({ error: r.error });
     const old = req.cookies[COOKIE];
@@ -271,14 +270,18 @@ export default async function (app) {
   });
 
   /* ---------- support visits ---------- */
-  app.post('/api/platform/support', { schema: { body: { type: 'object', required: ['orgId', 'reason'], properties: {
-    orgId: { type: 'string', maxLength: 60 }, reason: { type: 'string', maxLength: 300 }, minutes: { type: 'integer', minimum: 5, maximum: SUPPORT_MAX_MINUTES } } } } }, async (req, reply) => {
+  app.post('/api/platform/support', { schema: { body: { type: 'object', required: ['orgId'], properties: {
+    orgId: { type: 'string', maxLength: 60 }, reason: { type: 'string', maxLength: 300 }, minutes: { type: 'integer', minimum: 5, maximum: 480 },
+    mode: { type: 'string', enum: ['view', 'manage'] } } } } }, async (req, reply) => {
     if (!requirePlatform(req, reply)) return;
-    const reason = req.body.reason.trim();
-    if (reason.length < 10) throw httpError(400, 'Describe why you need to look at this client’s portal (at least a few words). It is shown in their audit log.');
+    // Open portal ('manage'): straight in, as a manager. A read-only support visit ('view') needs a reason.
+    const mode = req.body.mode || 'view';
+    const reason = String(req.body.reason || '').trim() || (mode === 'manage' ? 'Opened the portal from the MSP Academy platform' : '');
+    if (mode === 'view' && reason.length < 10) throw httpError(400, 'Describe why you need to look at this client’s portal (at least a few words). It is shown in their audit log.');
+    if (mode === 'view' && req.body.minutes > SUPPORT_MAX_MINUTES) throw httpError(400, `A support visit lasts at most ${SUPPORT_MAX_MINUTES} minutes.`);
     const org = await getClient(req.body.orgId);
     if (org.get('library')) throw httpError(400, 'Open the library from the Library page instead.');
-    const minutes = req.body.minutes || 30;
+    const minutes = req.body.minutes || (mode === 'manage' ? 480 : 30);
     const grantRef = db.collection('supportGrants').doc();
     const until = new Date(Date.now() + minutes * 60000).toISOString();
     await db.runTransaction(async t => {
@@ -288,9 +291,9 @@ export default async function (app) {
         const g = db.collection('supportGrants').doc(prev.grantId);
         if ((await t.get(g)).exists) t.update(g, { endedAt: now(), endedBy: 'switched' });
       }
-      t.create(grantRef, { orgId: org.id, orgName: org.get('name'), adminId: admin(req).id, adminName: admin(req).name, reason, startedAt: now(), until, endedAt: null, ip: req.ip || null });
-      t.update(admin(req).sessionRef, { support: { grantId: grantRef.id, orgId: org.id, until, reason } });
-      writeBoth(t, req, org.id, 'support.start', { by: admin(req).name, reason, until, minutes });
+      t.create(grantRef, { orgId: org.id, orgName: org.get('name'), adminId: admin(req).id, adminName: admin(req).name, reason, mode, startedAt: now(), until, endedAt: null, ip: req.ip || null });
+      t.update(admin(req).sessionRef, { support: { grantId: grantRef.id, orgId: org.id, until, reason, mode } });
+      writeBoth(t, req, org.id, mode === 'manage' ? 'portal.open' : 'support.start', { by: admin(req).name, reason, until, minutes });
     });
     return { ok: true, until };
   });
@@ -310,7 +313,7 @@ export default async function (app) {
       const gs = await t.get(g);
       if (gs.exists && !gs.get('endedAt')) t.update(g, { endedAt: now(), endedBy: 'admin', requests });
       t.update(admin(req).sessionRef, { support: null });
-      writeBoth(t, req, sup.orgId, 'support.end', { by: admin(req).name, requests });
+      writeBoth(t, req, sup.orgId, sup.mode === 'manage' ? 'portal.close' : 'support.end', { by: admin(req).name, requests });
     });
     return { ok: true };
   });
@@ -378,6 +381,39 @@ export default async function (app) {
     publish: { type: 'boolean' }, change: { type: 'string', enum: ['minor', 'major'] } } } } }, async (req, reply) => {
     if (!requirePlatform(req, reply)) return;
     return shareCourse(db, storage, admin(req), req.body, { ip: req.ip });
+  });
+
+  /* ---------- the MSP Academy team: platform admins ---------- */
+  app.get('/api/platform/admins', async (req, reply) => {
+    if (!requirePlatform(req, reply)) return;
+    const q = await db.collection('platformAdmins').get();
+    return { me: admin(req).id, admins: q.docs.map(d => ({ id: d.id, name: d.get('name'), email: d.get('email'), active: !!d.get('active'), lastLoginAt: d.get('lastLoginAt') || null, createdAt: d.get('createdAt') || null }))
+      .sort((a, b) => a.name.localeCompare(b.name)) };
+  });
+  app.post('/api/platform/admins', { schema: { body: { type: 'object', required: ['email', 'name', 'password'], properties: {
+    email: { type: 'string', maxLength: 254 }, name: { type: 'string', maxLength: 120 }, password: { type: 'string', maxLength: 200 } } } } }, async (req, reply) => {
+    if (!requirePlatform(req, reply)) return;
+    const r = await createPlatformAdmin(db, req.body);
+    await db.collection('platformAudit').add(platformAuditRecord(admin(req), 'platform_admin.add', { email: normEmail(req.body.email), name: req.body.name }, { ip: req.ip }));
+    return { id: r.id };
+  });
+  app.post('/api/platform/admins/:id/password', { schema: { body: { type: 'object', required: ['password'], properties: { password: { type: 'string', maxLength: 200 } } } } }, async (req, reply) => {
+    if (!requirePlatform(req, reply)) return;
+    const a = await db.collection('platformAdmins').doc(String(req.params.id)).get();
+    if (!a.exists) throw httpError(404, 'Not found.');
+    await setPlatformAdminPassword(db, { email: a.get('email'), password: req.body.password });
+    await db.collection('platformAudit').add(platformAuditRecord(admin(req), 'platform_admin.password_set', { email: a.get('email') }, { ip: req.ip }));
+    return { ok: true };
+  });
+  app.post('/api/platform/admins/:id/active', { schema: { body: { type: 'object', required: ['active'], properties: { active: { type: 'boolean' } } } } }, async (req, reply) => {
+    if (!requirePlatform(req, reply)) return;
+    if (String(req.params.id) === admin(req).id) throw httpError(400, 'You can’t switch off your own account.');
+    const a = await db.collection('platformAdmins').doc(String(req.params.id)).get();
+    if (!a.exists) throw httpError(404, 'Not found.');
+    await a.ref.update({ active: req.body.active });
+    if (!req.body.active) for (const x of (await db.collection('sessions').where('adminId', '==', a.id).get()).docs) if (!x.get('revokedAt')) await x.ref.update({ revokedAt: now() });
+    await db.collection('platformAudit').add(platformAuditRecord(admin(req), req.body.active ? 'platform_admin.reactivate' : 'platform_admin.deactivate', { email: a.get('email') }, { ip: req.ip }));
+    return { ok: true };
   });
 
   app.get('/api/platform/audit', async (req, reply) => {

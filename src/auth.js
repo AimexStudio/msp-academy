@@ -154,8 +154,7 @@ export function authHooks(app, db) {
     const touch = async () => { if (!req.headers['x-pelagos-passive'] && secondsSince(s.lastSeenAt) > 10) await s.ref.update({ lastSeenAt: now() }); };
 
     if (s.kind === 'platform') {
-      // Platform admins only ever sign in on the shared address, never on a client's own.
-      if (req.hostOrgId) return;
+      // Platform admins can sign in on any address (each address has its own cookie, so its own sign-in).
       req.platform = { ...s.admin, sessionRef: s.ref, support: s.support };
       const sup = s.support;
       if (sup && sup.mode === 'author' && new Date(sup.until) > new Date()) {
@@ -170,11 +169,14 @@ export function authHooks(app, db) {
         const org = await getOrg(db, sup.orgId);
         if (org) {
           req.orgId = org.id;
+          // 'manage': an MSP Academy admin working in the client's portal with a manager's rights (Open portal).
+          // Otherwise a read-only support visit. Either way every request is logged for the client to see.
+          const manage = sup.mode === 'manage';
           req.session = { ref: s.ref, kind: 'support', lastSeenAt: s.lastSeenAt, idleSeconds: s.idleSeconds, support: sup,
-            staff: { id: `support:${s.admin.id}`, orgId: org.id, staffNo: '', name: s.admin.name, positionId: null, role: 'support' } };
+            staff: { id: `support:${s.admin.id}`, orgId: org.id, staffNo: '', name: s.admin.name, positionId: null, role: manage ? 'manager' : 'support' } };
           const path = req.url.split('?')[0];
           const platformPath = path.startsWith('/api/platform/');
-          if (!['GET', 'HEAD'].includes(req.method) && !platformPath && !SUPPORT_WRITES.has(path)) return reply.code(403).send({ error: 'Support access is read-only.' });
+          if (!manage && !['GET', 'HEAD'].includes(req.method) && !platformPath && !SUPPORT_WRITES.has(path)) return reply.code(403).send({ error: 'Support access is read-only.' });
           // Every look at the client's data during the visit is recorded, for the client to see.
           if (!platformPath) await db.collection('supportLog').add({ orgId: org.id, grantId: sup.grantId, adminId: s.admin.id, method: req.method, path: path.slice(0, 300), at: now() });
         }

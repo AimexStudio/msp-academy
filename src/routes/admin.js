@@ -757,6 +757,6 @@ export default async function (app) {
     const limit = Math.min(500, Number(req.query.limit) || 200);
     const q = await db.collection('auditLog').where('orgId', '==', orgId).orderBy('at', 'desc').limit(limit).get();
     const names = new Map((await loadStaff(db, orgId)).map(x => [x.id, x.name]));
-    return { entries: q.docs.map(s => { const a = s.data(); return { id: s.id, action: a.action, entity: a.entity, entity_id: a.entityId, details: a.details, at: a.at, actor: a.actorName || (a.actorId ? names.get(a.actorId) || null : null) }; }) };
+    return { entries: q.docs.map(s => { const a = s.data(); return { id: s.id, action: a.action, entity: a.entity, entity_id: a.entityId, details: a.details, at: a.at, actor: a.actorName || (a.actorId ? names.get(a.actorId) || (/^(support|platform):/.test(a.actorId) ? 'MSP Academy' : null) : null) }; }) };
   });
 }

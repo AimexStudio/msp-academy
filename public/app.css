@@ -684,3 +684,5 @@ details summary{cursor:pointer;font-weight:600;color:var(--lagoon)}
 .pf-bar .who a.bar-btn{text-decoration:none}
 @media (max-width:760px){.pf-bar .who a.bar-btn{display:none}}
 .pc-stats span{white-space:nowrap}
+
+.pc-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}

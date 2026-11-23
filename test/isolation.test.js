@@ -113,6 +113,8 @@ const ROUTES = () => ({
   'GET /api/platform/groups': { platform: true }, 'POST /api/platform/groups': { platform: true }, 'PUT /api/platform/groups/:id': { platform: true },
   'DELETE /api/platform/groups/:id': { platform: true }, 'POST /api/platform/share': { platform: true },
   'GET /api/platform/library': { platform: true }, 'POST /api/platform/library/open': { platform: true },
+  'GET /api/platform/admins': { platform: true }, 'POST /api/platform/admins': { platform: true },
+  'POST /api/platform/admins/:id/password': { platform: true }, 'POST /api/platform/admins/:id/active': { platform: true },
 });
 
 async function sweep(c, label) {
@@ -277,7 +279,7 @@ test('A client’s own web address picks the client; its sessions only work ther
   assert.equal((await pel.get('/api/my/course')).status, 200, 'but still works on the shared address');
   const viaHosting = await env.app.inject({ method: 'GET', url: '/api/branding', headers: { host: 'europe-west1-x.cloudfunctions.net', 'x-forwarded-host': 'training.harbourhotel.co.za' } });
   assert.equal(viaHosting.json().client.name, 'Harbour Hotel');
-  assert.equal((await client(env.app, { host: 'training.harbourhotel.co.za' }).platformLogin(a.email, a.password)).status, 404);
+  assert.equal((await client(env.app, { host: 'training.harbourhotel.co.za' }).platformLogin(a.email, a.password)).status, 200, 'MSP Academy admins can sign in on any address');
   assert.equal((await p.call('DELETE', `/api/platform/clients/${HARBOUR}/domains/training.harbourhotel.co.za`)).status, 200);
 });
 

@@ -298,7 +298,7 @@ function afterRender() { setupSig(); setupVideos(); refreshGates(); if (S.view =
   if (window.PelLearn && window.PelLearn.afterRender) window.PelLearn.afterRender(); }
 // The support visit's countdown; when it runs out, the server has already closed access.
 setInterval(() => {
-  if (!S.support || S.support.author) return;
+  if (!S.support || S.support.author || S.support.mode === "manage") return;
   const left = Math.max(0, Math.round((new Date(S.support.until) - Date.now()) / 60000));
   const el = document.getElementById("support-left"); if (el) el.textContent = left;
   if (left <= 0) location.href = "/platform";
@@ -307,7 +307,7 @@ setInterval(() => {
 function vTop() {
   const st = S.me; const inMgr = S.view.startsWith("m-"); const inPrev = S.view.startsWith("p-");
   const right = `<div class="who"><div style="min-width:0;text-align:right"><div class="nm">${esc(st.name)}</div><div class="ps">${esc(st.positionName)}</div></div>
-      ${isMgrish() && !isSupport() && !isAuthor() ? (inMgr ? `<a class="bar-btn" href="#/home">My training</a>` : `<a class="bar-btn" href="#/m/overview">Dashboard</a>`) : ""}
+      ${isMgrish() && !S.support ? (inMgr ? `<a class="bar-btn" href="#/home">My training</a>` : `<a class="bar-btn" href="#/m/overview">Dashboard</a>`) : ""}
       ${S.support ? "" : `<button type="button" class="bar-btn" data-act="logout">Sign out</button>`}</div>`;
   const band = inPrev ? `<div class="preview-band gutter"><div class="in"><strong>Preview</strong><span>You are seeing the course a ${esc(posName(S.params.pos))} gets, including drafts. Nothing you do here is saved.</span><a class="btn sm" href="#/m/settings">Exit preview</a></div></div>` : "";
   const head = `<header class="topbar gutter"><div class="topbar-in"><div class="brand">${brandMark("mark")}<span class="sub">${esc(S.brand && S.brand.subtitle ? S.brand.subtitle + " · Staff Training" : "Staff Training")}</span></div><div class="spacer"></div>${right}</div></header>`;
@@ -324,6 +324,9 @@ function supportBand() {
   if (!S.support) return "";
   if (S.support.author) return `<div class="support-band author gutter" role="status"><div class="in"><img class="sb-logo" src="/brand/msp-academy-white.svg" alt="MSP Academy"><strong>Library</strong>
     <span>You're building MSP Academy courses. Share them with clients from the platform.</span>
+    <button type="button" class="btn sm" data-act="support-end">Back to the platform</button></div></div>`;
+  if (S.support.mode === "manage") return `<div class="support-band author gutter" role="status"><div class="in"><img class="sb-logo" src="/brand/msp-academy-white.svg" alt="MSP Academy"><strong>${esc(S.support.orgName)}</strong>
+    <span>You're in this client's portal as MSP Academy admin. Changes are recorded in their audit log.</span>
     <button type="button" class="btn sm" data-act="support-end">Back to the platform</button></div></div>`;
   const left = Math.max(0, Math.round((new Date(S.support.until) - Date.now()) / 60000));
   return `<div class="support-band gutter" role="status"><div class="in"><strong>Support visit to ${esc(S.support.orgName)}</strong>
@@ -359,8 +362,7 @@ function vLogin() {
       <p class="muted" style="font-size:.86rem">Forgot your PIN? Ask your manager to reset it.${S.brandByHost ? "" : ` Not at ${esc(b.name)}? <button type="button" class="linkish" data-act="change-client">Change client</button>`}</p>
       <p class="powered">Powered by <img src="/brand/msp-academy.svg" alt="MSP Academy"></p>`;
   // The way in for the MSP Academy team. On a client's own web address it points to the shared address, where platform sign-in works.
-  const adminHref = S.brandByHost ? S.platformLink : "/platform";
-  const admin = !adminHref ? "" : `<a class="admin-link" href="${esc(adminHref)}" aria-label="MSP Academy admin sign-in"><svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path fill="currentColor" d="M8 1a3.5 3.5 0 0 0-3.5 3.5V6H4a1.5 1.5 0 0 0-1.5 1.5v6A1.5 1.5 0 0 0 4 15h8a1.5 1.5 0 0 0 1.5-1.5v-6A1.5 1.5 0 0 0 12 6h-.5V4.5A3.5 3.5 0 0 0 8 1Zm-2 3.5a2 2 0 1 1 4 0V6H6V4.5Z"/></svg><span>Admin</span></a>`;
+  const admin = `<a class="admin-link" href="/platform" aria-label="MSP Academy admin sign-in"><svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path fill="currentColor" d="M8 1a3.5 3.5 0 0 0-3.5 3.5V6H4a1.5 1.5 0 0 0-1.5 1.5v6A1.5 1.5 0 0 0 4 15h8a1.5 1.5 0 0 0 1.5-1.5v-6A1.5 1.5 0 0 0 12 6h-.5V4.5A3.5 3.5 0 0 0 8 1Zm-2 3.5a2 2 0 1 1 4 0V6H6V4.5Z"/></svg><span>Admin</span></a>`;
   return `<main class="login">${admin}${side}<section class="login-main gutter"><div class="login-card">${body}</div></section></main>`;
 }
 async function doLogin() {

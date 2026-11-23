@@ -78,7 +78,8 @@ Everything below is at `/platform`, for the MSP Academy team.
 - **Clients**: shown as cards in their own colours, grouped. **Add a client** creates it with its first manager; the next screen shows the client code, staff number and PIN to hand over (once).
 - **A client's page**: details, group, branding (logo, colours, fonts, wording such as "Qualification" instead of "Course", an announcement for staff home screens) with a live preview, own web addresses, managers (including **Help a manager who can't get in**), support visits, and the client's platform log.
 - **Suspend / reactivate**: with a reason. Suspended clients can't sign in; nothing is deleted.
-- **Visit as support**: read-only, time-limited, with a reason. A striped banner shows on every screen, and the client sees the visit and every page opened in their audit log.
+- **Open portal**: one click into a client's portal with a manager's rights, to set things up or help. A bar at the top shows where you are, with **Back to the platform**; everything you do is recorded in the client's audit log as MSP Academy. **Read-only visit** is still there for looking without changing anything (with a reason).
+- **Team**: add MSP Academy admins, give someone a new password, or switch an account off. Admins sign in with email and password, on any address (the Admin button on every sign-in page).
 - **Groups**: e.g. HR, Hospitality. Share a course with a whole group at once.
 - **Library**: **Open the course builder** to build MSP Academy courses (it opens on **Courses**) (a gold banner shows you're in the library). Publish them, then **Share…** with clients.
 - **Sharing**: each client gets its own copy (its own files, its own records), shown as "Provided by MSP Academy", never naming where it came from. Their manager can choose who completes it but not change it. Nothing updates by itself: share again to send a newer version.

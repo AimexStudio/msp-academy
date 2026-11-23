@@ -8,6 +8,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { setup, versionOf, CONTENT } from './helpers.js';
 import { createVercelHandler } from '../src/vercel.js';
 import { buildApp } from '../src/app.js';
@@ -71,7 +72,7 @@ test('The review setup refuses the live Pelagos project', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'key-'));
   const key = path.join(dir, 'key.json');
   fs.writeFileSync(key, JSON.stringify({ project_id: 'pelagos-portal', private_key: 'x', client_email: 'x@y' }));
-  const r = spawnSync(process.execPath, ['scripts/setup-review.js', '--email', 'a@b.co', '--name', 'A'], { cwd: new URL('..', import.meta.url).pathname,
+  const r = spawnSync(process.execPath, ['scripts/setup-review.js', '--email', 'a@b.co', '--name', 'A'], { cwd: fileURLToPath(new URL('..', import.meta.url)),
     env: { ...process.env, GOOGLE_APPLICATION_CREDENTIALS: key, FIRESTORE_EMULATOR_HOST: '' }, encoding: 'utf8', input: '' });
   assert.equal(r.status, 1);
   assert.match(r.stderr + r.stdout, /live project "pelagos-portal".*separate project/s);

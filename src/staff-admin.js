@@ -135,3 +135,28 @@ export async function seedDemoLibraryLessons(db) {
   await publishCourse(db, { orgId: LIBRARY_ORG_ID, courseId: ref.id, actorName: 'MSP Academy' });
   return true;
 }
+
+/** Leave tracking switched on for Pelagos and Harbour Demo, with yearly leave set and a few sample records. */
+export async function seedDemoLeave(db, pelagosOrgId) {
+  const { workingDays } = await import('./leave.js');
+  let added = false;
+  for (const orgId of [pelagosOrgId, DEMO_CLIENT.orgId]) {
+    const o = db.collection('orgs').doc(orgId), os = await o.get();
+    if (!os.exists) continue;
+    if (!(os.get('features') || {}).leave) await o.update({ features: { ...(os.get('features') || {}), leave: true } });
+    const staff = (await db.collection('staff').where('orgId', '==', orgId).get()).docs;
+    for (const [i, s] of staff.entries()) {
+      const pr = db.collection('leaveProfiles').doc(s.id);
+      if ((await pr.get()).exists) continue;
+      added = true;
+      const year = new Date().getFullYear();
+      await pr.set({ orgId, staffId: s.id, annualDays: 15, openingBalance: i % 3, accrualStart: `${year}-01-01`, sickDays: 30, familyDays: 3, updatedAt: now(), updatedBy: null });
+      const rec = (type, a, b, note) => db.collection('leaveEntries').add({ orgId, staffId: s.id, type, startDate: a, endDate: b, days: workingDays(a, b) || 1, note,
+        certificateFileId: null, createdAt: now(), createdBy: null, updatedAt: null, deletedAt: null });
+      if (i % 2 === 0) await rec('annual', `${year}-03-09`, `${year}-03-13`, 'Family holiday');
+      if (i % 3 === 0) await rec('sick', `${year}-05-05`, `${year}-05-05`, 'Phoned in sick; certificate not needed for one day');
+      if (i % 4 === 1) await rec('annual', `${year}-12-21`, `${year}-12-24`, 'Christmas week');
+    }
+  }
+  return added;
+}

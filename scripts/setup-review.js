@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { connectReview, arg, ask, stop } from './connect.js';
 import { createBucketStorage } from '../src/storage.js';
 import { importContent } from '../src/importer.js';
-import { seedDemoStaff, seedDemoPlatform, seedDemoSharing, seedDemoLibrary, seedDemoLibraryLessons } from '../src/staff-admin.js';
+import { seedDemoStaff, seedDemoPlatform, seedDemoSharing, seedDemoLibrary, seedDemoLibraryLessons, seedDemoLeave } from '../src/staff-admin.js';
 import { createPlatformAdmin, validEmail, validPassword } from '../src/platform.js';
 import { config } from '../src/config.js';
 
@@ -25,6 +25,7 @@ await seedDemoPlatform(db, { demoAdmin: false });
 await seedDemoSharing(db, config.orgId);
 await seedDemoLibrary(db);
 await seedDemoLibraryLessons(db);
+await seedDemoLeave(db, config.orgId);
 console.log('  Harbour Demo, HR Demo, the groups and the two library courses are there.');
 try { await createPlatformAdmin(db, { email, name, password: pw }); }
 catch (e) { if (/already a platform admin/.test(e.message)) console.log(`  ${email} is already a platform admin here (password unchanged; use npm run review:admin to set a new one).`); else throw e; }

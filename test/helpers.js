@@ -145,6 +145,14 @@ export async function setupTwoClients() {
   const cq = await pc.post(`/api/my/courses/${pcourse.body.id}/lessons/l-check/quiz`, { versionId: `${pcourse.body.id}@1.0`, answers: [0] });
   if (!cq.body.progress || !cq.body.progress.completion) throw new Error('Pelagos course certificate: ' + JSON.stringify(cq.body));
 
+  // Leave tracking switched on for both clients; a Pelagos leave record with a medical certificate.
+  for (const o of [ORG, HARBOUR]) await db.collection('orgs').doc(o).update({ features: { leave: true } });
+  const { invalidate } = await import('../src/tenancy.js'); invalidate(db);
+  await pm.put(`/api/admin/leave/${env.ids.PL005}/profile`, { annualDays: 15, openingBalance: 1, accrualStart: '2026-01-01' });
+  const cert = await uploadAs(pm, `/api/admin/leave/${env.ids.PL005}/certificate`, fs.readFileSync(`${CONTENT}files/PEL-SOP-003.pdf`), 'pelagos-certificate.pdf', 'application/pdf');
+  if (cert.status !== 200) throw new Error('Pelagos certificate: ' + JSON.stringify(cert.body));
+  const leave = await pm.post(`/api/admin/leave/${env.ids.PL005}/entries`, { type: 'sick', startDate: '2026-03-02', endDate: '2026-03-03', note: 'Pelagos private note', certificateFileId: cert.body.id });
+  if (leave.status !== 200) throw new Error('Pelagos leave: ' + JSON.stringify(leave.body));
   const evRef = await db.collection('courseEvidence').add({ orgId: ORG, staffId: env.ids.PL005, courseId: pcourse.body.id, versionId: `${pcourse.body.id}@1.0`, major: 1,
     lessonId: 'l-welcome', lessonTitle: 'Welcome to Pelagos', courseTitle: 'Pelagos Front of House', text: 'Pelagos evidence', fileId: null, status: 'pending', note: null,
     submittedAt: new Date().toISOString(), reviewedAt: null, reviewedBy: null });
@@ -152,7 +160,7 @@ export async function setupTwoClients() {
   return { ...env, harbour: { manager: hm, staff: hs, staffId: hsId, docCode: created.code, fileId: up.body.id, declarationId: hdecl.body.declaration.id },
     pelagos: { staffId: env.ids.PL005, waitronId: env.ids.PL002, managerId: env.ids.PL001, docCode: 'PEL-SOP-001', pdfFileId: pv.pdfFileId,
       videoFileId: pv.videos[0].fileId, declarationId: pdecl.body.declaration.id, version: `${pv.major}.${pv.minor}`,
-      courseId: pcourse.body.id, lessonId: 'l-welcome', quizId: 'l-check', evidenceId: evRef.id } };
+      courseId: pcourse.body.id, lessonId: 'l-welcome', quizId: 'l-check', evidenceId: evRef.id, leaveId: leave.body.id, certificateId: cert.body.id } };
 }
 
 /** A platform admin for tests: signs in with email and password. */

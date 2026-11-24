@@ -695,3 +695,15 @@ fieldset.quiz-q .opt{margin:0}
 .brand:has(> .mark.logo),.pf-preview .pv-bar:has(> .mark.logo){align-items:center}
 .brand > .mark.logo{display:block;height:30px;width:auto;max-width:170px;object-fit:contain;object-position:left center}
 .brand:has(> .mark.logo) > .sub,.pf-preview .pv-bar:has(> .mark.logo) > .sub{padding-left:12px;border-left:1px solid color-mix(in srgb,var(--on-bar) 28%,transparent);line-height:1.5}
+
+/* ================= Leave ================= */
+.leave-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:12px}
+.leave-card{padding:16px;display:flex;flex-direction:column;gap:4px}
+.leave-card strong{font-size:1.9rem;line-height:1.1;color:var(--ink)}
+.leave-card.main{border-top:4px solid var(--lagoon)}
+.leave-card.proj{border-top:4px solid var(--gold)}
+.leave-card.proj input{max-width:180px;margin:2px 0 4px}
+.leave-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(260px,1fr);gap:18px;align-items:start;margin-top:18px}
+@media (max-width:900px){.leave-grid{grid-template-columns:1fr}}
+.leave-home{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;color:inherit;text-decoration:none;border-left:4px solid var(--lagoon)}
+.leave-home > div{display:flex;flex-direction:column;gap:2px}.leave-home strong{font-size:1.3rem}

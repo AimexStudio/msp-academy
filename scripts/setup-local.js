@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { initFirebase } from '../src/firebase.js';
 import { createBucketStorage } from '../src/storage.js';
 import { importContent } from '../src/importer.js';
-import { seedDemoStaff, seedDemoPlatform, seedDemoSharing, seedDemoLibrary, seedDemoLibraryLessons, DEMO_ADMIN } from '../src/staff-admin.js';
+import { seedDemoStaff, seedDemoPlatform, seedDemoSharing, seedDemoLibrary, seedDemoLibraryLessons, seedDemoLeave, DEMO_ADMIN } from '../src/staff-admin.js';
 import { migrateFirstClient } from '../src/migrate.js';
 import { config } from '../src/config.js';
 
@@ -28,6 +28,7 @@ if (await seedDemoPlatform(db)) console.log('Harbour Demo (client code HARBOUR):
 if (await seedDemoSharing(db, config.orgId)) console.log('HR Demo (client code HRDEMO, HR group): HR001 PIN 123456, with an "HR Essentials" course to share.');
 if (await seedDemoLibrary(db)) console.log('MSP Academy library: a sample course, "Customer Service Fundamentals", ready to share (Platform → Library).');
 if (await seedDemoLibraryLessons(db)) console.log('MSP Academy library: "Workplace Safety Starter" (checklist, policy sign-off, field evidence).');
+if (await seedDemoLeave(db, config.orgId)) console.log('Leave tracking: switched on for Pelagos and Harbour Demo, with sample leave.');
 console.log(`Platform admin: ${DEMO_ADMIN.email}, password ${DEMO_ADMIN.password}, no code needed locally.`);
 console.log('\nReady. Start it with:  npm start   then open http://localhost:5050\n');
 process.exit(0);

@@ -85,7 +85,7 @@ export default async function (app) {
     return {
       client: { orgId: s.id, clientNo: d.clientNo ?? null, name: d.name, courseTitle: d.courseTitle, loginCode: d.loginCode || null, status: d.status || 'active',
         statusReason: d.statusReason || null, docPrefix: d.docPrefix || '', staffNoPrefix: d.staffNoPrefix ?? '', domains: d.domains || [], library: !!d.library,
-        legacyStorage: !!d.legacyStorage, createdAt: d.createdAt || null, branding: cleanBranding(d.branding || {}), groupId: d.groupId || null,
+        legacyStorage: !!d.legacyStorage, createdAt: d.createdAt || null, branding: cleanBranding(d.branding || {}), groupId: d.groupId || null, features: { leave: !!(d.features && d.features.leave) },
         logo: logo && logo.exists ? { name: logo.get('name'), size: logo.get('size') } : null, preview: publicBranding({ id: s.id, ...d }) },
       groups: groups.docs.map(g => ({ id: g.id, name: g.get('name') })).sort((a, b) => a.name.localeCompare(b.name)),
       courses,
@@ -99,7 +99,7 @@ export default async function (app) {
 
   app.put('/api/platform/clients/:orgId', { schema: { body: { type: 'object', properties: {
     name: { type: 'string', maxLength: 120 }, loginCode: { type: 'string', maxLength: 30 }, docPrefix: { type: 'string', maxLength: 10 },
-    staffNoPrefix: { type: 'string', maxLength: 10 }, branding: { type: 'object' }, groupId: { type: ['string', 'null'], maxLength: 60 } } } } }, async (req, reply) => {
+    staffNoPrefix: { type: 'string', maxLength: 10 }, branding: { type: 'object' }, groupId: { type: ['string', 'null'], maxLength: 60 }, features: { type: 'object' } } } } }, async (req, reply) => {
     if (!requirePlatform(req, reply)) return;
     const b = req.body;
     const group = b.groupId ? await db.collection('groups').doc(b.groupId).get() : null;
@@ -135,6 +135,7 @@ export default async function (app) {
         if (JSON.stringify(nb) !== JSON.stringify(cleanBranding(d.branding || {}))) { upd.branding = nb; changes.branding = true; }
       }
       if (b.groupId !== undefined && !d.library && (b.groupId || null) !== (d.groupId || null)) { upd.groupId = b.groupId || null; changes.group = group ? group.get('name') : null; }
+      if (b.features && typeof b.features.leave === 'boolean' && b.features.leave !== !!(d.features && d.features.leave)) { upd.features = { ...(d.features || {}), leave: b.features.leave }; changes.leaveTracking = b.features.leave; }
       if (!Object.keys(upd).length) return;
       if (newCode) { if (d.loginCode) t.delete(codeRef(db, d.loginCode)); t.create(codeRef(db, newCode), { orgId: s.id }); }
       t.update(ref, { ...upd, updatedAt: now() });

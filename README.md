@@ -85,6 +85,16 @@ Everything below is at `/platform`, for the MSP Academy team.
 - **Library**: **Open the course builder** to build MSP Academy courses (it opens on **Courses**) (a gold banner shows you're in the library). Publish them, then **Share…** with clients.
 - **Sharing**: each client gets its own copy (its own files, its own records), shown as "Provided by MSP Academy", never naming where it came from. Their manager can choose who completes it but not change it. Nothing updates by itself: share again to send a newer version.
 
+## Leave tracking
+
+Switched on per client in the platform (client page → Details → **Leave tracking**). Then managers get **Leave** in their menu:
+
+- **Each person's yearly leave**: annual leave per year (15 working days is the legal minimum for a 5-day week), the date it builds up from (usually their start date), any opening balance, sick days per 3-year cycle (30) and family responsibility days per year (3).
+- **Record leave**: annual, sick, family responsibility, special or unpaid, with the number of days suggested (weekends and South African public holidays skipped; change it for weekend workers or half days), a note for managers, and a medical certificate (PDF or photo, seen only by the person and their managers). **Adjustments** (+ or −, with a reason) handle carry-over limits, payouts or corrections. Records can be changed or removed; all of it is in the audit log.
+- **Balances**: annual leave builds up day by day (yearly days × days since the start ÷ 365), minus annual leave taken, plus adjustments. Sick leave runs in 36-month cycles and family responsibility leave in yearly cycles from the same start date. Leave counts from its first day, so leave booked ahead shows in the balance on any date after it.
+
+Staff see **My leave** (and a card on their home screen): their balances today, the balance on any future date they pick, and their leave history (without managers' notes).
+
 ## Building courses
 
 Client managers: **Courses → New course** (MSP Academy's library uses the same builder). Read-and-sign documents (SOPs, policies, manuals, memos) live under **Documents**; each client can use its own word for both, e.g. "Qualifications" or "SOP library" (Platform → client → Branding → Wording). Add **modules**, then use the **Add a lesson** buttons under each module:

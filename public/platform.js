@@ -41,7 +41,7 @@ async function load() {
     else if (pf.view === "client") {
       pf.data = await GET(`/api/platform/clients/${encodeURIComponent(pf.params.orgId)}`);
       const c = pf.data.client;
-      pf.edit = { name: c.name, loginCode: c.loginCode || "", docPrefix: c.docPrefix, staffNoPrefix: c.staffNoPrefix, groupId: c.groupId || "", b: clone(c.branding), domain: "",
+      pf.edit = { name: c.name, loginCode: c.loginCode || "", docPrefix: c.docPrefix, staffNoPrefix: c.staffNoPrefix, groupId: c.groupId || "", b: clone(c.branding), domain: "", leave: !!(c.features && c.features.leave),
         rescue: { staffNo: "", name: "", pin: sixDigits(), reason: "" } };
     }
     else if (pf.view === "new") {
@@ -173,6 +173,7 @@ function vClient() {
     <div class="grid2"><div class="field"><label for="pf-edit-groupId">Group</label>${groupSelect("pf.edit.groupId", e.groupId)}</div>
       <div class="field"><label for="c-sprefix">Staff number prefix</label><input id="c-sprefix" type="text" autocapitalize="characters" data-bind="pf.edit.staffNoPrefix" value="${esc(e.staffNoPrefix)}"></div></div>
     <div class="field" style="max-width:360px"><label for="c-prefix">Document code prefix</label><input id="c-prefix" type="text" autocapitalize="characters" data-bind="pf.edit.docPrefix" value="${esc(e.docPrefix)}"><span class="hint">For new documents only. Existing codes never change: they are in signed records.</span></div>
+    <label class="check"><input type="checkbox" data-bind="pf.edit.leave" ${e.leave ? "checked" : ""}><span><strong>Leave tracking</strong><br><span class="muted" style="font-size:.86rem">Managers record annual, sick and other leave with medical certificates; staff see their leave balance.</span></span></label>
     <div class="row"><button type="submit" class="btn primary">Save details</button></div></form>
   ${vCourses(d)}
   ${vBranding(c)}
@@ -443,7 +444,7 @@ P.addForms({
       pf.created = { ...r, name: e.name.trim(), staffNo: e.manager.staffNo.trim().toUpperCase(), pin: e.manager.pin }; pf.edit = null; render();
     } catch (err) { showErr("pf-new-err", err); }
   },
-  "pf-details": async () => { const e = pf.edit; await PUT(orgUrl(), { name: e.name, loginCode: e.loginCode, docPrefix: e.docPrefix, staffNoPrefix: e.staffNoPrefix, groupId: e.groupId || null }); toast("Details saved."); load(); },
+  "pf-details": async () => { const e = pf.edit; await PUT(orgUrl(), { name: e.name, loginCode: e.loginCode, docPrefix: e.docPrefix, staffNoPrefix: e.staffNoPrefix, groupId: e.groupId || null, features: { leave: !!e.leave } }); toast("Details saved."); load(); },
   "pf-branding": async () => { await PUT(orgUrl(), { branding: pf.edit.b }); toast("Branding saved. Staff see it the next time a page loads."); load(); },
   "pf-domain": async () => { const r = await POST(orgUrl("/domains"), { host: pf.edit.domain }); toast(`${r.host} added.`); load(); },
   "pf-admin-add": async () => {

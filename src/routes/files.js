@@ -18,7 +18,7 @@ export async function canAccessFile(db, orgId, session, fileId, file) {
   if (!orgId || !file || file.orgId !== orgId || file.kind === 'logo') return false;
   if (!storageKeyAllowed(await getOrg(db, orgId), file.storageKey)) return false;
   // A photo submitted as field evidence: the person who sent it, and their managers.
-  if (file.kind === 'evidence') return isManagerish(s.role) || file.staffId === s.id;
+  if (file.kind === 'evidence' || file.kind === 'medical') return isManagerish(s.role) || file.staffId === s.id;
   if (isManagerish(s.role)) return true;
   const docs = await loadPublishedDocs(db, orgId);
   if (docs.some(d => appliesTo(d.audience, s.positionId) && uses(d, fileId))) return true;

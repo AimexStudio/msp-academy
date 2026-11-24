@@ -12,6 +12,7 @@ import fileRoutes from './routes/files.js';
 import adminRoutes from './routes/admin.js';
 import platformRoutes from './routes/platform.js';
 import learnRoutes from './routes/learn.js';
+import leaveRoutes from './routes/leave.js';
 
 /** Build the web app. db is Firestore (or the in-memory stand-in); storage is Cloud Storage (or memory). */
 export async function buildApp({ db, storage, logger = true, serveStatic = true } = {}) {
@@ -67,6 +68,7 @@ export async function buildApp({ db, storage, logger = true, serveStatic = true 
   await app.register(adminRoutes);
   await app.register(platformRoutes);
   await app.register(learnRoutes);
+  await app.register(leaveRoutes);
 
   app.get('/api/healthz', async () => {
     await db.collection('counters').doc('platform').get();

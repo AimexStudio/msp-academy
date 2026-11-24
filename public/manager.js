@@ -11,7 +11,7 @@ function vMgr(inner) {
   const on = keys => keys.includes(v) ? "on" : "";
   const nav = (href, label, keys, extra = "") => `<a class="nav ${on(keys)}" href="${href}" ${on(keys) ? 'aria-current="page"' : ""}><span>${label}</span>${extra}</a>`;
   const body = inner || ({ "m-overview": mOverview, "m-staff": mStaff, "m-staffnew": mStaffNew, "m-person": mPerson, "m-library": mLibrary,
-    "m-edit": mEdit, "m-version": mVersion, "m-course": mCourse, "m-courses": mCourses, "m-reviews": mReviews, "m-reports": mReports, "m-settings": mSettings, "m-audit": mAudit }[v] || (() => ""))(S.data[v]);
+    "m-edit": mEdit, "m-version": mVersion, "m-course": mCourse, "m-courses": mCourses, "m-reviews": mReviews, "m-leave": d => window.PelLeave.mList(d), "m-leave-person": d => window.PelLeave.mPerson(d), "m-reports": mReports, "m-settings": mSettings, "m-audit": mAudit }[v] || (() => ""))(S.data[v]);
   return `<div class="gutter"><div class="mgr"><nav class="rail" aria-label="Manager"><span class="eyebrow">${esc(P.isAuthor() ? "MSP Academy author" : S.support && S.support.mode === "manage" ? "MSP Academy admin" : P.isSupport() ? P.SUPPORT_LABEL : ROLE_LABEL[P.role()])}</span>
     ${nav("#/m/overview", "Overview", ["m-overview"])}
     ${canDocs() ? nav("#/m/courses", P.term("courses"), ["m-courses", "m-course"]) : ""}
@@ -20,6 +20,7 @@ function vMgr(inner) {
     ${nav("#/m/reports", "Reports", ["m-reports"])}
     ${canDocs() ? nav("#/m/settings", "Settings", ["m-settings"]) : ""}
     ${nav("#/m/reviews", "Reviews", ["m-reviews"])}
+    ${S.features && S.features.leave ? nav("#/m/leave", "Leave", ["m-leave", "m-leave-person"]) : ""}
     ${canDocs() ? nav("#/m/audit", "Audit log", ["m-audit"]) : ""}
     ${S.support ? "" : `<hr><a class="nav" href="#/home"><span>My training</span></a>`}</nav>
     <main style="min-width:0">${body}</main></div></div>`;

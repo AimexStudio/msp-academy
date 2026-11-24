@@ -216,15 +216,17 @@ async function route() {
   else if (a === "doc" && b) { view = "s-doc"; params = { code: b, step: c || null }; }
   else if (a === "declaration") view = "s-declaration";
   else if (a === "record") view = "s-record";
+  else if (a === "leave") view = "s-leave";
   else if (a === "course" && b) { view = c === "certificate" ? "s-cert" : c ? "s-lesson" : "s-course"; params = { id: b, lesson: c && c !== "certificate" ? c : null }; }
   else if (a === "preview" && b && isMgrish()) { view = c === "doc" && d ? "p-doc" : "p-home"; params = { pos: b, code: d || null }; }
   else if (a === "m" && isMgrish()) {
     params = { id: c || null };
     view = { overview: "m-overview", staff: c === "new" ? "m-staffnew" : c ? "m-person" : "m-staff", library: "m-library", doc: "m-edit",
-      reports: "m-reports", settings: "m-settings", audit: "m-audit", version: "m-version", course: "m-course", reviews: "m-reviews", courses: "m-courses" }[b] || "m-overview";
+      reports: "m-reports", settings: "m-settings", audit: "m-audit", version: "m-version", course: "m-course", reviews: "m-reviews", courses: "m-courses", leave: c ? "m-leave-person" : "m-leave" }[b] || "m-overview";
     if (b === "version") params = { code: c, vid: d };
     if (b === "reviews") params = { filter: c || "pending" };
   }
+  if (!["m-leave-person", "s-leave"].includes(view) || (S.params && S.params.id !== params.id)) S.leaveAt = null;
   S.view = view; S.params = params;
   window.scrollTo(0, 0);
   await load();
@@ -238,7 +240,7 @@ async function load() {
   S.loading = true; S.sameView = S.lastKey === key; S.lastKey = key; render();
   try {
     let data = null;
-    if (v === "s-home") { S.lcReturn = null; const [course, cs] = await Promise.all([GET("/api/my/course"), GET("/api/my/courses").catch(() => ({ courses: [] }))]); data = { ...course, courses: cs.courses }; }
+    if (v === "s-home") { S.lcReturn = null; S.leaveAt = null; const [course, cs, lv] = await Promise.all([GET("/api/my/course"), GET("/api/my/courses").catch(() => ({ courses: [] })), S.features.leave ? GET("/api/my/leave").catch(() => null) : null]); data = { ...course, courses: cs.courses, leave: lv }; }
     else if (v === "s-course" || v === "s-lesson") { S.lcReturn = null; data = await GET(`/api/my/courses/${encodeURIComponent(P.id)}`); if (v === "s-lesson" && (!S.lc || S.lc.lesson !== P.lesson)) S.lc = { lesson: P.lesson, answers: [], result: null }; }
     else if (v === "s-cert") data = await GET(`/api/my/courses/${encodeURIComponent(P.id)}/certificate`);
     else if (v === "s-doc") { data = await GET(`/api/my/documents/${encodeURIComponent(P.code)}`); S.docv = newDocView(data, P.step); }
@@ -247,6 +249,9 @@ async function load() {
     else if (v === "p-home") data = await GET(`/api/admin/preview/${encodeURIComponent(P.pos)}`);
     else if (v === "p-doc") { data = await GET(`/api/admin/documents/${encodeURIComponent(P.code)}/preview`); S.docv = newDocView({ doc: data.doc, state: previewState(data.doc), statement: `I, Preview Staff Member, confirm that I have read and understood ${data.doc.code} ${data.doc.title} (version ${data.doc.label}), and I agree to follow it in my work at ${S.org.orgName}.`, profileName: "Preview Staff Member", preview: true }, null); }
     else if (v === "m-overview") { const [o, ev] = await Promise.all([GET("/api/admin/overview"), GET("/api/admin/evidence?status=pending").catch(() => ({ pending: 0 }))]); data = { ...o, evidencePending: ev.pending }; }
+    else if (v === "m-leave") data = await GET("/api/admin/leave");
+    else if (v === "m-leave-person") { data = await GET(`/api/admin/leave/${encodeURIComponent(P.id)}${S.leaveAt ? `?date=${S.leaveAt}` : ""}`); window.PelLeave.prepare(data); }
+    else if (v === "s-leave") data = await GET(`/api/my/leave${S.leaveAt ? `?date=${S.leaveAt}` : ""}`);
     else if (v === "m-reviews") data = await GET(`/api/admin/evidence?status=${encodeURIComponent(P.filter || "pending")}`);
     else if (v === "m-staff") data = await GET("/api/admin/staff");
     else if (v === "m-staffnew") { data = await GET("/api/admin/staff"); S.staffEdit = { id: null, name: "", staffNo: data.nextStaffNo, positionId: S.org.positions.some(p => p.id === "waitron") ? "waitron" : (S.org.positions[0] || {}).id, startDate: "", role: "staff", pin: randPin() }; }
@@ -435,6 +440,7 @@ function vStaff() {
   if (v === "s-declaration") return vDeclaration(S.data["s-declaration"]);
   if (v === "s-record") { const r = S.data["s-record"]; return `<main class="wrap gutter stack"><div class="row between no-print"><a class="back" href="#/home">← My training</a>${r.declaration ? `<button type="button" class="btn sm" data-act="print">Print</button>` : ""}</div>${certificate(r)}</main>`; }
   if (v === "p-home") return vPreviewHome(S.data["p-home"]);
+  if (v === "s-leave" && window.PelLeave) return window.PelLeave.sMine(S.data[v]);
   if (window.PelLearn) { if (v === "s-course") return window.PelLearn.vCourse(S.data[v]); if (v === "s-lesson") return window.PelLearn.vLesson(S.data[v]); if (v === "s-cert") return window.PelLearn.vCert(S.data[v]); }
   return "";
 }
@@ -487,6 +493,7 @@ function vHome(c) {
   return `<main class="wrap gutter stack" style="gap:26px">
     <section class="hello">${ring(c.pct)}<div class="txt"><span class="eyebrow">${esc(c.courseTitle)}</span><h1>${greeting()}, <span class="accent">${esc(firstName(S.me.name))}</span></h1><p class="muted">${esc(lead)}</p></div></section>
     ${S.brand && S.brand.announcement ? `<div class="announcement" role="note"><span class="a-dot" aria-hidden="true"></span><span>${esc(S.brand.announcement)}</span></div>` : ""}
+    ${window.PelLeave ? window.PelLeave.homeCard(c.leave) : ""}
     ${window.PelLearn ? window.PelLearn.coursesSection(c.courses) : ""}
     ${alerts.length ? `<section class="stack" style="gap:10px"><div class="section-title"><h2>Action required</h2><span class="muted" style="font-size:.88rem">New or updated since you last signed</span></div><div class="alerts">${alerts.map(m => `<div class="alert"><div class="a-main"><div class="a-title">${m.status === "updated" ? "Updated" : "New"} ${esc(KINDS[m.kind] || "document")}: ${esc(m.title)}</div><div class="a-sub">${esc(m.code)} · version ${esc(m.label)} · issued ${esc(m.issueDate || fmtDate(m.publishedAt))}</div></div><a class="btn sm primary" href="${link(m)}">${m.status === "updated" ? "Read & sign" : "Start"}</a></div>`).join("")}</div></section>` : ""}
     <section><div class="section-title"><h2>${c.courses && c.courses.length ? esc(term("documents")) : "Your course"}</h2><span class="muted tnum" style="font-size:.88rem">${c.done} of ${c.total} signed · ${esc(c.positionName)}</span></div>

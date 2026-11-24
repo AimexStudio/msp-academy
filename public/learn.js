@@ -79,6 +79,7 @@ function vLesson(d) {
       : `<form data-form="lc-quiz" class="stack" style="gap:14px"><p class="muted">You need ${esc(l.passMark)}% to pass. You can try again if you don't.</p>${l.questions.map((x, k) => `<fieldset class="card pad quiz-q ${res && res.wrong.includes(k) ? "wrong" : ""}"><legend class="q-text">${k + 1}. ${esc(x.q)}</legend>
           ${x.options.map((o, n) => `<label class="opt ${q.answers[k] === n ? "sel" : ""}"><input type="radio" name="lq-${k}" data-change="lc-answer" data-k="${k}" data-n="${n}" ${q.answers[k] === n ? "checked" : ""}><span>${esc(o)}</span></label>`).join("")}</fieldset>`).join("")}
         ${res ? `<div class="notice ${res.passed ? "ok" : "bad"}">${res.passed ? `Passed with ${res.score}%.` : `${res.score}%. You need ${res.passMark}% to pass. The questions marked in red were wrong. Try again.`}</div>` : ""}
+        <p class="err" id="lc-err" role="alert"></p>
         <div class="row">${res && res.passed ? nextBtn : `<button type="submit" class="btn primary" ${q.answers.every(a => a !== null) ? "" : "disabled"}>Check my answers</button>`}</div></form>`;
   } else if (l.type === "checklist") {
     const ck = S.lck && S.lck.lesson === l.id ? S.lck : (S.lck = { lesson: l.id, checked: [] });
@@ -173,7 +174,7 @@ P.addForms({
   "lc-quiz": async () => {
     const d = S.data[S.view], q = S.lc;
     try { const r = await P.POST(url(`/lessons/${encodeURIComponent(S.params.lesson)}/quiz`), { versionId: d.course.versionId, answers: q.answers }); q.result = r.result; refreshWith(r); window.scrollTo(0, 0); }
-    catch (e) { if (e.status === 409) { P.toast(e.message); P.load(); } else P.fail(e); }
+    catch (e) { showErr(e); }
   },
 });
 function currentLesson() { const d = S.data[S.view]; return d && d.course ? lessons(d.course).find(l => l.id === S.params.lesson) : null; }

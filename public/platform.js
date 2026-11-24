@@ -99,7 +99,11 @@ function vLogin() {
 
 /* ---------- clients ---------- */
 const SIGNIN_NOTE = "Opens in a new tab. Signing in there as a staff member signs you out of the platform in this browser: use a private window, or Visit as support to look around.";
-const signInUrl = c => c.domains && c.domains.length ? `https://${c.domains[0]}/` : `/?code=${encodeURIComponent(c.loginCode)}`;
+/** The shared address (never a client's own, where every path shows that client). */
+const shared = () => (pf.me && pf.me.publicUrl) || location.origin;
+/** The link to send a client's staff: the shared address plus their client code, e.g. …/harbour. Nothing to set up per client. */
+const staffLink = c => `${shared()}/${encodeURIComponent(String(c.loginCode).toLowerCase())}`;
+const signInUrl = c => c.domains && c.domains.length ? `https://${c.domains[0]}/` : `${staffLink(c)}?preview=1`;
 function clientCard(c) {
   const col = c.colors || {};
   return `<a class="pf-client" href="#/clients/${encodeURIComponent(c.orgId)}">
@@ -124,7 +128,8 @@ function vNew() {
     return `<section class="card pad stack" style="gap:14px;max-width:680px"><h1>${esc(c.name)} is ready</h1>
       <p>Client number ${c.clientNo}. Give these to the client's manager. The PIN isn't shown again.</p>
       <div class="pf-handover"><div><span class="muted">Client code</span><strong class="mono">${esc(c.loginCode)}</strong></div><div><span class="muted">Staff number</span><strong class="mono">${esc(c.staffNo)}</strong></div><div><span class="muted">PIN</span><strong class="mono">${esc(c.pin)}</strong></div></div>
-      <p class="muted">They sign in on the main page with the client code, then set up departments, positions, staff, documents and courses.</p>
+      <p>Their staff sign-in link: <strong class="mono">${esc(staffLink(c))}</strong></p>
+      <p class="muted">The manager signs in there (or on the main page with the client code), then sets up departments, positions, staff, documents and courses.</p>
       <div class="row"><a class="btn primary" href="#/clients/${encodeURIComponent(c.orgId)}" data-act="pf-created-done">Set up branding</a><a class="btn" href="#/clients" data-act="pf-created-done">Back to clients</a></div></section>`;
   }
   const e = pf.edit, m = e.manager;
@@ -171,10 +176,14 @@ function vClient() {
     <div class="row"><button type="submit" class="btn primary">Save details</button></div></form>
   ${vCourses(d)}
   ${vBranding(c)}
-  <section class="card pad stack" style="gap:12px"><h2>Own web address</h2>
-    <p class="muted">Staff who open one of these addresses go straight to ${esc(c.name)}'s sign-in, with no client code. Connect the address in the Firebase console first (Hosting → Add custom domain), then add it here.</p>
+  ${c.loginCode && !c.library ? `<section class="card pad stack" style="gap:10px"><h2>Staff sign-in link</h2>
+    <p class="muted">Send this to ${esc(c.name)}'s manager to share with their staff. It opens ${esc(c.name)}'s own sign-in page, and the device remembers it, so a bookmark or home-screen icon goes straight there. Nothing to set up.</p>
+    <div class="row" style="flex-wrap:nowrap;gap:8px"><input type="text" readonly class="mono" id="staff-link" value="${esc(staffLink(c))}" aria-label="Staff sign-in link" style="flex:1"><button type="button" class="btn primary" data-act="pf-copy-link">Copy</button></div>
+    <p class="muted" style="font-size:.86rem">Staff can also go to ${esc(shared())} and type the client code <strong class="mono">${esc(c.loginCode)}</strong>.</p></section>` : ""}
+  <details class="card pad"><summary>Own web address (optional, advanced)</summary><div class="stack" style="gap:12px;margin-top:12px">
+    <p class="muted">Only if a client wants its own address, such as training.theircompany.co.za. It needs setting up in Firebase Hosting and the client's domain settings. The staff sign-in link above does the same job without any of that.</p>
     ${c.domains.length ? `<div class="list">${c.domains.map(h => `<div class="li"><div class="main"><div class="title mono">${esc(h)}</div></div><button type="button" class="btn ghost sm" data-act="pf-domain-del" data-h="${esc(h)}">Remove</button></div>`).join("")}</div>` : `<p>No own address yet. Staff use the shared page with the code <strong class="mono">${esc(c.loginCode || "")}</strong>.</p>`}
-    <form data-form="pf-domain" class="row" style="flex-wrap:nowrap"><label class="sr-only" for="c-dom">Web address</label><input id="c-dom" type="text" data-bind="pf.edit.domain" value="${esc(e.domain)}" placeholder="training.example.co.za"><button type="submit" class="btn">Add address</button></form></section>
+    <form data-form="pf-domain" class="row" style="flex-wrap:nowrap"><label class="sr-only" for="c-dom">Web address</label><input id="c-dom" type="text" data-bind="pf.edit.domain" value="${esc(e.domain)}" placeholder="training.example.co.za"><button type="submit" class="btn">Add address</button></form></div></details>
   <section class="card pad stack" style="gap:12px"><h2>Managers</h2>
     ${d.managers.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Name</th><th>Staff number</th><th>Status</th><th>Last sign-in</th></tr></thead><tbody>${d.managers.map(m => `<tr><td>${esc(m.name)}</td><td class="mono">${esc(m.staffNo)}</td><td>${m.active ? "Active" : "Left"}</td><td class="muted">${fmtDate(m.lastLoginAt)}</td></tr>`).join("")}</tbody></table></div>` : `<p class="muted">No managers.</p>`}
     <details><summary>Help a manager who can't get in</summary>
@@ -357,6 +366,11 @@ P.addActions({
     pf.me = null; pf.view = "login"; render();
   },
   "pf-new-pin": () => { pf.edit.manager.pin = sixDigits(); render(); },
+  "pf-copy-link": async () => {
+    const el = document.getElementById("staff-link"); if (!el) return;
+    try { await navigator.clipboard.writeText(el.value); } catch { el.select(); document.execCommand("copy"); }
+    toast("Link copied.");
+  },
   // Straight into a client's portal, as a manager. Everything done there is recorded in their audit log.
   "pf-open-portal": async (t, ds) => { try { await POST("/api/platform/support", { orgId: ds.org, mode: "manage" }); location.href = "/#/m/overview"; } catch (e) { fail(e); } },
   "pf-admin-pw": (t, ds) => {

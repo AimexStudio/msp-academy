@@ -122,11 +122,20 @@ async function loadBranding() {
     if (r.client) { S.brand = r.client; S.brandByHost = true; S.platformLink = r.platformUrl || null; applyBrand(S.brand); return; }
   } catch {}
   S.brandByHost = false;
-  // A link like /?code=HARBOUR (from the platform) opens that client's sign-in without remembering it on this device.
-  const linked = new URLSearchParams(location.search).get("code");
+  // A client's sign-in link, e.g. /harbour (or the older /?code=HARBOUR): opens that client's sign-in and remembers it
+  // on this device, so a bookmark or home-screen icon goes straight there. The platform's preview (?preview=1) isn't remembered.
+  const qs = new URLSearchParams(location.search), seg = location.pathname.replace(/^\/+|\/+$/g, "");
+  const fromPath = /^[A-Za-z0-9-]{3,20}$/.test(seg) && seg.toLowerCase() !== "platform" ? seg : null;
+  const linked = fromPath || qs.get("code");
   if (linked) {
-    history.replaceState(null, "", location.pathname + location.hash);
-    try { S.brand = (await GET(`/api/branding?code=${encodeURIComponent(linked)}`)).client; applyBrand(S.brand); return; } catch {}
+    if (!fromPath || qs.has("code") || fromPath !== fromPath.toLowerCase()) history.replaceState(null, "", (fromPath ? `/${fromPath.toLowerCase()}` : location.pathname) + location.hash);
+    try {
+      S.brand = (await GET(`/api/branding?code=${encodeURIComponent(linked)}`)).client;
+      if (!qs.has("preview")) storeCode(S.brand.loginCode);
+      applyBrand(S.brand); return;
+    } catch (e) {
+      if (fromPath) { history.replaceState(null, "", "/" + location.hash); S.login.err = "That sign-in link isn't recognised. Enter your client code, or ask your manager for the right link."; }
+    }
   }
   const code = storedCode();
   if (code) {
@@ -146,7 +155,7 @@ async function chooseClient() {
   } catch (e) { f.err = e.message; }
   S.busy = false; render();
 }
-function changeClient() { S.brand = null; S.login = { no: "", pin: "", err: "", code: "", remember: true }; storeCode(""); applyBrand(null); render(); }
+function changeClient() { if (location.pathname !== "/") history.replaceState(null, "", "/" + location.hash); S.brand = null; S.login = { no: "", pin: "", err: "", code: "", remember: true }; storeCode(""); applyBrand(null); render(); }
 const shortName = () => (S.brand && S.brand.wordmark) ? S.brand.wordmark.charAt(0) + S.brand.wordmark.slice(1).toLowerCase() : (S.org ? S.org.orgName : "");
 const term = k => (S.brand && S.brand.terms && S.brand.terms[k]) || { course: "Course", courses: "Courses", module: "Module", modules: "Modules", document: "Document", documents: "Documents" }[k];
 

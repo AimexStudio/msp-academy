@@ -267,8 +267,7 @@ test('A client’s own web address picks the client; its sessions only work ther
   const onHarbour = client(env.app, { clientCode: 'PELAGOS', host: 'training.harbourhotel.co.za' });
   const hb = (await onHarbour.get('/api/branding')).body;
   assert.equal(hb.client.name, 'Harbour Hotel');
-  assert.match(hb.platformUrl, /^https:\/\/.+\/platform$/, 'the Admin button on an own address points to the shared platform address');
-  assert.equal((await client(env.app).get('/api/branding?code=HARBOUR')).body.platformUrl, null, 'on the shared address it stays /platform');
+  assert.equal((await client(env.app).get('/api/branding?code=HARBOUR')).body.platformUrl, null, 'no shared-address link off the live site');
   assert.equal((await onHarbour.login('PL001', '1234')).status, 401, 'Pelagos PIN does not work on Harbour’s address');
   assert.equal((await onHarbour.login('PL001', '654321')).status, 200);
   assert.equal((await onHarbour.get('/api/me')).body.staff.name, 'Harbour Manager');

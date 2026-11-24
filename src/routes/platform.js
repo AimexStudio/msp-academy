@@ -36,7 +36,7 @@ export default async function (app) {
   app.get('/api/platform/me', async (req, reply) => {
     if (!requirePlatform(req, reply)) return;
     const a = admin(req), sup = a.support && new Date(a.support.until) > new Date() ? a.support : null;
-    return { admin: { id: a.id, name: a.name, email: a.email }, support: sup, fonts: FONTS, local: !config.production };
+    return { admin: { id: a.id, name: a.name, email: a.email }, support: sup, fonts: FONTS, local: !config.production, publicUrl: config.platformUrl || null };
   });
 
   /* ---------- clients ---------- */

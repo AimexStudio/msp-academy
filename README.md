@@ -79,6 +79,7 @@ Everything below is at `/platform`, for the MSP Academy team.
 - **A client's page**: details, group, branding (logo, colours, fonts, wording such as "Qualification" instead of "Course", an announcement for staff home screens) with a live preview, own web addresses, managers (including **Help a manager who can't get in**), support visits, and the client's platform log.
 - **Suspend / reactivate**: with a reason. Suspended clients can't sign in; nothing is deleted.
 - **Open portal**: one click into a client's portal with a manager's rights, to set things up or help. A bar at the top shows where you are, with **Back to the platform**; everything you do is recorded in the client's audit log as MSP Academy. **Read-only visit** is still there for looking without changing anything (with a reason).
+- **Staff sign-in link**: every client has one, on its page in the platform, e.g. `pelagos-portal.firebaseapp.com/harbour` (the shared address plus the client code). Send it to the client's manager; staff who open it land on that client's sign-in, and their device remembers it. Nothing to set up per client. (A client's own web address is still possible, under "Own web address (optional, advanced)", but not needed.)
 - **Team**: add MSP Academy admins, give someone a new password, or switch an account off. Admins sign in with email and password, on any address (the Admin button on every sign-in page).
 - **Groups**: e.g. HR, Hospitality. Share a course with a whole group at once.
 - **Library**: **Open the course builder** to build MSP Academy courses (it opens on **Courses**) (a gold banner shows you're in the library). Publish them, then **Share…** with clients.
@@ -147,7 +148,9 @@ Do this once, **before** deploying this version. The move only adds information 
 
 5. Check: `npm run verify:live`. Pelagos staff keep using **pelagos-portal.web.app** without a code; the shared page and `/platform` are at **pelagos-portal.firebaseapp.com**. Delete the key file afterwards.
 
-**A client's own web address**: Firebase console → Hosting → **Add custom domain**, follow the DNS steps, then add the address on the client's page in the platform. The small Admin button on that client's sign-in page then points to the shared platform address (`pelagos-portal.firebaseapp.com/platform`, or your own platform domain if you set `PLATFORM_URL`).
+**Getting staff to their client's sign-in**: each client's page in the platform has a **Staff sign-in link** (`<platform address>/?code=CLIENTCODE`) with a Copy button. Send it to the client's manager; staff who open it land on that client's branded sign-in, and their device remembers it. Nothing to set up per client.
+
+**A client's own web address (optional)**: Firebase console → Hosting → **Add custom domain**, follow the DNS steps, then add the address on the client's page in the platform. The small Admin button on that client's sign-in page then points to the shared platform address (`pelagos-portal.firebaseapp.com/platform`, or your own platform domain if you set `PLATFORM_URL`).
 
 ---
 

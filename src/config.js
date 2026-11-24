@@ -35,7 +35,7 @@ export const config = {
   vercel: env.VERCEL === '1',
   // The shared address where /platform works, for the Admin button on a client's own web address.
   // Set PLATFORM_URL (e.g. https://academy.mspcondev.co.za) once the platform has its own domain.
-  get platformUrl() { return (env.PLATFORM_URL || (this.usingEmulators || this.vercel ? '' : `https://${this.projectId}.firebaseapp.com`)).replace(/\/+$/, ''); },
+  get platformUrl() { return (env.PLATFORM_URL || (this.production && !this.vercel && !this.usingEmulators ? `https://${this.projectId}.firebaseapp.com` : '')).replace(/\/+$/, ''); },
   // Vercel functions can't send or receive more than 4.5 MB at once: uploads are capped and videos stream in pieces.
   get maxResponseBytes() { return this.vercel ? 4 * 1024 * 1024 : Infinity; },
   // The emulators are "local"; anything else is a real Firebase project.

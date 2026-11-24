@@ -69,7 +69,7 @@ test('Uploads over 4 MB are refused with a clear message suggesting YouTube', as
 test('vercel.json routes the API and the platform page, with the same security rules as Firebase Hosting', () => {
   const v = JSON.parse(fs.readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'));
   const fb = JSON.parse(fs.readFileSync(new URL('../firebase.json', import.meta.url), 'utf8'));
-  assert.deepEqual(v.rewrites.map(r => r.source), ['/api/:path*', '/platform']);
+  assert.deepEqual(v.rewrites.map(r => r.source), ['/api/:path*', '/platform', '/:code([A-Za-z0-9-]{3,20})']);
   const csp = h => h.find(x => x.key === 'Content-Security-Policy').value;
   assert.equal(csp(v.headers[0].headers), csp(fb.hosting.headers[0].headers));
   assert.equal(v.outputDirectory, 'public');

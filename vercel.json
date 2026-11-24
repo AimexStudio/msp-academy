@@ -22,6 +22,10 @@
     {
       "source": "/platform",
       "destination": "/index.html"
+    },
+    {
+      "source": "/:code([A-Za-z0-9-]{3,20})",
+      "destination": "/index.html"
     }
   ],
   "headers": [

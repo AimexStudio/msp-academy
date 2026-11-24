@@ -686,3 +686,8 @@ details summary{cursor:pointer;font-weight:600;color:var(--lagoon)}
 .pc-stats span{white-space:nowrap}
 
 .pc-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+/* Course quiz questions: the question sits inside its card (a fieldset's caption is otherwise drawn on the border). */
+fieldset.quiz-q{margin:0;min-width:0;display:flex;flex-direction:column;gap:10px}
+fieldset.quiz-q > legend.q-text{float:left;width:100%;padding:0;margin:0 0 4px;font-weight:600;font-size:1rem;line-height:1.4;color:var(--ink)}
+fieldset.quiz-q > legend.q-text + *{clear:both}
+fieldset.quiz-q .opt{margin:0}

@@ -5,7 +5,7 @@
 #   bash scripts/update-from-zip.sh             update, set up and start
 #   bash scripts/update-from-zip.sh --no-start  update and install only
 #
-# Your local data (emulator-data), settings (.env) and installed packages are kept, and your local
+# Your local data (emulator-data), settings (.env), Git history (.git, linked to GitHub) and installed packages are kept, and your local
 # data is backed up first to emulator-data-backup-<date>.
 set -e
 say() { printf '\n\033[1m%s\033[0m\n' "$1"; }
@@ -47,7 +47,7 @@ fi
 # 6. Copy the new code over, keeping data, settings and installed packages.
 say "Copying the new version in…"
 # (tar is on every Mac; it copies everything except your data, settings and installed packages.)
-(cd "$SRC" && tar cf - --exclude ./node_modules --exclude ./emulator-data --exclude './emulator-data-backup-*' --exclude ./.env .) | tar xf -
+(cd "$SRC" && tar cf - --exclude ./node_modules --exclude ./emulator-data --exclude './emulator-data-backup-*' --exclude ./.env --exclude ./.env.local --exclude ./.vercel --exclude ./.git .) | tar xf -
 rm -rf "$TMP"
 
 # 7. Install, set up, start.

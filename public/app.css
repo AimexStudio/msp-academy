@@ -691,3 +691,7 @@ fieldset.quiz-q{margin:0;min-width:0;display:flex;flex-direction:column;gap:10px
 fieldset.quiz-q > legend.q-text{float:left;width:100%;padding:0;margin:0 0 4px;font-weight:600;font-size:1rem;line-height:1.4;color:var(--ink)}
 fieldset.quiz-q > legend.q-text + *{clear:both}
 fieldset.quiz-q .opt{margin:0}
+/* A client logo in the top bar: centre it with "Staff Training" (text names keep the baseline alignment). */
+.brand:has(> .mark.logo),.pf-preview .pv-bar:has(> .mark.logo){align-items:center}
+.brand > .mark.logo{display:block;height:30px;width:auto;max-width:170px;object-fit:contain;object-position:left center}
+.brand:has(> .mark.logo) > .sub,.pf-preview .pv-bar:has(> .mark.logo) > .sub{padding-left:12px;border-left:1px solid color-mix(in srgb,var(--on-bar) 28%,transparent);line-height:1.5}

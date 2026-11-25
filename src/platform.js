@@ -15,7 +15,7 @@ import { auditRecord, httpError } from './documents.js';
 import { CLIENT_CODE_RE, DOC_PREFIX_RE, STAFF_PREFIX_RE, ORG_ID_RE, normCode, codeRef, orgRef, cleanBranding, starterConfig, invalidate } from './tenancy.js';
 
 const ARGON = { type: argon2.argon2id, memoryCost: 19456, timeCost: 2, parallelism: 1 };
-export const PLATFORM_IDLE_SECONDS = 15 * 60;
+export const PLATFORM_IDLE_SECONDS = 4 * 3600; // 4 hours without activity (sessions still end after 12 hours)
 export const SUPPORT_MAX_MINUTES = 120;
 export const normEmail = s => String(s || '').trim().toLowerCase();
 export const validEmail = s => /^[^\s@]{1,64}@[^\s@]{1,190}\.[a-z]{2,}$/i.test(String(s || ''));

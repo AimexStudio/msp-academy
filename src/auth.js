@@ -149,6 +149,8 @@ export function authHooks(app, db) {
     if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method) && req.headers['x-pelagos'] !== '1') return reply.code(403).send({ error: 'Request blocked.' });
     req.hostOrgId = await orgIdForHost(db, requestHost(req));
     const s = await resolveSession(db, req.cookies[COOKIE]);
+    // For diagnosing sign-in problems: did the browser send a sign-in cookie, and was it recognised? (No secrets.)
+    req.sessionDiag = { cookie: !!req.cookies[COOKIE], session: !req.cookies[COOKIE] ? 'none' : !s ? 'unknown' : s.expired ? 'expired' : s.kind };
     if (s && s.expired) { req.sessionExpired = true; return; }
     if (!s) return;
     const touch = async () => { if (!req.headers['x-pelagos-passive'] && secondsSince(s.lastSeenAt) > 10) await s.ref.update({ lastSeenAt: now() }); };
@@ -211,7 +213,7 @@ export function requireRole(req, reply, roles) {
 export const cookieOptions = () => ({ path: '/', httpOnly: true, sameSite: 'strict', secure: config.production });
 /** Platform admin routes: a platform session on the shared address. */
 export function requirePlatform(req, reply) {
-  if (!req.platform) { reply.code(req.sessionExpired ? 401 : 404).send({ error: req.sessionExpired ? 'You were signed out after a period without activity.' : 'Not found.', expired: !!req.sessionExpired }); return false; }
+  if (!req.platform) { reply.code(req.sessionExpired ? 401 : 404).send({ error: req.sessionExpired ? 'You were signed out after a period without activity.' : 'Not found.', expired: !!req.sessionExpired, diag: req.sessionDiag || null }); return false; }
   return true;
 }
 /** The staff journey (reading, quizzes, signing, courses): real staff only, never a support or author visit. */

@@ -60,8 +60,9 @@ async function load() {
       pf.share = { targets: [], publish: false, change: "major", result: null };
     }
   } catch (e) {
-    if (e.status === 401 || (e.status === 404 && pf.view !== "client")) { pf.me = null; pf.view = "login"; }
-    else pf.data = { error: e.message };
+    const signedOut = e.status === 401 || (e.status === 404 && e.body && e.body.diag);
+    if (signedOut) { if (pf.view !== "login") { pf.me = null; pf.view = "login"; } } // signedOut() has already said why
+    else pf.data = { error: `${e.message}${e.status ? ` (error ${e.status})` : ""}` };
   }
   pf.loading = false; render();
 }
@@ -434,8 +435,26 @@ const showErr = (id, e) => { const el = document.getElementById(id); if (el) el.
 P.addForms({
   "pf-login": async () => {
     const f = pf.login;
-    try { await api("POST", "/api/platform/login", { email: f.email, password: f.password }, { noAuthRedirect: true }); pf.login = { email: "", password: "", err: "" }; await boot(); }
-    catch (e) { f.err = e.message; f.password = ""; render(); }
+    // Read the boxes as they are now: password managers sometimes fill them without the usual typing events.
+    const em = document.getElementById("pf-email"), pw = document.getElementById("pf-pw");
+    if (em) f.email = em.value; if (pw) f.password = pw.value;
+    if (!f.email.trim() || !f.password) { f.err = "Enter your email and password."; render(); return; }
+    try { await api("POST", "/api/platform/login", { email: f.email.trim(), password: f.password }, { noAuthRedirect: true }); }
+    catch (e) { f.err = e.message; f.password = ""; render(); return; }
+    // Signed in: check this browser kept the sign-in, and say so plainly if it didn't.
+    let me = null, problem = null;
+    try { me = await GET("/api/platform/me", { noAuthRedirect: true }); } catch (e) { problem = e; }
+    if (!me) {
+      const diag = problem && problem.body && problem.body.diag;
+      f.password = "";
+      f.err = problem && problem.status !== 404 && problem.status !== 401
+        ? `Your email and password are right, but the server had a problem straight after (error ${problem.status}: ${problem.message}). Send this message to support.`
+        : !diag || !diag.cookie
+        ? "Your email and password are right, but this browser didn't keep the sign-in. Allow cookies for this site (or turn off any blocker or private-mode setting for it), then try again."
+        : `Your email and password are right, but the sign-in wasn't recognised a moment later (${diag.session}). Send this message to support.`;
+      render(); return;
+    }
+    pf.login = { email: "", password: "", err: "" }; await boot();
   },
   "pf-new": async () => {
     const e = pf.edit;
@@ -466,5 +485,13 @@ P.addForms({
   },
 });
 
-window.PelPlat = { boot, route, render: view };
+/** Signed out while working: back to the sign-in, saying why. Coming back to the same page after signing in. */
+function signedOut(message) {
+  if (pf.view === "login") return;
+  const email = (pf.me && pf.me.admin && pf.me.admin.email) || pf.login.email || "";
+  pf.me = null; pf.view = "login"; pf.login = { email, password: "", err: message };
+  document.querySelectorAll(".modal-back, .modal").forEach(m => m.remove());
+  render();
+}
+window.PelPlat = { boot, route, render: view, signedOut };
 })();

@@ -173,6 +173,11 @@ async function api(method, url, body, opts = {}) {
     signedOut(data && data.expired ? "You were signed out after a period without activity." : "Sign in again to continue.");
     throw new ApiError("Signed out", 401, data);
   }
+  // On the platform: signed out (timed out, or the account was changed) shows the sign-in again, from any button.
+  if (S.platformMode && !opts.noAuthRedirect && window.PelPlat && (res.status === 401 || (res.status === 404 && data && data.diag))) {
+    window.PelPlat.signedOut(res.status === 401 ? "You were signed out after a while without activity. Sign in again to carry on." : "You’re no longer signed in. Sign in again to carry on.");
+    throw new ApiError("Signed out", res.status, data);
+  }
   if (!res.ok) throw new ApiError((data && data.error) || "That didn't work. Try again.", res.status, data);
   return data;
 }

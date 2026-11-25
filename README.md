@@ -244,6 +244,11 @@ It prints the address, e.g. `https://msp-academy-review.vercel.app`. Check `/api
 
 Add another platform reviewer, or set a new password for one: `npm run review:admin -- --email them@example.com --name "Their Name"` (with the review key set). Update the site after changes: `npx vercel deploy --prod`. The example people are made up; don't enter real staff data on the review site.
 
+## Staying signed in
+
+- **Staff** are signed out after 10 minutes without activity (and after 12 hours), because they usually share a training tablet: otherwise the next person could sign documents in their name. A countdown warns them first.
+- **Managers, heads of department, auditors and MSP Academy admins** stay signed in until they sign out (up to 30 days). Use **Sign out** on shared computers.
+
 ## How clients are kept apart
 
 - The server takes the client from the signed-in session only; every query includes it, and every record an ID points to is checked to belong to the same client.

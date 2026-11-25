@@ -193,3 +193,12 @@ test('The Team page: add MSP Academy admins, give a new password, switch one off
   const log = (await p.get('/api/platform/audit')).body.entries.map(e => e.action);
   for (const x of ['platform_admin.add', 'platform_admin.password_set', 'platform_admin.deactivate']) assert.ok(log.includes(x), x);
 });
+
+test('MSP Academy admins aren’t signed out for inactivity (only after 30 days)', async () => {
+  const { a, p } = await signedInAdmin('quiet@example.com');
+  const sess = async () => (await env.db.collection('sessions').where('adminId', '==', a.id).get()).docs.filter(d => !d.get('revokedAt'));
+  for (const d of await sess()) await d.ref.update({ lastSeenAt: new Date(Date.now() - 10 * 86400000).toISOString() });
+  assert.equal((await p.get('/api/platform/me')).status, 200, 'a quiet ten days is fine');
+  for (const d of await sess()) await d.ref.update({ createdAt: new Date(Date.now() - 31 * 86400000).toISOString() });
+  assert.equal((await p.get('/api/platform/me')).status, 401, 'signed out after 30 days');
+});

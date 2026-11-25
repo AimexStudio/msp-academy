@@ -15,7 +15,7 @@ import { auditRecord, httpError } from './documents.js';
 import { CLIENT_CODE_RE, DOC_PREFIX_RE, STAFF_PREFIX_RE, ORG_ID_RE, normCode, codeRef, orgRef, cleanBranding, starterConfig, invalidate } from './tenancy.js';
 
 const ARGON = { type: argon2.argon2id, memoryCost: 19456, timeCost: 2, parallelism: 1 };
-export const PLATFORM_IDLE_SECONDS = 4 * 3600; // 4 hours without activity (sessions still end after 12 hours)
+export const PLATFORM_IDLE_SECONDS = 0; // no sign-out for inactivity: MSP Academy admins stay signed in until they sign out (up to 30 days)
 export const SUPPORT_MAX_MINUTES = 120;
 export const normEmail = s => String(s || '').trim().toLowerCase();
 export const validEmail = s => /^[^\s@]{1,64}@[^\s@]{1,190}\.[a-z]{2,}$/i.test(String(s || ''));
@@ -96,7 +96,7 @@ export async function platformLogin(db, { email, password, ip, userAgent }) {
   await event(true, null);
   const token = crypto.randomBytes(32).toString('base64url');
   await db.collection('sessions').doc(sha(token)).set({ kind: 'platform', adminId: adminSnap.id, orgId: null, staffId: null,
-    createdAt: now(), lastSeenAt: now(), idleSeconds: PLATFORM_IDLE_SECONDS, revokedAt: null, support: null, ip: ip || null, userAgent: userAgent || null });
+    createdAt: now(), lastSeenAt: now(), idleSeconds: PLATFORM_IDLE_SECONDS, maxHours: 30 * 24, revokedAt: null, support: null, ip: ip || null, userAgent: userAgent || null });
   return { ok: true, token, adminId: adminSnap.id };
 }
 

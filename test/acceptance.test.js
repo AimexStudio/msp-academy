@@ -223,10 +223,13 @@ test('Five wrong PINs pause sign-in; idle sessions end on the server', async () 
   await ageSessions(env.ids.PL002, 11);
   const r = await s.get('/api/my/course');
   assert.equal(r.status, 401); assert.equal(r.body.expired, true);
-  // Managers get 30 minutes
+  // Managers aren't signed out for inactivity: still signed in after a quiet week, signed out after 30 days
   const m = client(env.app); await m.login('PL001');
-  await ageSessions(env.ids.PL001, 11);
+  await ageSessions(env.ids.PL001, 7 * 24 * 60);
   assert.equal((await m.get('/api/admin/overview')).status, 200);
+  const q = await env.db.collection('sessions').where('staffId', '==', env.ids.PL001).get();
+  for (const d of q.docs) await d.ref.update({ createdAt: new Date(Date.now() - 31 * 86400000).toISOString() });
+  assert.equal((await m.get('/api/admin/overview')).status, 401, 'but not for ever');
 });
 
 test('Staff cannot read anyone else’s records, manager pages, or files outside their course', async () => {

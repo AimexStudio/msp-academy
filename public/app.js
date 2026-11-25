@@ -421,7 +421,7 @@ const idle = (() => {
   function videoPlaying() { return Array.from(document.querySelectorAll("video")).some(v => !v.paused && !v.ended); }
   function hideWarn() { const w = document.getElementById("idle"); if (!w.hidden) w.hidden = true; }
   function tick() {
-    if (!S.me) return;
+    if (!S.me || !S.idleSeconds) return; // no countdown for managers (0 = they stay signed in)
     if (videoPlaying()) last = Date.now();
     const quiet = (Date.now() - last) / 1000, limit = S.idleSeconds;
     if (quiet >= limit) { POST("/api/auth/logout").catch(() => {}); signedOut("You were signed out after a period without activity."); return; }

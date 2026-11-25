@@ -16,7 +16,11 @@ export const hashPin = pin => argon2.hash(String(pin), ARGON);
 export const normStaffNo = s => String(s || '').trim().toUpperCase().replace(/\s+/g, '');
 export const sha = s => crypto.createHash('sha256').update(String(s)).digest('hex');
 export const isManagerish = role => ['manager', 'hod', 'auditor', 'support'].includes(role);
-export const idleSecondsFor = role => (isManagerish(role) ? config.idleMinutes.manager : config.idleMinutes.staff) * 60;
+// Staff are signed out after a short quiet spell, because they usually share a training tablet: otherwise the next
+// person could sign documents in their name. Managers, heads of department and auditors stay signed in (0 = no limit)
+// until they sign out, up to 30 days.
+export const idleSecondsFor = role => (isManagerish(role) ? 0 : config.idleMinutes.staff * 60);
+export const maxHoursFor = role => (isManagerish(role) ? 30 * 24 : MAX_SESSION_HOURS);
 const secondsSince = iso => (iso ? (Date.now() - new Date(iso).getTime()) / 1000 : Infinity);
 
 /**
@@ -75,7 +79,7 @@ export async function login(db, { orgId, staffNo, pin, ip, userAgent }) {
   await stSnap.ref.update(updates);
   const token = crypto.randomBytes(32).toString('base64url');
   await db.collection('sessions').doc(sha(token)).set({ kind: 'staff', staffId: stSnap.id, orgId, createdAt: now(), lastSeenAt: now(),
-    idleSeconds: idleSecondsFor(st.role), revokedAt: null, ip: ip || null, userAgent: userAgent || null });
+    idleSeconds: idleSecondsFor(st.role), maxHours: maxHoursFor(st.role), revokedAt: null, ip: ip || null, userAgent: userAgent || null });
   return { ok: true, token, staffId: stSnap.id };
 }
 
@@ -104,7 +108,7 @@ export async function resolveSession(db, token) {
   if (!s.exists) return null;
   const d = s.data();
   if (d.revokedAt) return null;
-  if (secondsSince(d.lastSeenAt) > d.idleSeconds || secondsSince(d.createdAt) > MAX_SESSION_HOURS * 3600) {
+  if ((d.idleSeconds > 0 && secondsSince(d.lastSeenAt) > d.idleSeconds) || secondsSince(d.createdAt) > (d.maxHours || MAX_SESSION_HOURS) * 3600) {
     await ref.update({ revokedAt: now() });
     return { expired: true };
   }

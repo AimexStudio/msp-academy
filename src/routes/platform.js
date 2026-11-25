@@ -1,7 +1,7 @@
 // The platform admin area: clients, their status, branding, web addresses, support visits, groups,
 // sharing and the MSP Academy library. Only reachable with a platform admin session, and only on the
 // shared address (never on a client's own).
-import { requirePlatform, COOKIE, cookieOptions, now, sha, hashPin, validPin, normStaffNo, staffNoRef, revokeAllFor, clearLockout } from '../auth.js';
+import { requirePlatform, COOKIE, cookieOptions, now, sha, revokeBrowserSessions, hashPin, validPin, normStaffNo, staffNoRef, revokeAllFor, clearLockout } from '../auth.js';
 import { httpError } from '../documents.js';
 import { config } from '../config.js';
 import { platformLogin, createClient, platformAuditRecord, clientAuditFromPlatform, SUPPORT_MAX_MINUTES, createPlatformAdmin, setPlatformAdminPassword, normEmail } from '../platform.js';
@@ -27,8 +27,7 @@ export default async function (app) {
     email: { type: 'string', maxLength: 254 }, password: { type: 'string', maxLength: 200 } } } } }, async (req, reply) => {
     const r = await platformLogin(db, { email: req.body.email, password: req.body.password, ip: req.ip, userAgent: req.headers['user-agent'] });
     if (!r.ok) return reply.code(r.locked ? 429 : 401).send({ error: r.error });
-    const old = req.cookies[COOKIE];
-    if (old) await db.collection('sessions').doc(sha(old)).update({ revokedAt: now() }).catch(() => {});
+    await revokeBrowserSessions(db, req); // whoever was signed in in this browser before is signed out
     reply.setCookie(COOKIE, r.token, cookieOptions());
     return { ok: true };
   });

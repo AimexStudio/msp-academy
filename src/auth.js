@@ -143,6 +143,21 @@ const SUPPORT_WRITES = new Set(['/api/auth/logout', '/api/auth/keepalive']);
  *   req.platform  the platform admin, for /api/platform routes
  *   req.hostOrgId the client registered to this web address, if any (sign-in page hint only)
  */
+/** Every sign-in cookie the browser sent (normally one). */
+export function sessionTokens(req) {
+  const raw = String(req.headers.cookie || '');
+  const out = [];
+  for (const part of raw.split(';')) {
+    const i = part.indexOf('='); if (i < 0) continue;
+    if (part.slice(0, i).trim() === COOKIE) { let v = part.slice(i + 1).trim(); try { v = decodeURIComponent(v); } catch {} if (v && !out.includes(v)) out.push(v); }
+  }
+  return out;
+}
+/** On sign-in or sign-out: end every sign-in this browser held before. */
+export async function revokeBrowserSessions(db, req) {
+  for (const t of sessionTokens(req)) await db.collection('sessions').doc(sha(t)).update({ revokedAt: now() }).catch(() => {});
+}
+
 export function authHooks(app, db) {
   app.decorateRequest('session', null);
   app.decorateRequest('orgId', null);
@@ -152,9 +167,19 @@ export function authHooks(app, db) {
     if (!req.url.startsWith('/api/')) return;
     if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method) && req.headers['x-pelagos'] !== '1') return reply.code(403).send({ error: 'Request blocked.' });
     req.hostOrgId = await orgIdForHost(db, requestHost(req));
-    const s = await resolveSession(db, req.cookies[COOKIE]);
-    // For diagnosing sign-in problems: did the browser send a sign-in cookie, and was it recognised? (No secrets.)
-    req.sessionDiag = { cookie: !!req.cookies[COOKIE], session: !req.cookies[COOKIE] ? 'none' : !s ? 'unknown' : s.expired ? 'expired' : s.kind };
+    // A browser can end up holding more than one sign-in cookie: check each, and use the admin sign-in for platform
+    // pages (or a portal visit) and the staff sign-in for everything else.
+    const tokens = sessionTokens(req).slice(0, 4);
+    const found = [];
+    for (const t of tokens) found.push(await resolveSession(db, t));
+    const live = found.filter(x => x && !x.expired);
+    const plat = live.find(x => x.kind === 'platform'), staff = live.find(x => x.kind === 'staff');
+    const isPlatformPath = req.url.startsWith('/api/platform/');
+    const visiting = plat && plat.support && new Date(plat.support.until) > new Date();
+    const s = (isPlatformPath ? plat || staff : visiting ? plat : staff || plat) || found.find(x => x && x.expired) || null;
+    // For diagnosing sign-in problems: how many sign-in cookies arrived, and what they were (no secrets).
+    req.sessionDiag = { cookie: tokens.length > 0, cookies: tokens.length, session: !tokens.length ? 'none' : !s ? 'unknown' : s.expired ? 'expired' : s.kind,
+      found: found.map(x => (!x ? 'unknown' : x.expired ? 'expired' : x.kind)), at: now() };
     if (s && s.expired) { req.sessionExpired = true; return; }
     if (!s) return;
     const touch = async () => { if (!req.headers['x-pelagos-passive'] && secondsSince(s.lastSeenAt) > 10) await s.ref.update({ lastSeenAt: now() }); };

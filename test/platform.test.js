@@ -202,3 +202,20 @@ test('MSP Academy admins aren’t signed out for inactivity (only after 30 days)
   for (const d of await sess()) await d.ref.update({ createdAt: new Date(Date.now() - 31 * 86400000).toISOString() });
   assert.equal((await p.get('/api/platform/me')).status, 401, 'signed out after 30 days');
 });
+
+test('A browser holding both a staff and an admin sign-in works for both; answers are never cached', async () => {
+  const staff = client(env.app); await staff.login('PL002');
+  const { p } = await signedInAdmin('two-cookies@example.com');
+  const both = client(env.app); both.cookie = `${staff.cookie}; ${p.cookie}`; // the staff cookie first, as in the problem seen live
+  const me = await both.get('/api/platform/me');
+  assert.equal(me.status, 200, 'platform pages use the admin sign-in');
+  assert.equal(me.raw.headers['cache-control'], 'no-store, private', 'never stored by browsers or caches');
+  assert.equal((await both.get('/api/my/course')).status, 200, 'training pages use the staff sign-in');
+  // Signing in again clears every earlier sign-in in that browser.
+  const a2 = await makePlatformAdmin(env.db, { email: 'again@example.com' });
+  await both.platformLogin(a2.email, a2.password);
+  const old = client(env.app); old.cookie = staff.cookie;
+  assert.equal((await old.get('/api/my/course')).status, 401, 'the old staff sign-in ended');
+  const diag = (await old.get('/api/platform/me')).body.diag;
+  assert.deepEqual([diag.cookies, diag.session], [1, 'unknown']);
+});

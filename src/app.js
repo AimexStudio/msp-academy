@@ -25,6 +25,11 @@ export async function buildApp({ db, storage, logger = true, serveStatic = true 
   // Every route, so the isolation tests can check each one (test/isolation.test.js).
   const routeList = [];
   app.decorate('routeList', routeList);
+  // Answers from the server are private and change all the time: never let a browser or Firebase's network keep a copy.
+  app.addHook('onSend', async (req, reply, payload) => {
+    if (req.url.startsWith('/api/') && !reply.getHeader('cache-control')) reply.header('Cache-Control', 'no-store, private');
+    return payload;
+  });
   app.addHook('onRoute', r => { for (const m of [].concat(r.method)) if (m !== 'HEAD') routeList.push({ method: m, url: r.url }); });
   app.decorate('storage', storage);
 

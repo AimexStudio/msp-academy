@@ -451,7 +451,7 @@ P.addForms({
         ? `Your email and password are right, but the server had a problem straight after (error ${problem.status}: ${problem.message}). Send this message to support.`
         : !diag || !diag.cookie
         ? "Your email and password are right, but this browser didn't keep the sign-in. Allow cookies for this site (or turn off any blocker or private-mode setting for it), then try again."
-        : `Your email and password are right, but the sign-in wasn't recognised a moment later (${diag.session}). Send this message to support.`;
+        : `Your email and password are right, but the sign-in wasn't recognised a moment later (${diag.session}; ${diag.cookies || 0} sign-in cookie${diag.cookies === 1 ? "" : "s"}: ${(diag.found || []).join(", ")}; ${diag.at || ""}). Send this message to support.`;
       render(); return;
     }
     pf.login = { email: "", password: "", err: "" }; await boot();

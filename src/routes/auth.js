@@ -1,4 +1,4 @@
-import { login, requireAuth, COOKIE, cookieOptions, now, sha, noteIpFailure } from '../auth.js';
+import { login, requireAuth, COOKIE, cookieOptions, now, sha, noteIpFailure, revokeBrowserSessions } from '../auth.js';
 import { loadOrg } from '../course.js';
 import { config } from '../config.js';
 import { getOrg, orgIdForCode, publicBranding, isActive } from '../tenancy.js';
@@ -50,15 +50,13 @@ export default async function (app) {
     const r = await login(db, { orgId: c.org.id, staffNo: req.body.staffNo, pin: req.body.pin, ip: req.ip, userAgent: req.headers['user-agent'] });
     if (!r.ok) return reply.code(r.locked ? 429 : 401).send({ error: r.error, locked: !!r.locked });
     // One person per browser: whoever was signed in here before is signed out.
-    const old = req.cookies[COOKIE];
-    if (old) await db.collection('sessions').doc(sha(old)).update({ revokedAt: now() }).catch(() => {});
+    await revokeBrowserSessions(db, req); // whoever was signed in in this browser before is signed out
     reply.setCookie(COOKIE, r.token, cookieOptions());
     return { ok: true };
   });
 
   app.post('/api/auth/logout', async (req, reply) => {
-    const tok = req.cookies[COOKIE];
-    if (tok) await db.collection('sessions').doc(sha(tok)).update({ revokedAt: now() }).catch(() => {});
+    await revokeBrowserSessions(db, req);
     reply.clearCookie(COOKIE, cookieOptions());
     return { ok: true };
   });
